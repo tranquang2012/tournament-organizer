@@ -5,13 +5,13 @@ import heroImg from './assets/hero.png'
 import './App.css'
 
 //import components
-import SignIn from './components/authentication/Signin.jsx'
+import LoginPage from './pages/auth/LoginPage.jsx'
 
 const App = () => {
 
   return (
     <>
-      <SignIn />
+      <LoginPage />
     </>
   )
 }
