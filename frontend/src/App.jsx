@@ -1,17 +1,21 @@
+import { Router } from 'react-router-dom'
 import { useState } from 'react'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import heroImg from './assets/hero.png'
 import './App.css'
 
+
 //import components
-import LoginPage from './pages/auth/LoginPage.jsx'
+import Login from './pages/auth/Login.jsx'
 
 const App = () => {
 
   return (
     <>
-      <LoginPage />
+      <div className = "app-container">
+        Home Page
+      </div>
     </>
   )
 }
