@@ -6,17 +6,17 @@
     display: flex;
 
     .login-background {
-        background-image: url('https://netcompany.com/wp-content/uploads/2024/02/NC-logo-duotone-1880x1125.png');
+        background-image: url('https://cdn.discordapp.com/attachments/1481600618887122978/1506866541340266627/image_2.png?ex=6a0fd253&is=6a0e80d3&hm=5b284f26e565241c56dfbebf08c6ad6efde9ff9aaf65be8f544a8cff2f598b31&');
         background-size: cover;
         background-position: center;
         height: 100vh;
-        width: 75%;
+        width: 65%;
     }
 
     .login-content {
         display: flex;
         flex-direction: column;
-        width: 25%;
+        width: 35%;
         flex-direction: column;
         padding-left: 5px;
         align-items: center;
@@ -28,19 +28,37 @@
             color: #123826
         }
 
+        .login-title {
+            font-family: "Arial", sans-serif;
+        }
+
         .social-login {
             display: flex;
             gap: 20px;
             margin-top: 20px;
 
             .social-icon-gg {
+                cursor: pointer;
                 font-size: 50px;
                 color: red;
+
+                &:hover{
+                    border: 1px solid gray;
+                    background-color: #123826;
+                    color: white;
+                }
             }
 
             .social-icon-fa {
+                cursor: pointer;
                 font-size: 50px;
                 color: blue;
+
+                &:hover{
+                    border: 1px solid gray;
+                    background-color: #123826;
+                    color: white;
+                }
             }
         }
     }
