@@ -23,10 +23,11 @@
         justify-content: center;
 
         .title {
-            font-family: "git";
+            font-family: "Arial", sans-serif;
             font-size: 100px;
             color: #123826;
             margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
         }
 
         .login-title {
@@ -60,6 +61,31 @@
                 &:hover{
                     background-color: #123826;
                     color: white;
+                }
+            }
+        }
+
+        .back-home {
+            margin-top: 30px;
+
+            a {
+                font-family: "Arial", sans-serif;
+                text-decoration: none;
+                color: #123826;
+                font-size: 20px;
+            }
+
+            .back-home-link {
+                font-family: "Arial", sans-serif;
+                text-decoration: none;
+                color: rgb(17, 17, 202);
+                font-size: 20px;
+                opacity: 70%;
+
+                &:hover {
+                    text-decoration: underline;
+                    color: blue;
+                    opacity: 100%;
                 }
             }
         }

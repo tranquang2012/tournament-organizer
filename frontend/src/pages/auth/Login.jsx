@@ -21,8 +21,11 @@ const Login = (props) => {
             <FontAwesomeIcon icon={faGoogle} size="2x" className='social-icon-gg' onClick={(event) => handleLogin("Google")}/>
             <FontAwesomeIcon icon={faFacebook} size="2x" className='social-icon-fa' onClick={(event) => handleLogin("Facebook")}/>
           </div>
-          <div>
-            <Link to="/">Back to Home Page</Link>
+          <div className='back-home'>
+            <a>Don't want to sign in? </a>
+            <Link to="/" className='back-home-link'>
+              Back to Home Page
+            </Link>
           </div>
         </div>
       </div>
