@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 .login-container {
     padding: 0;
     margin: 0px;
@@ -8,21 +10,38 @@
         background-size: cover;
         background-position: center;
         height: 100vh;
-        width: 70%;
+        width: 75%;
     }
 
     .login-content {
-        width: 30%;
         display: flex;
+        flex-direction: column;
+        width: 25%;
         flex-direction: column;
         padding-left: 5px;
         align-items: center;
         justify-content: center;
 
         .title {
-            font-size: 50px;
+            font-family: "Aoboshi One", sans-serif;
+            font-size: 80px;
             color: #123826
-            
+        }
+
+        .social-login {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+
+            .social-icon-gg {
+                font-size: 50px;
+                color: red;
+            }
+
+            .social-icon-fa {
+                font-size: 50px;
+                color: blue;
+            }
         }
     }
 }
