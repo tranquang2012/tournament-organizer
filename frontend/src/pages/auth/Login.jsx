@@ -1,6 +1,7 @@
 import './Login.scss'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFacebook, faGoogle } from '@fortawesome/free-brands-svg-icons';
+import {Link} from 'react-router-dom';
 
 const Login = (props) => {
 
@@ -19,6 +20,9 @@ const Login = (props) => {
           <div className='social-login'>
             <FontAwesomeIcon icon={faGoogle} size="2x" className='social-icon-gg' onClick={(event) => handleLogin("Google")}/>
             <FontAwesomeIcon icon={faFacebook} size="2x" className='social-icon-fa' onClick={(event) => handleLogin("Facebook")}/>
+          </div>
+          <div>
+            <Link to="/">Back to Home Page</Link>
           </div>
         </div>
       </div>
