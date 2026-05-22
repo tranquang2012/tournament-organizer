@@ -2,13 +2,18 @@ import './Login.scss'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFacebook, faGoogle } from '@fortawesome/free-brands-svg-icons';
 import {Link} from 'react-router-dom';
+import { createClient } from '@supabase/supabase-js'
+
 
 const Login = (props) => {
 
   const handleLogin = (provider) => {
-    // Implement login logic here, e.g., redirect to OAuth provider
-    alert(`Logging in with ${provider}`);
-  }
+    const supabase = createClient('https://fcllhdeiknlthwqpafiy.supabase.co', 'sb_publishable_RXp-v2R5nmE7SCyygiGHHw_XlWXHcKR')
+// ---cut---
+supabase.auth.signInWithOAuth({
+  provider: 'google',
+})
+  };
 
   return (
     <div>
