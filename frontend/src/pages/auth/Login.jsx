@@ -1,23 +1,27 @@
 import './Login.scss'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFacebook, faGoogle } from '@fortawesome/free-brands-svg-icons';
-import { Link } from 'react-router-dom';
-import { createClient } from '@supabase/supabase-js'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { supabase } from '../../config/supabaseClient'
 
 
 const Login = (props) => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const loginError = searchParams.get('error_description') || searchParams.get('error');
 
-  const handleLogin = (provider) => {
-    const supabase = createClient('https://fcllhdeiknlthwqpafiy.supabase.co', 'sb_publishable_RXp-v2R5nmE7SCyygiGHHw_XlWXHcKR')
-    //---cut---
-    if (provider === "Google") {
-      supabase.auth.signInWithOAuth({
-        provider: 'google',
-      })
-    } else {
-      supabase.auth.signInWithOAuth({
-        provider: 'facebook',
-      })
+  const handleLogin = async (provider) => {
+    const oauthProvider = provider === "Google" ? 'google' : 'facebook';
+
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: oauthProvider,
+      options: {
+        redirectTo: `${window.location.origin}/oauth/callback`,
+      },
+    })
+
+    if (error) {
+      navigate(`/login?error_description=${encodeURIComponent(error.message)}`, { replace: true })
     }
   };
 
@@ -28,6 +32,11 @@ const Login = (props) => {
         <div className="login-background"></div>
         <div className="login-content flex flex-col">
           <h2 className='title'>Sign In</h2>
+          {loginError && (
+            <p className='login-error'>
+              {loginError}
+            </p>
+          )}
           <label className='login-title'>Sign In with Google/Facebook</label>
           <div className='social-login'>
             <FontAwesomeIcon icon={faGoogle} size="2x" className='social-icon-gg' onClick={(event) => handleLogin("Google")} />
