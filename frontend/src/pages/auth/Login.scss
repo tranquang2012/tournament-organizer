@@ -52,10 +52,12 @@
         }
 
         .social-login {
+            height: 70px;
             padding: 10px;
             display: flex;
             gap: 20px;
             margin-top: 20px;
+            align-items: center;
 
             .social-icon-gg {
                 cursor: pointer;
@@ -63,8 +65,8 @@
                 color: red;
 
                 &:hover{
-                    background-color: #123826;
-                    color: white;
+                    font-size: 70px;
+                    box-shadow: 0 0 10px rgba(255, 0, 0, 0.5);
                 }
             }
 
@@ -74,8 +76,8 @@
                 color: blue;
 
                 &:hover{
-                    background-color: #123826;
-                    color: white;
+                    font-size: 70px;
+                    box-shadow: 0 0 10px rgba(0, 0, 255, 0.5);
                 }
             }
         }

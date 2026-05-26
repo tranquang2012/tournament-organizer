@@ -6,13 +6,14 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 
 //import components
 import Login from './pages/auth/Login.jsx'
+import LandingPage from './pages/public/LandingPage.jsx'
 import OAuthCallbackPage from './pages/auth/OAuthCallbackPage.jsx'
 
 createRoot(document.getElementById('root')).render(
   // <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<App />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
       </Routes>
