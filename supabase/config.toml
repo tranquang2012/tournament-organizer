@@ -90,7 +90,11 @@ enabled = true
 # Port to use for Supabase Studio.
 port = 54323
 # External URL of the API server that frontend connects to.
+<<<<<<< HEAD
 api_url = "http://0.0.0.0"
+=======
+api_url = "http://127.0.0.1"
+>>>>>>> 08991daa6a44f619b69e540230fcfd572bb8136c
 # OpenAI API Key to use for Supabase AI in the Supabase Studio.
 openai_api_key = "env(OPENAI_API_KEY)"
 
@@ -406,3 +410,12 @@ s3_secret_key = "env(S3_SECRET_KEY)"
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+<<<<<<< HEAD
+=======
+
+[auth.external.google]
+enabled = true
+client_id = "304707250174-tu7gin0ma67g17m75rtqp218ovp3u17n.apps.googleusercontent.com"
+secret = "env(SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_SECRET)"
+skip_nonce_check = false
+>>>>>>> 08991daa6a44f619b69e540230fcfd572bb8136c

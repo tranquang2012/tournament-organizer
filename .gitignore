@@ -9,6 +9,9 @@ build/
 .env
 *.local
 
+# Supabase local CLI state
+supabase/.temp/
+
 # logs
 logs
 *.log
