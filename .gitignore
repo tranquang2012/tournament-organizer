@@ -9,6 +9,9 @@ build/
 .env
 *.local
 
+# Supabase local CLI state
+supabase/.temp/
+
 # logs
 logs
 *.log
@@ -23,4 +26,7 @@ pnpm-debug.log*
 
 # instructions
 GEMINI.md
+<<<<<<< HEAD
 /generated/prisma
+=======
+>>>>>>> 08991daa6a44f619b69e540230fcfd572bb8136c
