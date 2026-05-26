@@ -29,7 +29,7 @@ const Login = (props) => {
   return (
     <div>
       <div className="login-container">
-        <div className="login-background"></div>
+        <div className="login-background" ></div>
         <div className="login-content flex flex-col">
           <h2 className='title'>Sign In</h2>
           {loginError && (
