@@ -1,7 +1,9 @@
-import axiosInstance from "../config/apiEndpoints";
+import axios from "../config/apiEndpoints";
 
-const fetchUser = async () => {
-    const response = await axiosInstance.get()
+const getUser = (inputId) => {
+    return axios.get(`/api/users/${inputId}/profile`)
 }
 
-export {fetchUser};
+export {
+    getUser
+};
