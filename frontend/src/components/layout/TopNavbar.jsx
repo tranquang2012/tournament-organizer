@@ -12,20 +12,44 @@ const TopNavBar = (props) => {
 
   const navigate = useNavigate()
   const [data, setData] = useState(null);
-  const [isLogin, setIsLogin] = useState(true)
 
-  const handleLogout = () => {
-    setIsLogin(false)
+  const [isLogin, setIsLogin] = useState(false)
+  const [loading, setLoading] = useState(true)
+  
+  useEffect(() => {
+  async function checkAuth() {
+    const { data: { session } } = await supabase.auth.getSession()
+    setIsLogin(!!session)
+    setLoading(false)
   }
+  checkAuth()
+
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      setIsLogin(true)
+    } else if (event === 'SIGNED_OUT') {
+      setIsLogin(false)
+    }
+  })
+  return () => subscription.unsubscribe()
+}, [])
+
+    const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      window.location.href = `${window.location.origin}/login`;
+    } catch (error) {
+      console.error("Logout error:", error.message);
+    }
+  };
+  if (loading) return null
 
   const handleLogin = () =>{
     navigate(`/login`)
   }
-  
 
-  useEffect(() => {
-
-  }, []);
+  // console.log('User data:', data);
 
   return (
     <div className='home-header-container'>
