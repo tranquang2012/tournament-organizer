@@ -24,9 +24,4 @@ pnpm-debug.log*
 .idea/
 .DS_Store
 
-# instructions
-GEMINI.md
-<<<<<<< HEAD
 /generated/prisma
-=======
->>>>>>> 08991daa6a44f619b69e540230fcfd572bb8136c
