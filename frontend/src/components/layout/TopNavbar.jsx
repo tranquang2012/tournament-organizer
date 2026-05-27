@@ -35,7 +35,7 @@ const TopNavBar = (props) => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      window.location.href = `${window.location.origin}/oauth/callback`;
+      window.location.href = `${window.location.origin}/login`;
     } catch (error) {
       console.error("Logout error:", error.message);
     }
