@@ -10,40 +10,39 @@ import { supabase } from '../../config/supabaseClient';
 
 const TopNavBar = (props) => {
 
-  const [data, setData] = useState(null);
-
-  const handleLogout = () => {
-    alert('Logout successfully!');
-  }
-
+  const [isLogin, setIsLogin] = useState(false)
+  const [loading, setLoading] = useState(true)
+  
   useEffect(() => {
-    async function fetechUserData() {
-      try {
-        setLoading(true);
-        const { data: { user }, error: authError } = await supabase.auth.getUser();
-        if (authError) {
-          throw authError;
-        }
-        if (user) {
-          const { data , error: dbError } = await supabase
-          .from('user_roles')
-          .select('id, full_name, email')
-          .eq('id', user.id)
-          .single();
+  async function checkAuth() {
+    const { data: { session } } = await supabase.auth.getSession()
+    setIsLogin(!!session)
+    setLoading(false)
+  }
+  checkAuth()
 
-          if (dbError) {
-            throw dbError;
-          }
-
-          setData(data);
-        } 
-      } catch (error) {
-        console.error('Error fetching user data:', error.message);
-      }
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    if (event === 'SIGNED_IN' && session) {
+      setIsLogin(true)
+    } else if (event === 'SIGNED_OUT') {
+      setIsLogin(false)
     }
-  },  [data]);
+  })
+  return () => subscription.unsubscribe()
+}, [])
 
-  console.log('User data:', data);
+    const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      window.location.href = `${window.location.origin}/oauth/callback`;
+    } catch (error) {
+      console.error("Logout error:", error.message);
+    }
+  };
+  if (loading) return null
+
+  // console.log('User data:', data);
 
   return (
     <div className='home-header-container'>
