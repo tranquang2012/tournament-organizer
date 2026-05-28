@@ -3,38 +3,49 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { faBars, faHeadset, faUser, faRightFromBracket, faRightToBracket } from '@fortawesome/free-solid-svg-icons';
 import './TopNavBar.scss'
 import { useState, useEffect } from 'react';
-
 import { supabase } from '../../config/supabaseClient';
 
+//import api
+import { getUser } from '../../services/AuthService';
 
 
 const TopNavBar = (props) => {
 
   const navigate = useNavigate()
   const [data, setData] = useState(null);
+  const [userData, setUserData] = useState(null);
 
   const [isLogin, setIsLogin] = useState(false)
   const [loading, setLoading] = useState(true)
-  
+
   useEffect(() => {
-  async function checkAuth() {
-    const { data: { session } } = await supabase.auth.getSession()
-    setIsLogin(!!session)
-    setLoading(false)
-  }
-  checkAuth()
-
-  const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-    if (event === 'SIGNED_IN' && session) {
-      setIsLogin(true)
-    } else if (event === 'SIGNED_OUT') {
-      setIsLogin(false)
+    async function checkAuth() {
+      const { data: { session } } = await supabase.auth.getSession()
+      setIsLogin(!!session)
+      setLoading(false)
     }
-  })
-  return () => subscription.unsubscribe()
-}, [])
+    checkAuth()
 
-    const handleLogout = async () => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session) {
+        setIsLogin(true)
+      } else if (event === 'SIGNED_OUT') {
+        setIsLogin(false)
+      }
+    })
+    return () => subscription.unsubscribe()
+  }, [])
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const data = await getUser('2c2996d3-e841-4a21-a5ed-96e73f09f514');
+      setUserData(data);
+    };
+
+    fetchUser();
+  }, []);
+
+  const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
@@ -45,7 +56,7 @@ const TopNavBar = (props) => {
   };
   if (loading) return null
 
-  const handleLogin = () =>{
+  const handleLogin = () => {
     navigate(`/login`)
   }
 
@@ -79,12 +90,12 @@ const TopNavBar = (props) => {
           </div>
           <div className='user-profile'>
             <FontAwesomeIcon icon={faUser} className='user-icon' />
-            <span>{isLogin ? 'Admin1' : 'Guest'}</span>
+            <span>{isLogin ? userData?.data?.fullName : 'Guest'}</span>
           </div>
           <div className='log-out'>
             {isLogin ?
-              <FontAwesomeIcon icon={faRightFromBracket} className='log-out-icon' onClick={(event) => handleLogout()}/> :
-              <FontAwesomeIcon icon={faRightToBracket} className='log-out-icon' onClick={(event) => handleLogin()}/>
+              <FontAwesomeIcon icon={faRightFromBracket} className='log-out-icon' onClick={(event) => handleLogout()} /> :
+              <FontAwesomeIcon icon={faRightToBracket} className='log-out-icon' onClick={(event) => handleLogin()} />
             }
           </div>
         </div>
