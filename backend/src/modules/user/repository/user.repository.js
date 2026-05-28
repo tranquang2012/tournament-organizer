@@ -15,6 +15,19 @@ const findById = async (userId) => {
   return result.rows[0] ? User.fromDatabase(result.rows[0]) : null;
 };
 
+const findAll = async () => {
+  const result = await pool.query(
+    `
+      SELECT id, email, full_name, role
+      FROM public.user_roles
+      ORDER BY full_name ASC NULLS LAST, email ASC
+    `
+  );
+
+  return result.rows.map(User.fromDatabase);
+};
+
 module.exports = {
   findById,
+  findAll,
 };
