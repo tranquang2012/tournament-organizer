@@ -35,7 +35,7 @@ const UserProfileManagement = (props) => {
             <TopNavBar />
             <div className='account-management'>
                 <div className='title flex items-center bg-[#123826] h-[60px] pl-90 text-white text-[30px]'>Account Management</div>
-                <div className='account-management-container flex h-[500px] w-full px-90 py-5'>
+                <div className='account-management-container flex h-[500px] w-full px-[21%] py-5'>
                     <div className='content-left w-[30%]'>
                         <div className='profile h-[120px] w-full flex mb-5'>
                             <div className='profile-image border border-black rounded-[50%] h-full w-[120px] flex items-center justify-center'>
