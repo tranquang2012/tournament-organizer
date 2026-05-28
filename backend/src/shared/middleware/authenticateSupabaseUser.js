@@ -1,4 +1,5 @@
 const AppError = require("../errors/AppError");
+const userRepository = require("../../modules/user/repository/user.repository");
 
 const getBearerToken = (authorizationHeader) => {
   if (!authorizationHeader) {
@@ -42,6 +43,7 @@ const authenticateSupabaseUser = async (req, res, next) => {
     req.auth = {
       user,
       userId: user.id,
+      profile: await userRepository.findById(user.id),
     };
 
     next();

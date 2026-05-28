@@ -19,6 +19,13 @@ const getUserProfile = async (userId) => {
   return toUserProfileDto(user);
 };
 
+const getAllUserProfiles = async () => {
+  const users = await userRepository.findAll();
+
+  return users.map(toUserProfileDto);
+};
+
 module.exports = {
   getUserProfile,
+  getAllUserProfiles,
 };

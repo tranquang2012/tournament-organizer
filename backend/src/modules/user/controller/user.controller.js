@@ -24,7 +24,20 @@ const getCurrentUserProfile = async (req, res, next) => {
   }
 };
 
+const getAllUserProfiles = async (req, res, next) => {
+  try {
+    const userProfiles = await userService.getAllUserProfiles();
+
+    res.json({
+      data: userProfiles,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getUserProfile,
   getCurrentUserProfile,
+  getAllUserProfiles,
 };
