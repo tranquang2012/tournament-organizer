@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import './UserProfileManagement.css'
 
 //import API
-import { getUser } from '../../services/AuthService';
+import { getCurrentUserProfile } from '../../services/AuthService';
 
 //import component
 import TopNavBar from '../../components/layout/TopNavbar';
@@ -17,8 +17,15 @@ const UserProfileManagement = (props) => {
 
     useEffect(() => {
         const fetchUser = async () => {
-            const data = await getUser('2c2996d3-e841-4a21-a5ed-96e73f09f514');
-            setUserData(data);
+            try {
+                const data = await getCurrentUserProfile();
+                setUserData(data);
+            } catch (error) {
+                console.error(
+                    'Failed to fetch user profile:',
+                    error.response?.data?.error?.message || error.message
+                );
+            }
         };
 
         fetchUser();
