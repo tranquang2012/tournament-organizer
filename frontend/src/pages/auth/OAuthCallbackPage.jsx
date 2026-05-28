@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../config/supabaseClient'
+import { getCurrentUserProfile, normalizeRole } from '../../services/AuthService'
 
 const getOAuthError = () => {
   const searchParams = new URLSearchParams(window.location.search)
@@ -36,7 +37,17 @@ const OAuthCallbackPage = () => {
         return
       }
 
-      navigate('/', { replace: true })
+      try {
+        const profileResponse = await getCurrentUserProfile(data.session.access_token)
+        const role = normalizeRole(profileResponse.data?.role)
+
+        navigate(role === 'ADMIN' || role === 'SUPER_ADMIN' ? '/admin/dashboard' : '/', {
+          replace: true,
+        })
+      } catch (profileError) {
+        console.error('Failed to load profile after login:', profileError.message)
+        navigate('/', { replace: true })
+      }
     }
 
     finishLogin()
