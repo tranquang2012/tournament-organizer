@@ -8,6 +8,7 @@ import Login from './pages/auth/Login.jsx'
 import LandingPage from './pages/public/LandingPage.jsx'
 import OAuthCallbackPage from './pages/auth/OAuthCallbackPage.jsx'
 import UserProfileManagement from './pages/user/UserProfileManagement.jsx'
+import './index.css'
 
 createRoot(document.getElementById('root')).render(
   // <StrictMode>
