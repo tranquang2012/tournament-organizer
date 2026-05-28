@@ -27,12 +27,9 @@ const App = () => {
   }, [navigate])
 
   return (
-    <>
-      <div className = "app-container">
-        Home Page
-      </div>
-    </>
+    <div>
+    </div>
   )
-}
+};
 
 export default App;

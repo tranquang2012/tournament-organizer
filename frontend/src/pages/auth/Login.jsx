@@ -17,6 +17,9 @@ const Login = (props) => {
       provider: oauthProvider,
       options: {
         redirectTo: `${window.location.origin}/oauth/callback`,
+        queryParams: oauthProvider === 'google'
+          ? { prompt: 'select_account' }
+          : undefined,
       },
     })
 
