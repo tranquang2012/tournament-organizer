@@ -1,63 +1,15 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { faBars, faHeadset, faUser, faRightFromBracket, faRightToBracket } from '@fortawesome/free-solid-svg-icons';
 import './TopNavBar.scss'
-import { useState, useEffect } from 'react';
 import { supabase } from '../../config/supabaseClient';
-
-//import api
-import { getCurrentUserProfile } from '../../services/AuthService';
+import { useAuth } from '../../hooks/useAuth';
 
 
-const TopNavBar = (props) => {
+const TopNavBar = () => {
 
   const navigate = useNavigate()
-  const [data, setData] = useState(null);
-  const [userData, setUserData] = useState(null);
-
-  const [isLogin, setIsLogin] = useState(false)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession()
-      setIsLogin(!!session)
-      setLoading(false)
-    }
-    checkAuth()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        setIsLogin(true)
-      } else if (event === 'SIGNED_OUT') {
-        setIsLogin(false)
-      }
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-
-        if (!session) {
-          setUserData(null);
-          return;
-        }
-
-        const data = await getCurrentUserProfile();
-        setUserData(data);
-      } catch (error) {
-        console.error(
-          'Failed to fetch user profile:',
-          error.response?.data?.error?.message || error.message
-        );
-      }
-    };
-
-    fetchUser();
-  }, []);
+  const { isLogin, profile: userData } = useAuth()
 
   const handleLogout = async () => {
     try {
@@ -68,13 +20,9 @@ const TopNavBar = (props) => {
       console.error("Logout error:", error.message);
     }
   };
-  if (loading) return null
-
   const handleLogin = () => {
     navigate(`/login`)
   }
-
-  // console.log('User data:', data);
 
   return (
     <div className='home-header-container'>
@@ -104,12 +52,12 @@ const TopNavBar = (props) => {
           </div>
           <div className='user-profile'>
             <FontAwesomeIcon icon={faUser} className='user-icon' />
-            <span>{isLogin ? userData?.data?.fullName : 'Guest'}</span>
+            <span>{isLogin ? userData?.fullName : 'Guest'}</span>
           </div>
           <div className='log-out'>
             {isLogin ?
-              <FontAwesomeIcon icon={faRightFromBracket} className='log-out-icon' onClick={(event) => handleLogout()} /> :
-              <FontAwesomeIcon icon={faRightToBracket} className='log-out-icon' onClick={(event) => handleLogin()} />
+              <FontAwesomeIcon icon={faRightFromBracket} className='log-out-icon' onClick={handleLogout} /> :
+              <FontAwesomeIcon icon={faRightToBracket} className='log-out-icon' onClick={handleLogin} />
             }
           </div>
         </div>

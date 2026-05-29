@@ -1,41 +1,20 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { faUser, faPencil, faBell, faCalendarCheck } from '@fortawesome/free-solid-svg-icons';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import './UserProfileManagement.css'
-
-//import API
-import { getCurrentUserProfile } from '../../services/AuthService';
+import { useAuth } from '../../hooks/useAuth';
 
 //import component
 import TopNavBar from '../../components/layout/TopNavbar';
 
-const UserProfileManagement = (props) => {
+const UserProfileManagement = () => {
 
-    const [userData, setUserData] = useState(null);
     const [sectionChoose, setSectionChoose] = useState('profile')
-
-    useEffect(() => {
-        const fetchUser = async () => {
-            try {
-                const data = await getCurrentUserProfile();
-                setUserData(data);
-            } catch (error) {
-                console.error(
-                    'Failed to fetch user profile:',
-                    error.response?.data?.error?.message || error.message
-                );
-            }
-        };
-
-        fetchUser();
-    }, []);
+    const { profile: userData } = useAuth()
 
     const changeSection = (section) => {
         setSectionChoose(section)
     }
-
-    console.log(userData);
 
     return (
         <div>
@@ -49,14 +28,14 @@ const UserProfileManagement = (props) => {
                                 <FontAwesomeIcon icon={faUser} className='user-icon text-[80px]' />
                             </div>
                             <div className='edit-img pl-[30px] flex flex-col justify-center'>
-                                <div className='text-[25px]'><b>{userData?.data?.fullName}</b></div>
+                                <div className='text-[25px]'><b>{userData?.fullName}</b></div>
                                 <div className='cursor-pointer text-gray-850'><FontAwesomeIcon icon={faPencil}></FontAwesomeIcon> Change your avatar</div>
                             </div>
                         </div>
                         <div className={sectionChoose === 'profile' ?
                             'section text-white py-5 flex items-center bg-[#123826]' :
                             'section cursor-pointer py-5 flex items-center hover:bg-[#123826] hover:opacity-30 hover:text-white'}
-                            onClick={(event) => changeSection('profile')}
+                            onClick={() => changeSection('profile')}
                         >
                             <FontAwesomeIcon icon={faUser} className='user-icon text-[40px] pr-5' />
                             <span className='text-[22px]'>My Profile</span>
@@ -64,7 +43,7 @@ const UserProfileManagement = (props) => {
                         <div className={sectionChoose === 'notification' ?
                             'section text-white py-5 flex items-center bg-[#123826]' :
                             'section cursor-pointer py-5 flex items-center hover:bg-[#123826] hover:opacity-30 hover:text-white'}
-                            onClick={(event) => changeSection('notification')}
+                            onClick={() => changeSection('notification')}
                         >
                             <FontAwesomeIcon icon={faBell} className='user-icon text-[40px] pr-5' />
                             <span className='text-[22px]'>Notification</span>
@@ -72,7 +51,7 @@ const UserProfileManagement = (props) => {
                         <div className={sectionChoose === 'event' ?
                             'section py-5 text-white flex items-center bg-[#123826]' :
                             'section cursor-pointer py-5 flex items-center hover:bg-[#123826] hover:opacity-30 hover:text-white'}
-                            onClick={(event) => changeSection('event')}
+                            onClick={() => changeSection('event')}
                         >
                             <FontAwesomeIcon icon={faCalendarCheck} className='user-icon text-[40px] pr-5' />
                             <span className='text-[22px]'>My Favorite Events</span>
@@ -90,7 +69,7 @@ const UserProfileManagement = (props) => {
                                     <div className='flex-1'>
                                         <input
                                             type='text'
-                                            value={userData?.data?.email}
+                                            value={userData?.email || ''}
                                             disabled
                                             className='w-full h-[40px] border border-gray-300 rounded-md px-4 shadow-sm bg-gray-100 text-gray-500 outline-none'
                                         />
@@ -104,7 +83,7 @@ const UserProfileManagement = (props) => {
                                     <div className='flex-1'>
                                         <input
                                             type='text'
-                                            value={userData?.data?.fullName}
+                                            value={userData?.fullName || ''}
                                             className='w-full h-[40px] border border-gray-300 rounded-md px-4 shadow-sm outline-none'
                                         />
                                     </div>
