@@ -29,7 +29,7 @@ createRoot(document.getElementById('root')).render(
           <Route
             path="/account-management"
             element={
-              <PrivateRoute redirectAdmins>
+              <PrivateRoute>
                 <UserProfileManagement />
               </PrivateRoute>
             }
