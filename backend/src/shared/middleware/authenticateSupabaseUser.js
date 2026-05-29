@@ -43,6 +43,7 @@ const authenticateSupabaseUser = async (req, res, next) => {
     req.auth = {
       user,
       userId: user.id,
+      accessToken: token,
       profile: await userRepository.findById(user.id),
     };
 
