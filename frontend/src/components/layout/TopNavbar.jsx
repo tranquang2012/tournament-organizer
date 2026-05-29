@@ -81,31 +81,31 @@ const TopNavBar = (props) => {
       <div className='home-header-content'>
         <div className='home-header-left'>
           <FontAwesomeIcon icon={faBars} className='menu' />
-          <div className='header-logo'></div>
+          <Link to="/" className='header-logo'></Link>
         </div>
         <div className='home-header-center'>
-          <div className='category'>
+          <Link to="/sports" className='category'>
             <div><b>Sports</b></div>
             <div className='sub-titles'>Opportunities to explore sports world</div>
-          </div>
-          <div className='category'>
+          </Link>
+          <Link to="/tournaments" className='category'>
             <div><b>Tournaments</b></div>
             <div className='sub-titles'>Enjoy many exciting tournaments</div>
-          </div>
-          <div className='category'>
+          </Link>
+          <Link to="/matches" className='category'>
             <div><b>Matches</b></div>
             <div className='sub-titles'>Watching many thrilling matches</div>
-          </div>
+          </Link>
         </div>
         <div className='home-header-right'>
           <div className='support'>
             <FontAwesomeIcon icon={faHeadset} className='support-icon' />
             <span>Support</span>
           </div>
-          <div className='user-profile'>
+          <Link to={isLogin ? '/account-management' : '#'} className='user-profile'>
             <FontAwesomeIcon icon={faUser} className='user-icon' />
             <span>{isLogin ? userData?.data?.fullName : 'Guest'}</span>
-          </div>
+          </Link>
           <div className='log-out'>
             {isLogin ?
               <FontAwesomeIcon icon={faRightFromBracket} className='log-out-icon' onClick={(event) => handleLogout()} /> :

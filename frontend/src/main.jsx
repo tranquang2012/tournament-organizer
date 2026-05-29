@@ -10,6 +10,12 @@ import LandingPage from './pages/public/LandingPage.jsx'
 import OAuthCallbackPage from './pages/auth/OAuthCallbackPage.jsx'
 import UserProfileManagement from './pages/user/UserProfileManagement.jsx'
 
+// Public layout & pages
+import PublicLayout from './components/layout/PublicLayout.jsx'
+import SportsPage from './pages/public/SportsPage.jsx'
+import TournamentListPage from './pages/public/TournamentListPage.jsx'
+import MatchesPage from './pages/public/MatchesPage.jsx'
+
 // Admin
 import AdminLayout from './components/layout/AdminLayout.jsx'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx'
@@ -21,7 +27,14 @@ createRoot(document.getElementById('root')).render(
   // <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        {/* Public routes with shared navbar */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/sports" element={<SportsPage />} />
+          <Route path="/tournaments" element={<TournamentListPage />} />
+          <Route path="/matches" element={<MatchesPage />} />
+        </Route>
+
         <Route path="/login" element={<Login />} />
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
         <Route path="/account-management" element={<UserProfileManagement />} />
@@ -38,4 +51,3 @@ createRoot(document.getElementById('root')).render(
     </BrowserRouter>
   // </StrictMode>,
 )
-

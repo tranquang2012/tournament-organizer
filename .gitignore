@@ -26,3 +26,18 @@ pnpm-debug.log*
 
 # instructions
 GEMINI.md
+backend/package-lock.json
+frontend/package-lock.json
+frontend/package.json
+backend/package-lock.json
+frontend/package-lock.json
+frontend/package.json
+.gitignore
+.dockerignore
+docker-compose.yml
+backend/Dockerfile
+backend/package-lock.json
+backend/package-lock.json
+frontend/Dockerfile
+backend/package-lock.json
+.gitignore
