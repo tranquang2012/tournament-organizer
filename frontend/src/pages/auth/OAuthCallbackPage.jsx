@@ -53,7 +53,12 @@ const OAuthCallbackPage = () => {
     finishLogin()
   }, [navigate])
 
-  return <div>Signing you in...</div>
+  return (
+    <div className="fixed inset-0 bg-white flex flex-col items-center justify-center gap-4">
+      <div className="w-12 h-12 border-4 border-gray-200 border-t-blue-500 rounded-full animate-spin" />
+      <p className="text-gray-500 text-sm">Signing you in...</p>
+    </div>
+  )
 }
 
 export default OAuthCallbackPage
