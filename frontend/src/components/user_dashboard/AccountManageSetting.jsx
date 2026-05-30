@@ -31,7 +31,6 @@ const AccountManageSetting = () => {
                 accessToken
             )
             setShowConfirm(false)
-            console.log("Update user profile success!")
             setToast({ type: 'success', message: 'Profile updated successfully!' })
         }
         catch (error) {
@@ -52,10 +51,10 @@ const AccountManageSetting = () => {
                 onClose={() => setShowConfirm(false)}
                 onConfirm={handleConfirmSave}
                 title="Confirm Change"
-                description="Are you sure to update your account profile information"
+                description="Are you sure to update your account profile information?"
                 intent="info"
                 confirmLabel="Save Changes"
-                cancelLabel="Cancle"
+                cancelLabel="Cancel"
             />
             <div className='flex items-center mb-2'>
                 <div className='w-[120px] text-[16px] font-medium'>Email</div>
