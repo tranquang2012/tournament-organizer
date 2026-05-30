@@ -1,4 +1,6 @@
 const userService = require("../service/user.service");
+const { toUpdateUserProfileDto } = require("../dto/updateUserProfile.dto");
+const { toAvatarUploadDto } = require("../dto/avatarUpload.dto");
 
 const getUserProfile = async (req, res, next) => {
   try {
@@ -36,8 +38,41 @@ const getAllUserProfiles = async (req, res, next) => {
   }
 };
 
+const updateCurrentUserProfile = async (req, res, next) => {
+  try {
+    const userProfile = await userService.updateCurrentUserProfile(
+      req.auth.userId,
+      toUpdateUserProfileDto(req.body)
+    );
+
+    res.json({
+      data: userProfile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const uploadCurrentUserAvatar = async (req, res, next) => {
+  try {
+    const userProfile = await userService.uploadCurrentUserAvatar({
+      userId: req.auth.userId,
+      accessToken: req.auth.accessToken,
+      avatarUploadDto: toAvatarUploadDto(req.body),
+    });
+
+    res.json({
+      data: userProfile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getUserProfile,
   getCurrentUserProfile,
   getAllUserProfiles,
+  updateCurrentUserProfile,
+  uploadCurrentUserAvatar,
 };

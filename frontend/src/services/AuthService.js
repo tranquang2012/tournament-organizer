@@ -5,6 +5,42 @@ const getUser = (inputId) => {
     return axios.get(`/api/users/${inputId}/profile`)
 }
 
+const getAccessToken = async (accessToken) => {
+    if (accessToken) {
+        return accessToken;
+    }
+
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error) {
+        throw error;
+    }
+
+    const token = data.session?.access_token;
+
+    if (!token) {
+        throw new Error("User is not logged in");
+    }
+
+    return token;
+}
+
+const withAuthHeader = (accessToken) => ({
+    headers: {
+        Authorization: `Bearer ${accessToken}`,
+    },
+})
+
+const fileToDataUrl = (file) => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsDataURL(file);
+    });
+}
+
 const normalizeRole = (role) => {
     if (!role) return null;
 
@@ -19,31 +55,36 @@ const normalizeRole = (role) => {
 }
 
 const getCurrentUserProfile = async (accessToken) => {
-    let token = accessToken;
+    const token = await getAccessToken(accessToken);
 
-    if (!token) {
-        const { data, error } = await supabase.auth.getSession();
+    return axios.get("/api/users/me/profile", withAuthHeader(token));
+}
 
-        if (error) {
-            throw error;
-        }
+const updateCurrentUserProfile = async ({ fullName }, accessToken) => {
+    const token = await getAccessToken(accessToken);
 
-        token = data.session?.access_token;
-    }
+    return axios.patch(
+        "/api/users/me/profile",
+        { fullName },
+        withAuthHeader(token),
+    );
+}
 
-    if (!token) {
-        throw new Error("User is not logged in");
-    }
+const uploadCurrentUserAvatar = async (file, accessToken) => {
+    const token = await getAccessToken(accessToken);
+    const dataUrl = await fileToDataUrl(file);
 
-    return axios.get("/api/users/me/profile", {
-        headers: {
-            Authorization: `Bearer ${token}`,
-        },
-    });
+    return axios.post(
+        "/api/users/me/avatar",
+        { dataUrl },
+        withAuthHeader(token),
+    );
 }
 
 export {
     getUser,
     getCurrentUserProfile,
+    updateCurrentUserProfile,
+    uploadCurrentUserAvatar,
     normalizeRole
 };

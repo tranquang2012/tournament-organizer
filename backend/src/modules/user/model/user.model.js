@@ -1,9 +1,10 @@
 class User {
-  constructor({ id, email, fullName, role }) {
+  constructor({ id, email, fullName, role, avatarUrl }) {
     this.id = id;
     this.email = email;
     this.fullName = fullName;
     this.role = role;
+    this.avatarUrl = avatarUrl;
   }
 
   static fromDatabase(row) {
@@ -12,6 +13,7 @@ class User {
       email: row.email,
       fullName: row.full_name,
       role: row.role,
+      avatarUrl: row.avatar_url,
     });
   }
 }
