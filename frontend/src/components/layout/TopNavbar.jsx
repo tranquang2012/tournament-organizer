@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { faBars, faHeadset, faUser, faRightFromBracket, faRightToBracket } from '@fortawesome/free-solid-svg-icons';
 import { faSpinner, faUsersGear } from '@fortawesome/free-solid-svg-icons'
 import './TopNavBar.scss'
@@ -31,21 +31,21 @@ const TopNavBar = () => {
       <div className='home-header-content'>
         <div className='home-header-left'>
           <FontAwesomeIcon icon={faBars} className='menu' />
-          <div className='header-logo'onClick={() => navigate('/')}></div>
+          <div className='header-logo' onClick={() => navigate('/')}></div>
         </div>
         <div className='home-header-center'>
-          <div className='category'>
+          <Link to="/sports" className='category'>
             <div><b>Sports</b></div>
             <div className='sub-titles'>Opportunities to explore sports world</div>
-          </div>
-          <div className='category'>
+          </Link>
+          <Link to="/tournaments" className='category'>
             <div><b>Tournaments</b></div>
             <div className='sub-titles'>Enjoy many exciting tournaments</div>
-          </div>
-          <div className='category'>
+          </Link>
+          <Link to="/matches" className='category'>
             <div><b>Matches</b></div>
             <div className='sub-titles'>Watching many thrilling matches</div>
-          </div>
+          </Link>
         </div>
         <div className='home-header-right'>
           <div className='support hover:bg-gray-300 rounded-[5px] p-1'>

@@ -12,6 +12,11 @@ import { AuthProvider } from './context/AuthContext.jsx'
 import PrivateRoute from './routes/PrivateRoute.jsx'
 import AdminRoute from './routes/AdminRoute.jsx'
 
+// Public layout & pages
+import PublicLayout from './components/layout/PublicLayout.jsx'
+import SportsPage from './pages/public/SportsPage.jsx'
+import TournamentListPage from './pages/public/TournamentListPage.jsx'
+import MatchesPage from './pages/public/MatchesPage.jsx'
 
 // Admin
 import AdminLayout from './components/layout/AdminLayout.jsx'
@@ -25,7 +30,14 @@ createRoot(document.getElementById('root')).render(
   <BrowserRouter>
     <AuthProvider>
       <Routes>
-        <Route path="/" element={<LandingPage />} />
+        {/* Public routes with shared navbar */}
+        <Route element={<PublicLayout />}>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/sports" element={<SportsPage />} />
+          <Route path="/tournaments" element={<TournamentListPage />} />
+          <Route path="/matches" element={<MatchesPage />} />
+        </Route>
+
         <Route path="/login" element={<Login />} />
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
         <Route
@@ -64,4 +76,3 @@ createRoot(document.getElementById('root')).render(
   </BrowserRouter>
   // </StrictMode>,
 )
-
