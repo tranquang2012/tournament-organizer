@@ -15,7 +15,7 @@ const UserProfileManagement = () => {
 
     const [sectionChoose, setSectionChoose] = useState('profile')
     const [isLoading, setIsLoading] = useState(true)
-    const { profile: userData } = useAuth()
+    const { profile: userData, accessToken } = useAuth()
 
 
     const changeSection = (section) => {

@@ -38,7 +38,7 @@ export function NotificationToast({
   };
 
   const wrapperStyles = [
-    "fixed top-6 right-6 z-[300]",
+    "fixed bottom-6 right-6 z-[300]",
     "flex items-center gap-3 pl-4 pr-3 py-3",
     "rounded-xl text-sm font-medium shadow-lg border",
     "transition-all duration-200",

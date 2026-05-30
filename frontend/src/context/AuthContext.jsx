@@ -97,6 +97,7 @@ export const AuthProvider = ({ children }) => {
       role,
       loading,
       profileLoading,
+      accessToken: session?.access_token,
       isLogin: Boolean(session),
       isUser: role === 'USER',
       isAdmin: role === 'ADMIN' || role === 'SUPER_ADMIN',
