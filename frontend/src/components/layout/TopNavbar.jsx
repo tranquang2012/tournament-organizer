@@ -1,6 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useNavigate } from 'react-router-dom';
 import { faBars, faHeadset, faUser, faRightFromBracket, faRightToBracket } from '@fortawesome/free-solid-svg-icons';
+import { faSpinner, faUsersGear } from '@fortawesome/free-solid-svg-icons'
 import './TopNavBar.scss'
 import { supabase } from '../../config/supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
@@ -20,6 +21,7 @@ const TopNavBar = () => {
       console.error("Logout error:", error.message);
     }
   };
+
   const handleLogin = () => {
     navigate(`/login`)
   }
@@ -29,7 +31,7 @@ const TopNavBar = () => {
       <div className='home-header-content'>
         <div className='home-header-left'>
           <FontAwesomeIcon icon={faBars} className='menu' />
-          <div className='header-logo'></div>
+          <div className='header-logo'onClick={() => navigate('/')}></div>
         </div>
         <div className='home-header-center'>
           <div className='category'>
@@ -46,19 +48,20 @@ const TopNavBar = () => {
           </div>
         </div>
         <div className='home-header-right'>
-          <div className='support'>
+          <div className='support hover:bg-gray-300 rounded-[5px] p-1'>
             <FontAwesomeIcon icon={faHeadset} className='support-icon' />
             <span>Support</span>
           </div>
-          <div className='user-profile'>
+          <div className='user-profile cursor-pointer hover:bg-gray-300 rounded-[5px] p-1' onClick={() => navigate('/account-management')}>
             <FontAwesomeIcon icon={faUser} className='user-icon' />
             <span>{isLogin ? userData?.fullName : 'Guest'}</span>
           </div>
-          <div className='log-out'>
+          <div className='log-out hover:bg-gray-300 rounded-[5px] p-1'>
             {isLogin ?
               <FontAwesomeIcon icon={faRightFromBracket} className='log-out-icon' onClick={handleLogout} /> :
               <FontAwesomeIcon icon={faRightToBracket} className='log-out-icon' onClick={handleLogin} />
             }
+            {/* <FontAwesomeIcon icon={faSpinner} className="animate-spin text-lg" /> */}
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@
 .home-header-container {
     height: 80px;
     width: 100%;
-    padding: 0 20px;
+    padding: 0 3%;
 
     .home-header-content {
         width: 100%;
@@ -25,7 +25,7 @@
 
             .menu {
                 font-size: 30px;
-                margin-right: 20px;
+                margin-right: 7%;
                 cursor: pointer;
             }
         }
@@ -62,8 +62,7 @@
                 display: flex;
                 align-items: center;
                 justify-content: center;
-                padding-right: 20px;
-                width: 70%;
+                margin-inline: 20%;
                 cursor: pointer;
 
                 .support-icon {
@@ -75,7 +74,6 @@
                 display: flex;
                 flex-direction: column;
                 align-items: center;
-                padding-right: 20px;
                 width: 20%;
 
                 .user-icon {
