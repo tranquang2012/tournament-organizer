@@ -13,7 +13,7 @@ import NotificationToast from '../common/NotificationToast'
 
 const AccountManageSetting = () => {
 
-    const { profile: userData, accessToken } = useAuth()
+    const { profile: userData, accessToken, refreshProfile } = useAuth()
     const [userName, setUserName] = useState(userData?.fullName || '')
     const [showConfirm, setShowConfirm] = useState(false)
     const [toast, setToast] = useState(null)
@@ -30,6 +30,7 @@ const AccountManageSetting = () => {
                 { fullName: userName },
                 accessToken
             )
+            await refreshProfile()
             setShowConfirm(false)
             setToast({ type: 'success', message: 'Profile updated successfully!' })
         }

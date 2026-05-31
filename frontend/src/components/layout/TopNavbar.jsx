@@ -1,16 +1,17 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useNavigate, Link } from 'react-router-dom';
 import { faBars, faHeadset, faUser, faRightFromBracket, faRightToBracket } from '@fortawesome/free-solid-svg-icons';
-import { faSpinner, faUsersGear } from '@fortawesome/free-solid-svg-icons'
-import './TopNavBar.scss'
+import { useState } from 'react'
 import { supabase } from '../../config/supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
+import PublicSidebar from './PublicSideBar';
+import logo from '../../assets/logo.png'
 
 
 const TopNavBar = () => {
-
   const navigate = useNavigate()
   const { isLogin, profile: userData } = useAuth()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -22,49 +23,68 @@ const TopNavBar = () => {
     }
   };
 
-  const handleLogin = () => {
-    navigate(`/login`)
-  }
+  const handleLogin = () => navigate('/login')
 
   return (
-    <div className='home-header-container'>
-      <div className='home-header-content'>
-        <div className='home-header-left'>
-          <FontAwesomeIcon icon={faBars} className='menu' />
-          <div className='header-logo' onClick={() => navigate('/')}></div>
+    <div className='h-[80px] w-full px-[3%] overflow-hidden flex items-center'>
+      <div className='w-full h-full flex font-[Poppins,sans-serif]'>
+
+        {/* Left */}
+        <div className='flex items-center w-[25%]'>
+          <FontAwesomeIcon
+            icon={faBars}
+            className='text-[30px] mr-[7%] cursor-pointer'
+            onClick={() => setSidebarOpen(true)}
+          />
+          <img
+            src={logo}
+            alt="logo"
+            className='h-[170%]  w-auto object-contain cursor-pointer'
+            onClick={() => navigate('/')}
+          />
         </div>
-        <div className='home-header-center'>
-          <Link to="/sports" className='category'>
+
+        {/* Center */}
+        <div className='w-[50%] flex justify-between items-center'>
+          <Link to="/sports" className='text-[18px] text-[#123826] no-underline'>
             <div><b>Sports</b></div>
-            <div className='sub-titles'>Opportunities to explore sports world</div>
+            <div className='font-medium text-[12px]'>Opportunities to explore sports world</div>
           </Link>
-          <Link to="/tournaments" className='category'>
+          <Link to="/tournaments" className='text-[18px] text-[#123826] no-underline'>
             <div><b>Tournaments</b></div>
-            <div className='sub-titles'>Enjoy many exciting tournaments</div>
+            <div className='font-medium text-[12px]'>Enjoy many exciting tournaments</div>
           </Link>
-          <Link to="/matches" className='category'>
+          <Link to="/matches" className='text-[18px] text-[#123826] no-underline'>
             <div><b>Matches</b></div>
-            <div className='sub-titles'>Watching many thrilling matches</div>
+            <div className='font-medium text-[12px]'>Watching many thrilling matches</div>
           </Link>
         </div>
-        <div className='home-header-right'>
-          <div className='support hover:bg-gray-300 rounded-[5px] p-1'>
-            <FontAwesomeIcon icon={faHeadset} className='support-icon' />
-            <span>Support</span>
+
+        {/* Right */}
+        <div className='w-[25%] flex justify-end items-center'>
+          <div className='flex items-center justify-center mx-[20%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'>
+            <FontAwesomeIcon icon={faHeadset} className='text-[28px]' />
+            <span className='text-[12px] text-[#123826] ml-1'>Support</span>
           </div>
-          <div className='user-profile cursor-pointer hover:bg-gray-300 rounded-[5px] p-1' onClick={() => navigate('/account-management')}>
-            <FontAwesomeIcon icon={faUser} className='user-icon' />
-            <span>{isLogin ? userData?.fullName : 'Guest'}</span>
+
+          <div
+            className='flex flex-col items-center w-[20%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'
+            onClick={() => navigate('/account-management')}
+          >
+            <FontAwesomeIcon icon={faUser} className='text-[28px]' />
+            <span className='text-[12px] text-[#123826]'>{isLogin ? userData?.fullName : 'Guest'}</span>
           </div>
-          <div className='log-out hover:bg-gray-300 rounded-[5px] p-1'>
-            {isLogin ?
-              <FontAwesomeIcon icon={faRightFromBracket} className='log-out-icon' onClick={handleLogout} /> :
-              <FontAwesomeIcon icon={faRightToBracket} className='log-out-icon' onClick={handleLogin} />
+
+          <div className='hover:bg-gray-300 rounded-[5px] p-1'>
+            {isLogin
+              ? <FontAwesomeIcon icon={faRightFromBracket} className='text-[28px] cursor-pointer' onClick={handleLogout} />
+              : <FontAwesomeIcon icon={faRightToBracket} className='text-[28px] cursor-pointer' onClick={handleLogin} />
             }
-            {/* <FontAwesomeIcon icon={faSpinner} className="animate-spin text-lg" /> */}
           </div>
         </div>
+
       </div>
+      <PublicSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>
   );
 };

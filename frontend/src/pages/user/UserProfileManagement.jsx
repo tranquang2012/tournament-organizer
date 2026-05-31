@@ -28,7 +28,7 @@ const UserProfileManagement = () => {
         if (userData) {
             setTimeout(() => {
                 setIsLoading(false)
-            }, 300)
+            }, 1000)
         }
     }, [userData])
 
@@ -71,7 +71,6 @@ const UserProfileManagement = () => {
                 toast={toast}
                 onDismiss={() => setToast(null)}
             />
-            <TopNavBar />
             <TopLoadingBar isLoading={isLoading} />
             <div className='account-management'>
                 <div className='title flex items-center bg-[#123826] h-[60px] px-[21%] text-white text-[30px]'>Account Management</div>

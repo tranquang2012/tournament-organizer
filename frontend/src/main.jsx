@@ -36,18 +36,20 @@ createRoot(document.getElementById('root')).render(
           <Route path="/sports" element={<SportsPage />} />
           <Route path="/tournaments" element={<TournamentListPage />} />
           <Route path="/matches" element={<MatchesPage />} />
+          <Route
+            path="account-management"
+            element={
+              <PrivateRoute redirectAdmins>
+                <UserProfileManagement />
+              </PrivateRoute>
+            }
+          />
         </Route>
 
+        {/* Auth Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
-        <Route
-          path="account-management"
-          element={
-            <PrivateRoute redirectAdmins>
-              <UserProfileManagement />
-            </PrivateRoute>
-          }
-        />
+
 
         {/* Admin routes */}
         <Route
