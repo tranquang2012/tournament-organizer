@@ -17,6 +17,7 @@ const PublicSidebar = ({ isOpen, onClose }) => {
     const navigate = useNavigate()
     const { isLogin, isAdmin } = useAuth()
     const [sportsOpen, setSportsOpen] = useState(false)
+    const section = 'block py-[3%] px-[7%] text-[20px] font-semibold hover:bg-gray-100 rounded-15px border-t border-gray-300 cursor-pointer'
 
     const handleLogout = async () => {
         try {
@@ -27,8 +28,6 @@ const PublicSidebar = ({ isOpen, onClose }) => {
             console.error("Logout error:", error.message);
         }
     };
-
-    const section = 'block py-[3%] px-[7%] text-[20px] font-semibold hover:bg-gray-100 rounded-15px border-t border-gray-300 cursor-pointer'
 
     return (
         <>
