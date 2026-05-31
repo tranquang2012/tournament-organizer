@@ -107,9 +107,9 @@ const UserProfileManagement = () => {
                             </div>
                         </div>
                     </div>
-                    <div className='w-full md:w-[70%]'>
-                        <div className='rounded-[15px] shadow-md'>
-                            <div className='flex flex-col justify-center border-b border-gray-300 mx-4 md:mx-7 pl-3 md:pl-5 py-4'>
+                    <div className='w-500 md:w-[70%]'>
+                        <div className='rounded-[15px] shadow-md h-[500px]'>
+                            <div className='flex flex-col justify-center border-b border-gray-300 mx-4 md:mx-7 pl-3 md:pl-5 py-4 h-[20%]'>
                                 <div className='text-[20px] md:text-[25px]'>
                                     <b>{sectionChoose === 'profile' ? 'My Account' : sectionChoose === 'notification' ? 'Notifications' : 'My Favorite Events'}</b>
                                 </div>
@@ -119,7 +119,7 @@ const UserProfileManagement = () => {
                                             'Mark your favorite tournament to recieve schedule details via email'}
                                 </span>
                             </div>
-                            <div className='mx-4 md:mx-7 p-3 md:p-5'>
+                            <div className='mx-4 md:mx-7 p-3 md:p-5 h-[80%]'>
                                 {sectionChoose === 'profile' ? <AccountManageSetting /> : sectionChoose === 'notification' ? <NotificationSetting /> : <FollowedTournaments />}
                             </div>
                         </div>
