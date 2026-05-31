@@ -32,15 +32,12 @@ const PublicSidebar = ({ isOpen, onClose }) => {
 
     return (
         <>
-            {/* Backdrop */}
             {isOpen && (
                 <div
                     className="fixed inset-0 bg-black/40 z-40"
                     onClick={onClose}
                 />
             )}
-
-            {/* Sidebar */}
             <aside className={`fixed top-0 left-0 h-full bg-white z-50 shadow-xl transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'w-[400px]' : 'w-0'}`}
             >
                 {/* Header */}
@@ -49,7 +46,7 @@ const PublicSidebar = ({ isOpen, onClose }) => {
                     <img
                         src={logo}
                         alt="logo"
-                        className='h-[170%]  w-auto object-contain cursor-pointer'
+                        className='sm:w-[60%] max-h-[80px] object-contain cursor-pointer'
                         onClick={() => navigate('/')}
                     />
                 </div>

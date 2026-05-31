@@ -26,11 +26,9 @@ const TopNavBar = () => {
   const handleLogin = () => navigate('/login')
 
   return (
-    <div className='h-[80px] w-full px-[3%] overflow-hidden flex items-center'>
+    <div className='h-[80px] w-full px-[3%] flex items-center'>
       <div className='w-full h-full flex font-[Poppins,sans-serif]'>
-
-        {/* Left */}
-        <div className='flex items-center w-[25%]'>
+        <div className='flex items-center w-[25%] md:w-[25%]'>
           <FontAwesomeIcon
             icon={faBars}
             className='text-[30px] mr-[7%] cursor-pointer'
@@ -39,13 +37,11 @@ const TopNavBar = () => {
           <img
             src={logo}
             alt="logo"
-            className='h-[170%]  w-auto object-contain cursor-pointer'
+            className='md:w-[50%] max-h-[80px] object-contain cursor-pointer'
             onClick={() => navigate('/')}
           />
         </div>
-
-        {/* Center */}
-        <div className='w-[50%] flex justify-between items-center'>
+        <div className='hidden md:flex w-[50%] justify-between items-center'>
           <Link to="/sports" className='text-[18px] text-[#123826] no-underline'>
             <div><b>Sports</b></div>
             <div className='font-medium text-[12px]'>Opportunities to explore sports world</div>
@@ -59,9 +55,7 @@ const TopNavBar = () => {
             <div className='font-medium text-[12px]'>Watching many thrilling matches</div>
           </Link>
         </div>
-
-        {/* Right */}
-        <div className='w-[25%] flex justify-end items-center'>
+        <div className='hidden md:flex w-[25%] justify-end items-center'>
           <div className='flex items-center justify-center mx-[20%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'>
             <FontAwesomeIcon icon={faHeadset} className='text-[28px]' />
             <span className='text-[12px] text-[#123826] ml-1'>Support</span>

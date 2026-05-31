@@ -67,74 +67,68 @@ const UserProfileManagement = () => {
 
     return (
         <div>
-            <NotificationToast
-                toast={toast}
-                onDismiss={() => setToast(null)}
-            />
+            <NotificationToast toast={toast} onDismiss={() => setToast(null)} />
             <TopLoadingBar isLoading={isLoading} />
             <div className='account-management'>
-                <div className='title flex items-center bg-[#123826] h-[60px] px-[21%] text-white text-[30px]'>Account Management</div>
-                <div className='account-management-container flex h-[500px] w-full px-[21%] py-5'>
-                    <div className='content-left w-[30%]'>
-                        <div className='profile h-[120px] w-full flex mb-5'>
-                            <div className='profile-image border border-black rounded-[50%] h-full w-[120px] flex items-center justify-center overflow-hidden'>
+                <div className='flex items-center bg-[#123826] h-[60px] px-[5%] md:px-[21%] text-white text-[20px] md:text-[30px]'>
+                    Account Management
+                </div>
+                <div className='flex flex-col md:flex-row w-full px-[5%] md:px-[21%] py-5 gap-5'>
+                    <div className='w-full md:w-[30%]'>
+                        {/* Avatar */}
+                        <div className='flex items-center mb-5 gap-4'>
+                            <div className='profile-image border border-black rounded-full h-[80px] w-[80px] md:h-[120px] md:w-[120px] flex items-center justify-center overflow-hidden shrink-0'>
                                 {avatarUrl ? (
-                                    <img
-                                        src={avatarUrl}
-                                        alt="avatar"
-                                        className='w-full h-full object-cover'
-                                    />
+                                    <img src={avatarUrl} alt="avatar" className='w-full h-full object-cover' />
                                 ) : (
-                                    <FontAwesomeIcon icon={faUser} className='user-icon text-[80px]' />
+                                    <FontAwesomeIcon icon={faUser} className='text-[50px] md:text-[80px]' />
                                 )}
                             </div>
-                            <div className='edit-img pl-[20px] flex flex-col justify-center'>
-                                <div className='text-[25px]'><b>{userData?.fullName}</b></div>
-                                <input
-                                    type='file'
-                                    accept='image/*'
-                                    id='avatar-upload'
-                                    className='hidden'
-                                    onChange={handleUploadAvatar}
-                                />
-                                <label htmlFor='avatar-upload' className='cursor-pointer text-gray-850 text-[16px] my-2 hover:underline hover:text-[#123826]'>
+                            <div className='flex flex-col justify-center'>
+                                <div className='text-[18px] md:text-[25px]'><b>{userData?.fullName}</b></div>
+                                <input type='file' accept='image/*' id='avatar-upload' className='hidden' onChange={handleUploadAvatar} />
+                                <label htmlFor='avatar-upload' className='cursor-pointer text-gray-600 text-[14px] md:text-[16px] mt-1 hover:underline hover:text-[#123826]'>
                                     <FontAwesomeIcon icon={faPencil} /> Change your avatar
                                 </label>
                             </div>
                         </div>
-                        <div className={sectionClass('profile')} onClick={() => changeSection('profile')}>
-                            <FontAwesomeIcon icon={faUser} className='user-icon text-[35px] pr-5' />
-                            <span className='text-[20px]'>My Profile</span>
-                        </div>
-
-                        <div className={sectionClass('notification')} onClick={() => changeSection('notification')}>
-                            <FontAwesomeIcon icon={faBell} className='user-icon text-[35px] pr-5' />
-                            <span className='text-[20px]'>Notification</span>
-                        </div>
-
-                        <div className={sectionClass('event')} onClick={() => changeSection('event')}>
-                            <FontAwesomeIcon icon={faCalendarCheck} className='user-icon text-[35px] pr-5' />
-                            <span className='text-[20px]'>My Favorite Events</span>
+                        <div className='flex md:flex-col gap-1 overflow-x-auto'>
+                            <div className={sectionClass('profile')} onClick={() => changeSection('profile')}>
+                                <FontAwesomeIcon icon={faUser} className='text-[20px] md:text-[35px] pr-2 md:pr-5' />
+                                <span className='text-[14px] md:text-[20px] whitespace-nowrap'>My Profile</span>
+                            </div>
+                            <div className={sectionClass('notification')} onClick={() => changeSection('notification')}>
+                                <FontAwesomeIcon icon={faBell} className='text-[20px] md:text-[35px] pr-2 md:pr-5' />
+                                <span className='text-[14px] md:text-[20px] whitespace-nowrap'>Notification</span>
+                            </div>
+                            <div className={sectionClass('event')} onClick={() => changeSection('event')}>
+                                <FontAwesomeIcon icon={faCalendarCheck} className='text-[20px] md:text-[35px] pr-2 md:pr-5' />
+                                <span className='text-[14px] md:text-[20px] whitespace-nowrap'>My Favorite Events</span>
+                            </div>
                         </div>
                     </div>
-                    <div className='content-right w-[70%] h-full'>
-                        <div className='my-profile-container h-full rounded-[15px] shadow-md'>
-                            <div className='content-up h-[25%] flex flex-col justify-center border-b border-gray-300 mx-7 pl-5'>
-                                <div className='text-[25px]'><b>{sectionChoose === 'profile' ? 'My Account' : `${sectionChoose === 'notification' ? 'Notifications' : 'My Favorite Events'}`}</b></div>
-                                <span className='pt-2 text-[16px]'>{sectionChoose === 'profile' ? 'Manage information to secure your account' :
-                                    `${sectionChoose === 'notification' ? 'Check notifications regularly to update about your favorite tournament schedule' :
-                                        'Mark your favorite tournament to recieve schedule details via email'}`}
+                    <div className='w-full md:w-[70%]'>
+                        <div className='rounded-[15px] shadow-md'>
+                            <div className='flex flex-col justify-center border-b border-gray-300 mx-4 md:mx-7 pl-3 md:pl-5 py-4'>
+                                <div className='text-[20px] md:text-[25px]'>
+                                    <b>{sectionChoose === 'profile' ? 'My Account' : sectionChoose === 'notification' ? 'Notifications' : 'My Favorite Events'}</b>
+                                </div>
+                                <span className='pt-2 text-[13px] md:text-[16px]'>
+                                    {sectionChoose === 'profile' ? 'Manage information to secure your account' :
+                                        sectionChoose === 'notification' ? 'Check notifications regularly to update about your favorite tournament schedule' :
+                                            'Mark your favorite tournament to recieve schedule details via email'}
                                 </span>
                             </div>
-                            <div className='content-down h-[75%] mx-7 p-5'>
+                            <div className='mx-4 md:mx-7 p-3 md:p-5'>
                                 {sectionChoose === 'profile' ? <AccountManageSetting /> : sectionChoose === 'notification' ? <NotificationSetting /> : <FollowedTournaments />}
                             </div>
                         </div>
                     </div>
+
                 </div>
             </div>
         </div>
-    );
+    )
 };
 
 export default UserProfileManagement;
