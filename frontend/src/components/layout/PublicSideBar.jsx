@@ -15,7 +15,7 @@ const sports = [
 
 const PublicSidebar = ({ isOpen, onClose }) => {
     const navigate = useNavigate()
-    const { isLogin } = useAuth()
+    const { isLogin, isAdmin } = useAuth()
     const [sportsOpen, setSportsOpen] = useState(false)
 
     const handleLogout = async () => {
@@ -85,11 +85,17 @@ const PublicSidebar = ({ isOpen, onClose }) => {
                     <div className={section} onClick={() => { navigate('/matches'); onClose() }}>
                         Matches
                     </div>
-
                     {isLogin && (
                         <div>
                             <div className={section} onClick={() => { navigate('/account-management'); onClose() }}>
                                 Manage Account
+                            </div>
+                        </div>
+                    )}
+                    {isAdmin && (
+                        <div>
+                            <div className={section} onClick={() => { navigate('/admin'); onClose() }}>
+                                Admin Dashboard
                             </div>
                         </div>
                     )}
