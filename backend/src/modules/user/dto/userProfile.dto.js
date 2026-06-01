@@ -3,6 +3,7 @@ const toUserProfileDto = (user) => ({
   email: user.email,
   fullName: user.fullName,
   role: user.role,
+  avatarUrl: user.avatarUrl,
 });
 
 module.exports = {

@@ -12,6 +12,8 @@ router.get(
   userController.getAllUserProfiles
 );
 router.get("/me/profile", authenticateSupabaseUser, userController.getCurrentUserProfile);
+router.patch("/me/profile", authenticateSupabaseUser, userController.updateCurrentUserProfile);
+router.post("/me/avatar", authenticateSupabaseUser, userController.uploadCurrentUserAvatar);
 router.get("/:userId/profile", userController.getUserProfile);
 
 module.exports = router;

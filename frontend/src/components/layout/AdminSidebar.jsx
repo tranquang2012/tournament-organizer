@@ -9,6 +9,7 @@ import {
   faChevronLeft,
   faChevronRight,
 } from '@fortawesome/free-solid-svg-icons'
+import { useAuth } from '../../hooks/useAuth'
 
 const navItems = [
   {
@@ -34,6 +35,21 @@ const navItems = [
 const AdminSidebar = ({ collapsed, setCollapsed }) => {
   const [openMenus, setOpenMenus] = useState({ Tournaments: true })
   const location = useLocation()
+  const { profile: userData, role, isSuperAdmin } = useAuth()
+
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.path === '/admin/accounts') {
+      return isSuperAdmin
+    }
+
+    return true
+  })
+
+  const roleLabel = {
+    USER: 'User',
+    ADMIN: 'Admin',
+    SUPER_ADMIN: 'Super Admin',
+  }[role] || role
 
   const toggleMenu = (label) => {
     setOpenMenus((prev) => ({ ...prev, [label]: !prev[label] }))
@@ -70,7 +86,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
 
       {/* Navigation */}
       <nav className={`flex flex-col gap-0.5 ${collapsed ? 'px-2' : 'px-3'}`}>
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const hasChildren = !!item.children
 
           if (!hasChildren) {
@@ -182,9 +198,9 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
         {!collapsed && (
           <div className="flex flex-col overflow-hidden">
             <span className="text-[13px] font-semibold text-[#e0f0f0] overflow-hidden text-ellipsis">
-              NetCompany Admin
+              {userData?.fullName || 'Admin'}
             </span>
-            <span className="text-[11px] text-[#94b8b8] mt-px">Super Admin</span>
+            <span className="text-[11px] text-[#94b8b8] mt-px">{roleLabel}</span>
           </div>
         )}
       </div>

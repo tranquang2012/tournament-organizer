@@ -1,63 +1,17 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { faBars, faHeadset, faUser, faRightFromBracket, faRightToBracket } from '@fortawesome/free-solid-svg-icons';
-import './TopNavBar.scss'
-import { useState, useEffect } from 'react';
+import { useState } from 'react'
 import { supabase } from '../../config/supabaseClient';
+import { useAuth } from '../../hooks/useAuth';
+import PublicSidebar from './PublicSideBar';
+import logo from '../../assets/logo.png'
 
-//import api
-import { getCurrentUserProfile } from '../../services/AuthService';
 
-
-const TopNavBar = (props) => {
-
+const TopNavBar = () => {
   const navigate = useNavigate()
-  const [data, setData] = useState(null);
-  const [userData, setUserData] = useState(null);
-
-  const [isLogin, setIsLogin] = useState(false)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function checkAuth() {
-      const { data: { session } } = await supabase.auth.getSession()
-      setIsLogin(!!session)
-      setLoading(false)
-    }
-    checkAuth()
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session) {
-        setIsLogin(true)
-      } else if (event === 'SIGNED_OUT') {
-        setIsLogin(false)
-      }
-    })
-    return () => subscription.unsubscribe()
-  }, [])
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const { data: { session } } = await supabase.auth.getSession()
-
-        if (!session) {
-          setUserData(null);
-          return;
-        }
-
-        const data = await getCurrentUserProfile();
-        setUserData(data);
-      } catch (error) {
-        console.error(
-          'Failed to fetch user profile:',
-          error.response?.data?.error?.message || error.message
-        );
-      }
-    };
-
-    fetchUser();
-  }, []);
+  const { isLogin, profile: userData } = useAuth()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const handleLogout = async () => {
     try {
@@ -68,52 +22,63 @@ const TopNavBar = (props) => {
       console.error("Logout error:", error.message);
     }
   };
-  if (loading) return null
 
-  const handleLogin = () => {
-    navigate(`/login`)
-  }
-
-  // console.log('User data:', data);
+  const handleLogin = () => navigate('/login')
 
   return (
-    <div className='home-header-container'>
-      <div className='home-header-content'>
-        <div className='home-header-left'>
-          <FontAwesomeIcon icon={faBars} className='menu' />
-          <Link to="/" className='header-logo'></Link>
+    <div className='h-[80px] w-full px-[3%] flex items-center'>
+      <div className='w-full h-full flex font-[Poppins,sans-serif]'>
+        <div className='flex items-center w-[25%] md:w-[25%]'>
+          <FontAwesomeIcon
+            icon={faBars}
+            className='text-[30px] mr-[7%] cursor-pointer'
+            onClick={() => setSidebarOpen(true)}
+          />
+          <img
+            src={logo}
+            alt="logo"
+            className='md:w-[50%] max-h-[80px] object-contain cursor-pointer'
+            onClick={() => navigate('/')}
+          />
         </div>
-        <div className='home-header-center'>
-          <Link to="/sports" className='category'>
+        <div className='hidden md:flex w-[50%] justify-between items-center'>
+          <Link to="/sports" className='text-[18px] text-[#123826] no-underline'>
             <div><b>Sports</b></div>
-            <div className='sub-titles'>Opportunities to explore sports world</div>
+            <div className='font-medium text-[12px]'>Opportunities to explore sports world</div>
           </Link>
-          <Link to="/tournaments" className='category'>
+          <Link to="/tournaments" className='text-[18px] text-[#123826] no-underline'>
             <div><b>Tournaments</b></div>
-            <div className='sub-titles'>Enjoy many exciting tournaments</div>
+            <div className='font-medium text-[12px]'>Enjoy many exciting tournaments</div>
           </Link>
-          <Link to="/matches" className='category'>
+          <Link to="/matches" className='text-[18px] text-[#123826] no-underline'>
             <div><b>Matches</b></div>
-            <div className='sub-titles'>Watching many thrilling matches</div>
+            <div className='font-medium text-[12px]'>Watching many thrilling matches</div>
           </Link>
         </div>
-        <div className='home-header-right'>
-          <div className='support'>
-            <FontAwesomeIcon icon={faHeadset} className='support-icon' />
-            <span>Support</span>
+        <div className='hidden md:flex w-[25%] justify-end items-center'>
+          <div className='flex items-center justify-center mx-[20%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'>
+            <FontAwesomeIcon icon={faHeadset} className='text-[28px]' />
+            <span className='text-[12px] text-[#123826] ml-1'>Support</span>
           </div>
-          <Link to={isLogin ? '/account-management' : '#'} className='user-profile'>
-            <FontAwesomeIcon icon={faUser} className='user-icon' />
-            <span>{isLogin ? userData?.data?.fullName : 'Guest'}</span>
-          </Link>
-          <div className='log-out'>
-            {isLogin ?
-              <FontAwesomeIcon icon={faRightFromBracket} className='log-out-icon' onClick={(event) => handleLogout()} /> :
-              <FontAwesomeIcon icon={faRightToBracket} className='log-out-icon' onClick={(event) => handleLogin()} />
+
+          <div
+            className='flex flex-col items-center w-[20%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'
+            onClick={() => navigate('/account-management')}
+          >
+            <FontAwesomeIcon icon={faUser} className='text-[28px]' />
+            <span className='text-[12px] text-[#123826]'>{isLogin ? userData?.fullName : 'Guest'}</span>
+          </div>
+
+          <div className='hover:bg-gray-300 rounded-[5px] p-1'>
+            {isLogin
+              ? <FontAwesomeIcon icon={faRightFromBracket} className='text-[28px] cursor-pointer' onClick={handleLogout} />
+              : <FontAwesomeIcon icon={faRightToBracket} className='text-[28px] cursor-pointer' onClick={handleLogin} />
             }
           </div>
         </div>
+
       </div>
+      <PublicSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>
   );
 };

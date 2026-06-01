@@ -1,12 +1,11 @@
 import axios from 'axios';
 
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:5001',
+  baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001',
 });
 
 axiosInstance.interceptors.response.use(
   (response) => {
-    const { data } = response;
     return response.data;
   }
 );
