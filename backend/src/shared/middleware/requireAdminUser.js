@@ -1,6 +1,6 @@
 const AppError = require("../errors/AppError");
 
-const ADMIN_ROLES = new Set(["admin", "super_admin"]);
+const ADMIN_ROLES = new Set(["admin", "super_admin", "superadmin"]);
 
 const requireAdminUser = (req, res, next) => {
   const role = req.auth?.profile?.role?.toLowerCase();
