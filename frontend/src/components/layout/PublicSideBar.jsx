@@ -6,11 +6,19 @@ import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../config/supabaseClient'
 import logo from '../../assets/logo.png'
 
-
 const sports = [
-    'Football', 'Basketball', 'Badminton', 'Ping-pong (Table Tennis)',
-    'League of Legends', 'Dota', 'Counter Strike 2', 'Valorant',
-    'Running', 'Bowling', 'Teamfight Tactics', 'Programming'
+    { name: 'Football', path: '/sports/football' },
+    { name: 'Basketball', path: '/sports/basketball' },
+    { name: 'Badminton', path: '/sports/badminton' },
+    { name: 'Ping Pong', path: '/sports/ping-pong' },
+    { name: 'Running', path: '/sports/running' },
+    { name: 'Bowling', path: '/sports/bowling' },
+    { name: 'League of Legends', path: '/sports/league-of-legends' },
+    { name: 'Valorant', path: '/sports/valorant' },
+    { name: 'Dota 2', path: '/sports/dota-2' },
+    { name: 'Counter Strike 2', path: '/sports/counter-strike-2' },
+    { name: 'Teamfight Tactics', path: '/sports/teamfight-tactics' },
+    { name: 'Programming', path: '/sports/programming' },
 ]
 
 const PublicSidebar = ({ isOpen, onClose }) => {
@@ -65,10 +73,10 @@ const PublicSidebar = ({ isOpen, onClose }) => {
                             <div className={`transition-all duration-300 ease-in-out overflow-hidden ${sportsOpen ? 'max-h-[600px]' : 'max-h-0'}`}>
                                 <div className='flex flex-col'>
                                     {sports.map(sport => (
-                                        <div key={sport} className='py-[2%] px-[15%] text-[16px] hover:bg-gray-100 rounded-15px cursor-pointer'
-                                            onClick={() => { navigate('/sports'); onClose() }}
+                                        <div key={sport.path} className='py-[2%] px-[15%] text-[16px] hover:bg-gray-100 rounded-15px cursor-pointer'
+                                            onClick={() => { navigate(`${sport.path}`); onClose() }}
                                         >
-                                            {sport}
+                                            {sport.name}
                                         </div>
                                     ))}
                                 </div>

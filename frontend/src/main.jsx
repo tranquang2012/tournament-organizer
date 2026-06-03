@@ -33,7 +33,7 @@ createRoot(document.getElementById('root')).render(
         {/* Public routes with shared navbar */}
         <Route element={<PublicLayout />}>
           <Route path="/" element={<LandingPage />} />
-          <Route path="/sports" element={<SportsPage />} />
+          <Route path="/sports/:id" element={<SportsPage />} />
           <Route path="/tournaments" element={<TournamentListPage />} />
           <Route path="/matches" element={<MatchesPage />} />
           <Route
