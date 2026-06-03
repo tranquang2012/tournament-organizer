@@ -8,6 +8,7 @@ import {
   faChevronDown,
   faChevronLeft,
   faChevronRight,
+  faEye,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -29,6 +30,11 @@ const navItems = [
     label: 'Accounts Management',
     icon: faUsersGear,
     path: '/admin/accounts',
+  },
+  {
+    label: 'Go to User View',
+    icon: faEye,
+    path: '/',
   },
 ]
 
