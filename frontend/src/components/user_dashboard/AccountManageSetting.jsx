@@ -74,10 +74,14 @@ const AccountManageSetting = () => {
                     <input
                         type='text'
                         value={userName}
+                        maxLength={15}
                         className='w-full h-[40px] border border-gray-300 rounded-md px-4 shadow-sm outline-none text-[14px] md:text-[16px]'
                         onChange={(event) => setUserName(event.target.value)}
                     />
                 </div>
+            </div>
+            <div className='text-gray-500 text-[12px] md:text-[14px] mb-6 md:mb-4 md:pl-30'>
+                You can not enter over 15 character!
             </div>
             <div className='flex py-6 md:py-8 gap-x-[3%]'>
                 <button
