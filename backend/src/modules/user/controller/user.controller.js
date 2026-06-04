@@ -54,6 +54,22 @@ const disableUserAccount = async (req, res, next) => {
   }
 };
 
+const enableUserAccount = async (req, res, next) => {
+  try {
+    const userProfile = await userService.enableUserAccount({
+      actorUserId: req.auth.userId,
+      actorProfile: req.auth.profile,
+      targetUserId: req.params.userId,
+    });
+
+    res.json({
+      data: userProfile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const promoteUserToAdmin = async (req, res, next) => {
   try {
     const userProfile = await userService.promoteUserToAdmin({
@@ -121,6 +137,7 @@ module.exports = {
   getCurrentUserProfile,
   getAllUserProfiles,
   disableUserAccount,
+  enableUserAccount,
   promoteUserToAdmin,
   demoteAdminToUser,
   updateCurrentUserProfile,

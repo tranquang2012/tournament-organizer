@@ -84,6 +84,24 @@ const disableUserAccount = async ({ actorUserId, actorProfile, targetUserId }) =
   return toUserProfileDto(updatedUser);
 };
 
+const enableUserAccount = async ({ actorUserId, actorProfile, targetUserId }) => {
+  const targetUser = await getTargetUserOrThrow(targetUserId);
+
+  if (actorUserId === targetUser.id) {
+    throw new AppError("You cannot enable your own account.", 400);
+  }
+
+  const targetIsAdmin = isAdminRole(targetUser.role);
+
+  if (targetIsAdmin && !isSuperAdminRole(actorProfile?.role)) {
+    throw new AppError("Only super admins can enable admin accounts.", 403);
+  }
+
+  const updatedUser = await userRepository.updateById(targetUser.id, { isDisable: false });
+
+  return toUserProfileDto(updatedUser);
+};
+
 const promoteUserToAdmin = async ({ actorProfile, targetUserId }) => {
   assertSuperAdmin(actorProfile);
 
@@ -232,6 +250,7 @@ module.exports = {
   getUserProfile,
   getAllUserProfiles,
   disableUserAccount,
+  enableUserAccount,
   promoteUserToAdmin,
   demoteAdminToUser,
   updateCurrentUserProfile,

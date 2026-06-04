@@ -18,6 +18,12 @@ router.patch(
   userController.disableUserAccount
 );
 router.patch(
+  "/admin/:userId/enable",
+  authenticateSupabaseUser,
+  requireAdminUser,
+  userController.enableUserAccount
+);
+router.patch(
   "/admin/:userId/promote",
   authenticateSupabaseUser,
   requireAdminUser,

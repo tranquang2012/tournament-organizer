@@ -23,7 +23,7 @@ export async function getUsers() {
       name: user.fullName || "Unknown",
       email: user.email,
       role: normalizeRole(user.role) || "USER",
-      status: "ACTIVE", // mock default
+      status: user.isDisable ? "DISABLED" : "ACTIVE",
       provider: "email",
       avatarUrl: user.avatarUrl
     })),
@@ -31,16 +31,30 @@ export async function getUsers() {
   };
 }
 
-/* PATCH /admin/users/:id/role */
-export async function updateUserRole(userId, role) {
-  await delay(400);
-  // Mock success (backend doesn't have yet)
-  return { id: userId, role };
+/* PATCH /admin/users/:id/promote */
+export async function promoteUserToAdmin(userId) {
+  const token = await getAccessToken();
+  const response = await axios.patch(`/api/users/admin/${userId}/promote`, {}, withAuthHeader(token));
+  return response.data;
 }
 
-/* PATCH /admin/users/:id/status (enable / disable) */
-export async function updateUserStatus(userId, status) {
-  await delay(400);
-  // Mock success (backend doesn't have yet)
-  return { id: userId, status };
+/* PATCH /admin/users/:id/demote */
+export async function demoteAdminToUser(userId) {
+  const token = await getAccessToken();
+  const response = await axios.patch(`/api/users/admin/${userId}/demote`, {}, withAuthHeader(token));
+  return response.data;
+}
+
+/* PATCH /admin/users/:id/disable */
+export async function disableUserAccount(userId) {
+  const token = await getAccessToken();
+  const response = await axios.patch(`/api/users/admin/${userId}/disable`, {}, withAuthHeader(token));
+  return response.data;
+}
+
+/* PATCH /admin/users/:id/enable */
+export async function enableUserAccount(userId) {
+  const token = await getAccessToken();
+  const response = await axios.patch(`/api/users/admin/${userId}/enable`, {}, withAuthHeader(token));
+  return response.data;
 }
