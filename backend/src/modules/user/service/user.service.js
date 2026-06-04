@@ -4,7 +4,8 @@ const { toUserProfileDto } = require("../dto/userProfile.dto");
 
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const MAX_NAME_LENGTH = 100;
+const NAME_PATTERN = /^[\p{L}\p{N} .'-]+$/u;
+const MAX_NAME_LENGTH = 15;
 const MAX_AVATAR_BYTES = 2 * 1024 * 1024;
 const SUPPORTED_AVATAR_TYPES = new Map([
   ["image/jpeg", "jpg"],
@@ -45,6 +46,10 @@ const updateCurrentUserProfile = async (userId, updateProfileDto) => {
 
     if (fullName.length > MAX_NAME_LENGTH) {
       throw new AppError(`Full name must be ${MAX_NAME_LENGTH} characters or fewer.`, 400);
+    }
+
+    if (!NAME_PATTERN.test(fullName)) {
+      throw new AppError("Full name can only include letters, numbers, spaces, periods, apostrophes, and hyphens.", 400);
     }
 
     updates.fullName = fullName;
