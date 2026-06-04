@@ -511,8 +511,9 @@ model competitors {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model sport {
-  sport_id   String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   sport_name String
+  background String?
+  sport_id   Int          @id @db.SmallInt
   tournament tournament[]
 
   @@schema("public")
@@ -541,9 +542,9 @@ model tournament {
   tour_enddate   DateTime?     @db.Date
   tour_status    String?
   tour_pausedate DateTime?     @db.Date
-  sp_id          String?       @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   created_by     String?       @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   max_size       Int?          @db.SmallInt
+  sp_id          Int?          @db.SmallInt
   competitors    competitors[]
   sport          sport?        @relation(fields: [sp_id], references: [sport_id], onDelete: NoAction, onUpdate: NoAction)
 
