@@ -38,15 +38,23 @@ const UserTableRow = ({ user, isActing, onAction }) => {
       {/* name + provider */}
       <td className="px-6 py-4">
         <div className="flex items-center gap-3">
-          <div
-            className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 uppercase tracking-wide"
-            style={{
-              background: `linear-gradient(135deg, ${role.color}30, ${role.color}18)`,
-              color: role.color,
-            }}
-          >
-            {initials}
-          </div>
+          {user.avatarUrl ? (
+            <img
+              src={user.avatarUrl}
+              alt={`${user.name}'s avatar`}
+              className="w-9 h-9 rounded-full object-cover shrink-0"
+            />
+          ) : (
+            <div
+              className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-bold shrink-0 uppercase tracking-wide"
+              style={{
+                background: `linear-gradient(135deg, ${role.color}30, ${role.color}18)`,
+                color: role.color,
+              }}
+            >
+              {initials}
+            </div>
+          )}
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-slate-800 leading-tight">
               {user.name}

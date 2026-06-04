@@ -198,9 +198,21 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
           collapsed ? 'justify-center px-2 py-4 mx-1' : 'px-[18px] py-4 mx-3'
         }`}
       >
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#6366f1] text-white flex items-center justify-center text-[13px] font-bold shrink-0 tracking-[0.5px]">
-          NC
-        </div>
+        {userData?.avatarUrl ? (
+          <img
+            src={userData.avatarUrl}
+            alt="Admin avatar"
+            className="w-10 h-10 rounded-full object-cover shrink-0"
+          />
+        ) : (
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#6366f1] text-white flex items-center justify-center text-[13px] font-bold shrink-0 tracking-[0.5px] uppercase">
+            {(userData?.fullName || 'Admin')
+              .split(' ')
+              .map((w) => w[0])
+              .join('')
+              .slice(0, 2)}
+          </div>
+        )}
         {!collapsed && (
           <div className="flex flex-col overflow-hidden">
             <span className="text-[13px] font-semibold text-[#e0f0f0] overflow-hidden text-ellipsis">
