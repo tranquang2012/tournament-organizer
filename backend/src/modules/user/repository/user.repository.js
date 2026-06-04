@@ -4,7 +4,7 @@ const User = require("../model/user.model");
 const findById = async (userId) => {
   const result = await pool.query(
     `
-      SELECT id, email, full_name, role, avatar_url
+      SELECT id, email, full_name, role, avatar_url, is_disable
       FROM public.user_roles
       WHERE id = $1
       LIMIT 1

@@ -31,6 +31,14 @@ const withAuthHeader = (accessToken) => ({
     },
 })
 
+const getAuthErrorMessage = (error) => {
+    return error?.response?.data?.error?.message || error?.message || "Authentication failed";
+}
+
+const isDisabledAccountError = (error) => {
+    return error?.response?.status === 403 && /disabled/i.test(getAuthErrorMessage(error));
+}
+
 const fileToDataUrl = (file) => {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -88,5 +96,7 @@ export {
     uploadCurrentUserAvatar,
     normalizeRole,
     getAccessToken,
-    withAuthHeader
+    withAuthHeader,
+    getAuthErrorMessage,
+    isDisabledAccountError
 };

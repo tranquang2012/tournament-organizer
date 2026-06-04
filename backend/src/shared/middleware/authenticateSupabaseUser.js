@@ -40,11 +40,17 @@ const authenticateSupabaseUser = async (req, res, next) => {
       throw new AppError("Invalid authentication token.", 401);
     }
 
+    const profile = await userRepository.findById(user.id);
+
+    if (profile?.isDisable === true) {
+      throw new AppError("Your account has been disabled.", 403);
+    }
+
     req.auth = {
       user,
       userId: user.id,
       accessToken: token,
-      profile: await userRepository.findById(user.id),
+      profile,
     };
 
     next();

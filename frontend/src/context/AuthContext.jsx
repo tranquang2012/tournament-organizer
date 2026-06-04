@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../config/supabaseClient'
-import { getCurrentUserProfile, normalizeRole } from '../services/AuthService'
+import { getAuthErrorMessage, getCurrentUserProfile, isDisabledAccountError, normalizeRole } from '../services/AuthService'
 import { AuthContext } from './authContext'
 
 export const AuthProvider = ({ children }) => {
@@ -48,7 +48,18 @@ export const AuthProvider = ({ children }) => {
         await refreshProfile()
       } catch (error) {
         console.error('Failed to initialize auth:', error.message)
+        const isDisabledAccount = isDisabledAccountError(error)
+
+        if (isDisabledAccount) {
+          console.log(getAuthErrorMessage(error))
+          await supabase.auth.signOut()
+        }
+
         if (mounted) {
+          if (isDisabledAccount) {
+            setSession(null)
+          }
+
           setProfile(null)
         }
       } finally {
@@ -65,6 +76,11 @@ export const AuthProvider = ({ children }) => {
     } = supabase.auth.onAuthStateChange(async (_event, nextSession) => {
       setSession(nextSession)
 
+      if (window.location.pathname === '/oauth/callback') {
+        setLoading(false)
+        return
+      }
+
       if (!nextSession) {
         setProfile(null)
         setLoading(false)
@@ -75,6 +91,12 @@ export const AuthProvider = ({ children }) => {
         await loadProfileForSession(nextSession)
       } catch (error) {
         console.error('Failed to refresh user profile:', error.message)
+        if (isDisabledAccountError(error)) {
+          console.log(getAuthErrorMessage(error))
+          await supabase.auth.signOut()
+          setSession(null)
+        }
+
         setProfile(null)
       } finally {
         setLoading(false)
