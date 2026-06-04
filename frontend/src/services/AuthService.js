@@ -86,5 +86,7 @@ export {
     getCurrentUserProfile,
     updateCurrentUserProfile,
     uploadCurrentUserAvatar,
-    normalizeRole
+    normalizeRole,
+    getAccessToken,
+    withAuthHeader
 };
