@@ -18,7 +18,7 @@ const findById = async (userId) => {
 const findAll = async () => {
   const result = await pool.query(
     `
-      SELECT id, email, full_name, role, avatar_url
+      SELECT id, email, full_name, role, avatar_url, provider
       FROM public.user_roles
       ORDER BY full_name ASC NULLS LAST, email ASC
     `
@@ -52,7 +52,7 @@ const updateById = async (userId, updates) => {
       UPDATE public.user_roles
       SET ${fields.join(", ")}
       WHERE id = $${values.length}
-      RETURNING id, email, full_name, role, avatar_url
+      RETURNING id, email, full_name, role, avatar_url, provider
     `,
     values
   );
