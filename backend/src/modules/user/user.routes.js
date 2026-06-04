@@ -11,6 +11,24 @@ router.get(
   requireAdminUser,
   userController.getAllUserProfiles
 );
+router.patch(
+  "/admin/:userId/disable",
+  authenticateSupabaseUser,
+  requireAdminUser,
+  userController.disableUserAccount
+);
+router.patch(
+  "/admin/:userId/promote",
+  authenticateSupabaseUser,
+  requireAdminUser,
+  userController.promoteUserToAdmin
+);
+router.patch(
+  "/admin/:userId/demote",
+  authenticateSupabaseUser,
+  requireAdminUser,
+  userController.demoteAdminToUser
+);
 router.get("/me/profile", authenticateSupabaseUser, userController.getCurrentUserProfile);
 router.patch("/me/profile", authenticateSupabaseUser, userController.updateCurrentUserProfile);
 router.post("/me/avatar", authenticateSupabaseUser, userController.uploadCurrentUserAvatar);

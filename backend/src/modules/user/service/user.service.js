@@ -12,6 +12,19 @@ const SUPPORTED_AVATAR_TYPES = new Map([
   ["image/webp", "webp"],
   ["image/gif", "gif"],
 ]);
+const SUPER_ADMIN_ROLES = new Set(["superadmin", "super_admin"]);
+const ADMIN_ROLES = new Set(["admin", "superadmin", "super_admin"]);
+
+const normalizeRole = (role) => {
+  if (!role) {
+    return "";
+  }
+
+  return String(role).trim().toLowerCase();
+};
+
+const isSuperAdminRole = (role) => SUPER_ADMIN_ROLES.has(normalizeRole(role));
+const isAdminRole = (role) => ADMIN_ROLES.has(normalizeRole(role));
 
 const getUserProfile = async (userId) => {
   if (!userId || !UUID_PATTERN.test(userId)) {
@@ -31,6 +44,76 @@ const getAllUserProfiles = async () => {
   const users = await userRepository.findAll();
 
   return users.map(toUserProfileDto);
+};
+
+const getTargetUserOrThrow = async (targetUserId) => {
+  if (!targetUserId || !UUID_PATTERN.test(targetUserId)) {
+    throw new AppError("A valid target user id is required.", 400);
+  }
+
+  const targetUser = await userRepository.findById(targetUserId);
+
+  if (!targetUser) {
+    throw new AppError("Target user profile not found.", 404);
+  }
+
+  return targetUser;
+};
+
+const assertSuperAdmin = (actorProfile) => {
+  if (!isSuperAdminRole(actorProfile?.role)) {
+    throw new AppError("Super admin access is required.", 403);
+  }
+};
+
+const disableUserAccount = async ({ actorUserId, actorProfile, targetUserId }) => {
+  const targetUser = await getTargetUserOrThrow(targetUserId);
+
+  if (actorUserId === targetUser.id) {
+    throw new AppError("You cannot disable your own account.", 400);
+  }
+
+  const targetIsAdmin = isAdminRole(targetUser.role);
+
+  if (targetIsAdmin && !isSuperAdminRole(actorProfile?.role)) {
+    throw new AppError("Only super admins can disable admin accounts.", 403);
+  }
+
+  const updatedUser = await userRepository.updateById(targetUser.id, { isDisable: true });
+
+  return toUserProfileDto(updatedUser);
+};
+
+const promoteUserToAdmin = async ({ actorProfile, targetUserId }) => {
+  assertSuperAdmin(actorProfile);
+
+  const targetUser = await getTargetUserOrThrow(targetUserId);
+
+  if (isAdminRole(targetUser.role)) {
+    throw new AppError("Target user is already an admin.", 400);
+  }
+
+  const updatedUser = await userRepository.updateById(targetUser.id, { role: "admin" });
+
+  return toUserProfileDto(updatedUser);
+};
+
+const demoteAdminToUser = async ({ actorUserId, actorProfile, targetUserId }) => {
+  assertSuperAdmin(actorProfile);
+
+  const targetUser = await getTargetUserOrThrow(targetUserId);
+
+  if (actorUserId === targetUser.id) {
+    throw new AppError("You cannot demote your own account.", 400);
+  }
+
+  if (!isAdminRole(targetUser.role)) {
+    throw new AppError("Target user is not an admin.", 400);
+  }
+
+  const updatedUser = await userRepository.updateById(targetUser.id, { role: "user" });
+
+  return toUserProfileDto(updatedUser);
 };
 
 const updateCurrentUserProfile = async (userId, updateProfileDto) => {
@@ -148,6 +231,9 @@ const uploadCurrentUserAvatar = async ({ userId, accessToken, avatarUploadDto })
 module.exports = {
   getUserProfile,
   getAllUserProfiles,
+  disableUserAccount,
+  promoteUserToAdmin,
+  demoteAdminToUser,
   updateCurrentUserProfile,
   uploadCurrentUserAvatar,
 };

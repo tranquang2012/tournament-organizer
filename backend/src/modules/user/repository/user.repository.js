@@ -4,7 +4,7 @@ const User = require("../model/user.model");
 const findById = async (userId) => {
   const result = await pool.query(
     `
-      SELECT id, email, full_name, role, avatar_url
+      SELECT id, email, full_name, role, avatar_url, is_disable
       FROM public.user_roles
       WHERE id = $1
       LIMIT 1
@@ -18,7 +18,7 @@ const findById = async (userId) => {
 const findAll = async () => {
   const result = await pool.query(
     `
-      SELECT id, email, full_name, role, avatar_url
+      SELECT id, email, full_name, role, avatar_url, is_disable
       FROM public.user_roles
       ORDER BY full_name ASC NULLS LAST, email ASC
     `
@@ -41,6 +41,16 @@ const updateById = async (userId, updates) => {
     fields.push(`avatar_url = $${values.length}`);
   }
 
+  if (Object.prototype.hasOwnProperty.call(updates, "role")) {
+    values.push(updates.role);
+    fields.push(`role = $${values.length}`);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updates, "isDisable")) {
+    values.push(updates.isDisable);
+    fields.push(`is_disable = $${values.length}`);
+  }
+
   if (fields.length === 0) {
     return findById(userId);
   }
@@ -52,7 +62,7 @@ const updateById = async (userId, updates) => {
       UPDATE public.user_roles
       SET ${fields.join(", ")}
       WHERE id = $${values.length}
-      RETURNING id, email, full_name, role, avatar_url
+      RETURNING id, email, full_name, role, avatar_url, is_disable
     `,
     values
   );
