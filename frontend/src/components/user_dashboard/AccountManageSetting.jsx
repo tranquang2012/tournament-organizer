@@ -80,9 +80,11 @@ const AccountManageSetting = () => {
                     />
                 </div>
             </div>
-            <div className='text-gray-500 text-[12px] md:text-[14px] mb-6 md:mb-4 md:pl-30'>
-                You can not enter over 15 character!
-            </div>
+            {userName.length >= 15 && (
+                <div className='text-red-500 text-[12px] md:text-[14px] mb-6 md:mb-4 md:pl-30'>
+                    You can not enter over 15 character!
+                </div>
+            )}
             <div className='flex py-6 md:py-8 gap-x-[3%]'>
                 <button
                     className='cursor-pointer w-full md:w-[20%] py-2 text-[14px] md:text-[16px] text-white bg-[#123826] rounded-[10px] hover:bg-[#3aba90]'
