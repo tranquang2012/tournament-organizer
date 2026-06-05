@@ -1,14 +1,21 @@
 import './Login.scss'
+import { useEffect } from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faFacebook, faGoogle } from '@fortawesome/free-brands-svg-icons';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../../config/supabaseClient'
+import { useAuth } from '../../hooks/useAuth'
 
 
-const Login = (props) => {
+const Login = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { clearLoginRedirectPath } = useAuth();
   const loginError = searchParams.get('error_description') || searchParams.get('error');
+
+  useEffect(() => {
+    clearLoginRedirectPath?.();
+  }, [clearLoginRedirectPath]);
 
   const handleLogin = async (provider) => {
     const oauthProvider = provider === "Google" ? 'google' : 'facebook';
@@ -37,8 +44,8 @@ const Login = (props) => {
 
           <label className='login-title'>Sign In with Google/Facebook</label>
           <div className='social-login mb-3'>
-            <FontAwesomeIcon icon={faGoogle} size="2x" className='social-icon-gg' onClick={(event) => handleLogin("Google")} />
-            <FontAwesomeIcon icon={faFacebook} size="2x" className='social-icon-fa' onClick={(event) => handleLogin("Facebook")} />
+            <FontAwesomeIcon icon={faGoogle} size="2x" className='social-icon-gg' onClick={() => handleLogin("Google")} />
+            <FontAwesomeIcon icon={faFacebook} size="2x" className='social-icon-fa' onClick={() => handleLogin("Facebook")} />
           </div>
           {loginError && (
             <p className='bg-red-50 border border-red-300 text-red-600 px-5 py-2 rounded-md mb-4'>

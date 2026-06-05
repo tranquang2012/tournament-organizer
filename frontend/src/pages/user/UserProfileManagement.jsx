@@ -1,5 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faPencil, faBell, faCalendarCheck, faShieldHalved, faUserShield } from '@fortawesome/free-solid-svg-icons';
+import { faFacebook, faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuth';
 import clsx from 'clsx';
@@ -14,6 +15,7 @@ import NotificationSetting from '../../components/user_dashboard/NotificationSet
 import FollowedTournaments from '../../components/user_dashboard/FollowedTournaments';
 import TopLoadingBar from '../../components/common/TopLoadingBar';
 import NotificationToast from '../../components/common/NotificationToast';
+
 
 const roleMeta = {
     superadmin: { label: 'Super Admin', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: faShieldHalved },
@@ -109,6 +111,10 @@ const UserProfileManagement = () => {
                                 <label htmlFor='avatar-upload' className='cursor-pointer text-gray-600 text-[14px] md:text-[16px] mt-1 hover:underline hover:text-[#123826]'>
                                     <FontAwesomeIcon icon={faPencil} /> Change your avatar
                                 </label>
+                                <div>
+                                    <FontAwesomeIcon icon={userData.providers[0] === 'google' ? faGoogle : faFacebook} className="text-[#ea4335]" />
+                                    <span className="ml-1 text-[15px]">{userData.providers[0] === 'google' ? 'Google Account' : 'Facebook Account'}</span>
+                                </div>
                             </div>
                         </div>
                         <div className='flex md:flex-col gap-1 overflow-x-auto'>

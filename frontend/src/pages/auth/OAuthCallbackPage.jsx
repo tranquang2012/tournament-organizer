@@ -8,6 +8,8 @@ import {
   normalizeRole,
 } from '../../services/AuthService'
 
+const disabledAccountLoginPath = '/login?error_description=Your%20account%20has%20been%20disabled'
+
 const getOAuthError = () => {
   const searchParams = new URLSearchParams(window.location.search)
   const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''))
@@ -52,8 +54,12 @@ const OAuthCallbackPage = () => {
       } catch (profileError) {
         if (isDisabledAccountError(profileError)) {
           console.log(getAuthErrorMessage(profileError))
-          await supabase.auth.signOut()
-          navigate('/login?error_description=Your%20account%20has%20been%20disabled', { replace: true })
+          navigate(disabledAccountLoginPath, { replace: true })
+
+          void supabase.auth.signOut({ scope: 'local' }).catch((signOutError) => {
+            console.error('Failed to clear disabled account session:', signOutError.message)
+          })
+
           return
         }
 

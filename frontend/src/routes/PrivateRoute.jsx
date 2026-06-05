@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
 const PrivateRoute = ({ children }) => {
-  const { isLogin, loading } = useAuth()
+  const { isLogin, loading, loginRedirectPath } = useAuth()
   const location = useLocation()
 
   if (loading) {
@@ -10,7 +10,7 @@ const PrivateRoute = ({ children }) => {
   }
 
   if (!isLogin) {
-    return <Navigate to="/login" replace state={{ from: location }} />
+    return <Navigate to={loginRedirectPath || '/login'} replace state={{ from: location }} />
   }
 
   return children || <Outlet />

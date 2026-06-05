@@ -2,7 +2,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 
 const AdminRoute = ({ allowedRoles = ['ADMIN', 'SUPER_ADMIN'], redirectTo = '/', children }) => {
-  const { isLogin, loading, profileLoading, role } = useAuth()
+  const { isLogin, loading, profileLoading, role, loginRedirectPath } = useAuth()
   const location = useLocation()
 
   if (loading || profileLoading) {
@@ -10,7 +10,7 @@ const AdminRoute = ({ allowedRoles = ['ADMIN', 'SUPER_ADMIN'], redirectTo = '/',
   }
 
   if (!isLogin) {
-    return <Navigate to="/login" replace state={{ from: location }} />
+    return <Navigate to={loginRedirectPath || '/login'} replace state={{ from: location }} />
   }
 
   if (!allowedRoles.includes(role)) {
