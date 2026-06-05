@@ -112,7 +112,7 @@ const UserProfileManagement = () => {
                                     <FontAwesomeIcon icon={faPencil} /> Change your avatar
                                 </label>
                                 <div>
-                                    <FontAwesomeIcon icon={userData.providers[0] === 'google' ? faGoogle : faFacebook} className="text-[#ea4335]" />
+                                    <FontAwesomeIcon icon={userData.providers[0] === 'google' ? faGoogle : faFacebook} className={userData.providers[0] === 'google' ? 'text-[#ea4335]' : 'text-[#1877f2]'}/>
                                     <span className="ml-1 text-[15px]">{userData.providers[0] === 'google' ? 'Google Account' : 'Facebook Account'}</span>
                                 </div>
                             </div>

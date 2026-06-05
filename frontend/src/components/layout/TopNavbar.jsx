@@ -26,7 +26,7 @@ const TopNavBar = () => {
   const handleLogin = () => navigate('/login')
 
   return (
-    <div className='h-[80px] w-full px-[3%] flex items-center'>
+    <div className='sticky top-0 bg-white h-[80px] w-full px-[3%] flex items-center z-50'>
       <div className='w-full h-full flex font-[Poppins,sans-serif]'>
         <div className='flex items-center w-[25%] md:w-[25%]'>
           <FontAwesomeIcon
