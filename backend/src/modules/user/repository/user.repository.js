@@ -4,9 +4,13 @@ const User = require("../model/user.model");
 const findById = async (userId) => {
   const result = await pool.query(
     `
-      SELECT id, email, full_name, role, avatar_url
-      FROM public.user_roles
-      WHERE id = $1
+      SELECT 
+        ur.id, ur.email, ur.full_name, ur.role, ur.avatar_url, ur.is_disable,
+        COALESCE(array_agg(DISTINCT i.provider) FILTER (WHERE i.provider IS NOT NULL), '{}') AS providers
+      FROM public.user_roles ur
+      LEFT JOIN auth.identities i ON ur.id = i.user_id
+      WHERE ur.id = $1
+      GROUP BY ur.id, ur.email, ur.full_name, ur.role, ur.avatar_url, ur.is_disable
       LIMIT 1
     `,
     [userId]
@@ -18,9 +22,13 @@ const findById = async (userId) => {
 const findAll = async () => {
   const result = await pool.query(
     `
-      SELECT id, email, full_name, role, avatar_url, provider
-      FROM public.user_roles
-      ORDER BY full_name ASC NULLS LAST, email ASC
+      SELECT 
+        ur.id, ur.email, ur.full_name, ur.role, ur.avatar_url, ur.is_disable,
+        COALESCE(array_agg(DISTINCT i.provider) FILTER (WHERE i.provider IS NOT NULL), '{}') AS providers
+      FROM public.user_roles ur
+      LEFT JOIN auth.identities i ON ur.id = i.user_id
+      GROUP BY ur.id, ur.email, ur.full_name, ur.role, ur.avatar_url, ur.is_disable
+      ORDER BY ur.full_name ASC NULLS LAST, ur.email ASC
     `
   );
 
@@ -41,6 +49,16 @@ const updateById = async (userId, updates) => {
     fields.push(`avatar_url = $${values.length}`);
   }
 
+  if (Object.prototype.hasOwnProperty.call(updates, "role")) {
+    values.push(updates.role);
+    fields.push(`role = $${values.length}`);
+  }
+
+  if (Object.prototype.hasOwnProperty.call(updates, "isDisable")) {
+    values.push(updates.isDisable);
+    fields.push(`is_disable = $${values.length}`);
+  }
+
   if (fields.length === 0) {
     return findById(userId);
   }
@@ -52,12 +70,17 @@ const updateById = async (userId, updates) => {
       UPDATE public.user_roles
       SET ${fields.join(", ")}
       WHERE id = $${values.length}
-      RETURNING id, email, full_name, role, avatar_url, provider
+      RETURNING id, email, full_name, role, avatar_url, is_disable
     `,
     values
   );
 
-  return result.rows[0] ? User.fromDatabase(result.rows[0]) : null;
+  // If update was successful, fetch the complete object with providers
+  if (result.rows[0]) {
+    return findById(userId);
+  }
+
+  return null;
 };
 
 module.exports = {

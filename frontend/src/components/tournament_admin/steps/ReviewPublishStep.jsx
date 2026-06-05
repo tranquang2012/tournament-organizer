@@ -68,7 +68,7 @@ const ReviewPublishStep = ({ data, onGoToStep, onPublish, publishing }) => {
         <Section icon={faFutbol} title="Sport & Participants" onEdit={() => onGoToStep(1)}>
           <Row
             label="Sport"
-            value={data.sport === 'Other' ? data.customSport || 'Other' : data.sport || '—'}
+            value={data.sport || '—'}
           />
           <Row
             label="Participant Type"
@@ -108,8 +108,6 @@ const ReviewPublishStep = ({ data, onGoToStep, onPublish, publishing }) => {
         {/*  Format Configuration */}
         <Section icon={faGear} title="Format Configuration" onEdit={() => onGoToStep(2)}>
           <Row label="Format" value={FORMAT_LABELS[data.format] || '—'} />
-          <Row label="Number of Matches" value={data.numberOfMatches || '—'} />
-          <Row label="Matches per Day" value={data.matchesPerDay || '—'} />
         </Section>
       </div>
 

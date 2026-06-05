@@ -1,11 +1,12 @@
 class User {
-  constructor({ id, email, fullName, role, avatarUrl, provider }) {
+  constructor({ id, email, fullName, role, avatarUrl, isDisable, providers = [] }) {
     this.id = id;
     this.email = email;
     this.fullName = fullName;
     this.role = role;
     this.avatarUrl = avatarUrl;
-    this.provider = provider;
+    this.isDisable = isDisable;
+    this.providers = providers;
   }
 
   static fromDatabase(row) {
@@ -15,7 +16,8 @@ class User {
       fullName: row.full_name,
       role: row.role,
       avatarUrl: row.avatar_url,
-      provider: row.provider,
+      isDisable: row.is_disable,
+      providers: row.providers || [],
     });
   }
 }

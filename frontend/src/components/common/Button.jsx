@@ -76,7 +76,7 @@ export function Button({
     .filter(Boolean)
     .join(" ");
 
-  const iconSize = size === "sm" ? "text-[11px]" : "text-sm";
+  const iconSize = size === "sm" ? "text-[11px] w-3.5" : "text-sm w-4";
 
   return (
     <button

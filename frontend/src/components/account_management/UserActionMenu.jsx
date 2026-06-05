@@ -37,6 +37,7 @@ export function UserActionMenu({ user, isActing, onAction }) {
         icon={isActive ? faBan : faCircleCheck}
         label={isActive ? "Disable" : "Enable"}
         onClick={() => onAction(user, isActive ? "disable" : "enable")}
+        className="w-[90px]"
       />
 
       {/* Promote to Admin */}
@@ -47,6 +48,7 @@ export function UserActionMenu({ user, isActing, onAction }) {
           icon={faUserShield}
           label="Promote"
           onClick={() => onAction(user, "promote")}
+          className="w-[100px]"
         />
       )}
 
@@ -58,6 +60,7 @@ export function UserActionMenu({ user, isActing, onAction }) {
           icon={faUser}
           label="Demote"
           onClick={() => onAction(user, "demote")}
+          className="w-[100px]"
         />
       )}
     </div>
