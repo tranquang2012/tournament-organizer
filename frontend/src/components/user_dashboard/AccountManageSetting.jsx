@@ -66,7 +66,7 @@ const AccountManageSetting = () => {
                 </div>
             </div>
             <div className='text-gray-500 text-[12px] md:text-[14px] mb-6 md:mb-8 md:pl-30'>
-                You can not change your email.
+                You cannot change your email.
             </div>
             <div className='flex flex-col md:flex-row md:items-center mb-2 gap-1 md:gap-0'>
                 <div className='w-full md:w-[120px] text-[14px] md:text-[16px] font-medium'>Username</div>
@@ -81,7 +81,7 @@ const AccountManageSetting = () => {
                 </div>
             </div>
             <div className='text-gray-500 text-[12px] md:text-[14px] mb-6 md:mb-4 md:pl-30'>
-                You can not enter over 15 character!
+                Your name cannot exceed 15 characters!
             </div>
             <div className='flex py-6 md:py-8 gap-x-[3%]'>
                 <button
