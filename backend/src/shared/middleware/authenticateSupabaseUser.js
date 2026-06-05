@@ -42,8 +42,8 @@ const authenticateSupabaseUser = async (req, res, next) => {
 
     const profile = await userRepository.findById(user.id);
 
-    if (profile?.isDisable === true) {
-      throw new AppError("Your account has been disabled.", 403);
+    if (profile?.isDisable) {
+      throw new AppError("Account is disabled.", 403);
     }
 
     req.auth = {

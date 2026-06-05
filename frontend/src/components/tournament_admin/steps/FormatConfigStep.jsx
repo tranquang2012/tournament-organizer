@@ -122,28 +122,7 @@ const FormatConfigStep = ({ data, onChange }) => {
         })}
       </div>
 
-      {/* Configuration fields (visible when a format is selected) */}
-      {data.format && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 p-6">
-          <p className="text-sm font-semibold text-slate-700 m-0 mb-4">Match Settings</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            <InputField
-              label="Number of Matches"
-              type="number"
-              placeholder="e.g. 15"
-              value={data.numberOfMatches || ''}
-              onChange={update('numberOfMatches')}
-            />
-            <InputField
-              label="Matches per Day"
-              type="number"
-              placeholder="e.g. 3"
-              value={data.matchesPerDay || ''}
-              onChange={update('matchesPerDay')}
-            />
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

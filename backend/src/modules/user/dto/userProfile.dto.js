@@ -4,6 +4,8 @@ const toUserProfileDto = (user) => ({
   fullName: user.fullName,
   role: user.role,
   avatarUrl: user.avatarUrl,
+  isDisable: user.isDisable,
+  providers: user.providers,
 });
 
 module.exports = {

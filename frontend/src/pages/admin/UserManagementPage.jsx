@@ -5,7 +5,7 @@ import {
   faSearch,
   faChevronDown,
 } from '@fortawesome/free-solid-svg-icons'
-import { getUsers, updateUserRole, updateUserStatus } from '../../services/AdminService'
+import { getUsers, disableUserAccount, enableUserAccount, promoteUserToAdmin, demoteAdminToUser } from '../../services/AdminService'
 import UserMasterTable from '../../components/account_management/UserMasterTable'
 import ConfirmationModal from '../../components/common/ConfirmationModal'
 import NotificationToast from '../../components/common/NotificationToast'
@@ -94,7 +94,7 @@ const UserManagementPage = () => {
     try {
       switch (action) {
         case 'disable':
-          await updateUserStatus(user.id, 'DISABLED')
+          await disableUserAccount(user.id)
           setUsers((prev) =>
             prev.map((u) => (u.id === user.id ? { ...u, status: 'DISABLED' } : u)),
           )
@@ -102,7 +102,7 @@ const UserManagementPage = () => {
           break
 
         case 'enable':
-          await updateUserStatus(user.id, 'ACTIVE')
+          await enableUserAccount(user.id)
           setUsers((prev) =>
             prev.map((u) => (u.id === user.id ? { ...u, status: 'ACTIVE' } : u)),
           )
@@ -110,7 +110,7 @@ const UserManagementPage = () => {
           break
 
         case 'promote':
-          await updateUserRole(user.id, 'ADMIN')
+          await promoteUserToAdmin(user.id)
           setUsers((prev) =>
             prev.map((u) => (u.id === user.id ? { ...u, role: 'ADMIN' } : u)),
           )
@@ -118,7 +118,7 @@ const UserManagementPage = () => {
           break
 
         case 'demote':
-          await updateUserRole(user.id, 'USER')
+          await demoteAdminToUser(user.id)
           setUsers((prev) =>
             prev.map((u) => (u.id === user.id ? { ...u, role: 'USER' } : u)),
           )

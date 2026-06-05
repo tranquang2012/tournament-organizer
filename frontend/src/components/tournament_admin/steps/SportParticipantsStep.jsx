@@ -240,31 +240,7 @@ const SportParticipantsStep = ({ data, onChange }) => {
           ))}
         </div>
 
-        {/* Custom sport */}
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            onClick={() => handleSportSelect('Other')}
-            className={`
-              px-4 py-2 rounded-xl border-2 text-sm font-medium cursor-pointer
-              transition-all duration-200 bg-white
-              ${data.sport === 'Other'
-                ? 'border-[#123836] text-[#123836]'
-                : 'border-slate-100 text-slate-500 hover:border-slate-200'
-              }
-            `}
-          >
-            Other
-          </button>
-          {data.sport === 'Other' && (
-            <InputField
-              placeholder="Enter sport name..."
-              value={data.customSport || ''}
-              onChange={(e) => update('customSport', e.target.value)}
-              className="flex-1 max-w-[280px]"
-            />
-          )}
-        </div>
+
       </div>
 
       {/*  Add Participants Section */}

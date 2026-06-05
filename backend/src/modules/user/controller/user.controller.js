@@ -38,6 +38,69 @@ const getAllUserProfiles = async (req, res, next) => {
   }
 };
 
+const disableUserAccount = async (req, res, next) => {
+  try {
+    const userProfile = await userService.disableUserAccount({
+      actorUserId: req.auth.userId,
+      actorProfile: req.auth.profile,
+      targetUserId: req.params.userId,
+    });
+
+    res.json({
+      data: userProfile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const enableUserAccount = async (req, res, next) => {
+  try {
+    const userProfile = await userService.enableUserAccount({
+      actorUserId: req.auth.userId,
+      actorProfile: req.auth.profile,
+      targetUserId: req.params.userId,
+    });
+
+    res.json({
+      data: userProfile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const promoteUserToAdmin = async (req, res, next) => {
+  try {
+    const userProfile = await userService.promoteUserToAdmin({
+      actorProfile: req.auth.profile,
+      targetUserId: req.params.userId,
+    });
+
+    res.json({
+      data: userProfile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const demoteAdminToUser = async (req, res, next) => {
+  try {
+    const userProfile = await userService.demoteAdminToUser({
+      actorUserId: req.auth.userId,
+      actorProfile: req.auth.profile,
+      targetUserId: req.params.userId,
+    });
+
+    res.json({
+      data: userProfile,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 const updateCurrentUserProfile = async (req, res, next) => {
   try {
     const userProfile = await userService.updateCurrentUserProfile(
@@ -73,6 +136,10 @@ module.exports = {
   getUserProfile,
   getCurrentUserProfile,
   getAllUserProfiles,
+  disableUserAccount,
+  enableUserAccount,
+  promoteUserToAdmin,
+  demoteAdminToUser,
   updateCurrentUserProfile,
   uploadCurrentUserAvatar,
 };
