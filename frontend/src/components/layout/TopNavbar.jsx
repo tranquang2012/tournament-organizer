@@ -56,13 +56,13 @@ const TopNavBar = () => {
           </Link>
         </div>
         <div className='hidden md:flex w-[25%] justify-end items-center'>
-          <div className='flex items-center justify-center mx-[20%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'>
+          <div className='flex items-center justify-center mx-[15%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'>
             <FontAwesomeIcon icon={faHeadset} className='text-[28px]' />
             <span className='text-[12px] text-[#123826] ml-1'>Support</span>
           </div>
 
           <div
-            className='flex flex-col items-center w-[20%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'
+            className='flex flex-col items-center w-[26%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'
             onClick={() => navigate('/account-management')}
           >
             <FontAwesomeIcon icon={faUser} className='text-[28px]' />
@@ -70,13 +70,23 @@ const TopNavBar = () => {
           </div>
 
           <div className='hover:bg-gray-300 rounded-[5px] p-1'>
-            {isLogin
-              ? <FontAwesomeIcon icon={faRightFromBracket} className='text-[28px] cursor-pointer' onClick={handleLogout} />
-              : <FontAwesomeIcon icon={faRightToBracket} className='text-[28px] cursor-pointer' onClick={handleLogin} />
+            {isLogin ?
+              (
+                <div className='flex flex-col items-center w-full cursor-pointer hover:bg-gray-300 rounded-[5px] p-1 cursor-pointer'  onClick={handleLogout}>
+                  <FontAwesomeIcon icon={faRightFromBracket} className='text-[28px]' />
+                  <span className='text-[12px] text-[#123826]'>Sign out</span>
+                </div>
+              )
+              : 
+              (
+                <div className='flex flex-col items-center w-full cursor-pointer hover:bg-gray-300 rounded-[5px] p-1 cursor-pointer'  onClick={handleLogin}>
+                  <FontAwesomeIcon icon={faRightToBracket} className='text-[28px]' />
+                  <span className='text-[12px] text-[#123826]'>Sign in</span>
+                </div>
+              )
             }
           </div>
         </div>
-
       </div>
       <PublicSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>
