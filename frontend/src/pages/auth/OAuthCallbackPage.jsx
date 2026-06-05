@@ -53,7 +53,7 @@ const OAuthCallbackPage = () => {
         if (isDisabledAccountError(profileError)) {
           console.log(getAuthErrorMessage(profileError))
           await supabase.auth.signOut()
-          navigate('/login', { replace: true })
+          navigate('/login?error_description=Your%20account%20has%20been%20disabled', { replace: true })
           return
         }
 
