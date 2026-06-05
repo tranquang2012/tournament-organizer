@@ -1,13 +1,36 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../config/supabaseClient'
 import { getAuthErrorMessage, getCurrentUserProfile, isDisabledAccountError, normalizeRole } from '../services/AuthService'
 import { AuthContext } from './authContext'
 
+const disabledAccountLoginPath = '/login?error_description=Your%20account%20has%20been%20disabled'
+
 export const AuthProvider = ({ children }) => {
+  const navigate = useNavigate()
   const [session, setSession] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
+  const [loginRedirectPath, setLoginRedirectPath] = useState(null)
+
+  const clearLoginRedirectPath = useCallback(() => {
+    setLoginRedirectPath(null)
+  }, [])
+
+  const redirectDisabledAccount = useCallback((error) => {
+    console.log(getAuthErrorMessage(error))
+    setLoginRedirectPath(disabledAccountLoginPath)
+    navigate(disabledAccountLoginPath, { replace: true })
+    setSession(null)
+    setProfile(null)
+    setLoading(false)
+    setProfileLoading(false)
+
+    void supabase.auth.signOut({ scope: 'local' }).catch((signOutError) => {
+      console.error('Failed to clear disabled account session:', signOutError.message)
+    })
+  }, [navigate])
 
   const loadProfileForSession = useCallback(async (currentSession) => {
     if (!currentSession?.access_token) {
@@ -20,6 +43,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await getCurrentUserProfile(currentSession.access_token)
       const currentProfile = response.data
+      setLoginRedirectPath(null)
       setProfile(currentProfile)
       return currentProfile
     } finally {
@@ -51,8 +75,7 @@ export const AuthProvider = ({ children }) => {
         const isDisabledAccount = isDisabledAccountError(error)
 
         if (isDisabledAccount) {
-          console.log(getAuthErrorMessage(error))
-          await supabase.auth.signOut()
+          redirectDisabledAccount(error)
         }
 
         if (mounted) {
@@ -92,9 +115,8 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         console.error('Failed to refresh user profile:', error.message)
         if (isDisabledAccountError(error)) {
-          console.log(getAuthErrorMessage(error))
-          await supabase.auth.signOut()
-          setSession(null)
+          redirectDisabledAccount(error)
+          return
         }
 
         setProfile(null)
@@ -107,7 +129,7 @@ export const AuthProvider = ({ children }) => {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [loadProfileForSession, refreshProfile])
+  }, [loadProfileForSession, refreshProfile, redirectDisabledAccount])
 
   const role = normalizeRole(profile?.role)
 
@@ -124,9 +146,11 @@ export const AuthProvider = ({ children }) => {
       isUser: role === 'USER',
       isAdmin: role === 'ADMIN' || role === 'SUPER_ADMIN',
       isSuperAdmin: role === 'SUPER_ADMIN',
+      loginRedirectPath,
+      clearLoginRedirectPath,
       refreshProfile,
     }),
-    [session, profile, role, loading, profileLoading, refreshProfile],
+    [session, profile, role, loading, profileLoading, loginRedirectPath, clearLoginRedirectPath, refreshProfile],
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
