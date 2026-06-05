@@ -3,6 +3,7 @@ import {
   faShieldHalved,
   faUserShield,
   faUser,
+  faEnvelope,
 } from '@fortawesome/free-solid-svg-icons'
 import { faFacebook, faGoogle } from '@fortawesome/free-brands-svg-icons'
 import StatusBadge from '../common/StatusBadge'
@@ -59,12 +60,31 @@ const UserTableRow = ({ user, isActing, onAction }) => {
             <span className="text-sm font-semibold text-slate-800 leading-tight">
               {user.name}
             </span>
-            <span className="flex items-center gap-1.5 text-xs text-slate-400 mt-0.5">
-              <FontAwesomeIcon
-                icon={user.provider === 'facebook' ? faFacebook : faGoogle}
-                style={{ color: user.provider === 'facebook' ? '#1877f2' : '#ea4335' }}
-              />
-              {user.provider === 'facebook' ? 'Facebook' : 'Google'}
+            <span className="flex items-center gap-2.5 text-xs text-slate-400 mt-0.5">
+              {user.providers && user.providers.length > 0 ? (
+                user.providers.map((p) => {
+                  let icon = null;
+                  let color = '#94a3b8';
+                  if (p === 'facebook') {
+                    icon = faFacebook;
+                    color = '#1877f2';
+                  } else if (p === 'google') {
+                    icon = faGoogle;
+                    color = '#ea4335';
+                  } else if (p === 'email') {
+                    icon = faEnvelope;
+                    color = '#f59e0b';
+                  }
+                  return (
+                    <span key={p} className="flex items-center gap-1 capitalize">
+                      {icon && <FontAwesomeIcon icon={icon} style={{ color }} />}
+                      {p}
+                    </span>
+                  );
+                })
+              ) : (
+                <span className="capitalize">Unknown</span>
+              )}
             </span>
           </div>
         </div>

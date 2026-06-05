@@ -5,6 +5,7 @@ const toUserProfileDto = (user) => ({
   role: user.role,
   avatarUrl: user.avatarUrl,
   isDisable: user.isDisable,
+  providers: user.providers,
 });
 
 module.exports = {

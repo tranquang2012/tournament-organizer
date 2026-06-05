@@ -24,7 +24,7 @@ export async function getUsers() {
       email: user.email,
       role: normalizeRole(user.role) || "USER",
       status: user.isDisable ? "DISABLED" : "ACTIVE",
-      provider: "email",
+      providers: user.providers || [],
       avatarUrl: user.avatarUrl
     })),
     totalCount: data.length,
