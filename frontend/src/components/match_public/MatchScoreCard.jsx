@@ -45,7 +45,7 @@ const MatchScoreCard = ({ match }) => {
                     </div>
                 </div>
                 <div className='absolute inset-0 flex flex-col items-center justify-center gap-4 pointer-events-none'>
-                    <div className='flex items-center mt-[5%]'>
+                    <div className='flex items-center mt-[3%]'>
                         <span className='text-[20px] md:text-[32px] font-bold text-black mr-1'>{match.score1}</span>
                         <span className='text-[20px] md:text-[28px] font-bold text-black'>—</span>
                         <span className='text-[20px] md:text-[28px] font-bold text-white'>—</span>
