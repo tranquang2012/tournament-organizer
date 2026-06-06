@@ -1,23 +1,57 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faPencil, faBell, faCalendarCheck, faTrophy } from '@fortawesome/free-solid-svg-icons';
+import { faCircle } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect, useCallback } from 'react'
-import { useAuth } from '../../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 
-const MatchScoreCard = () => {
+import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
+import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
+import logo3 from '../../assets/defaultTeamLogos/logo3.jpg'
+import trophy from '../../assets/trophy.png'
 
-    const { profile: userData, accessToken, refreshProfile } = useAuth()
+const MatchScoreCard = ({ match }) => {
+    const isCompleted = match.status === 'completed';
+    const navigate = useNavigate();
+
+    const team1Losing = match.score1 < match.score2;
+    const team2Losing = match.score2 < match.score1;
 
     return (
-        <div className='w-full flex flex-col gap-3'>
-            <span className='text-[18px] md:text-[25px] font-semibold'>Tournament Name</span>
-            <span className='text-[12px] md:text-[17px] font-normal'>Match 11- Group A Match</span>
-            <div className='flex w-full h-[150px] md:h-[230px]  border border-[#d9d9d9] rounded-lg'>
-                <div className='flex flex-col w-[50%] gap-1'>
-                    <span className='text-[15px]'>Date: 08/02/2027</span>
-                    <span className='text-[15px]'>Time: 03:00 PM</span>
+        <div className='w-full flex flex-col gap-3 cursor-pointer group' onClick={() => navigate(`./matches/${match.matchNumber}`)}>
+            <span className='text-[18px] md:text-[25px] font-semibold'>{match.tournamentName}</span>
+            <span className='text-[12px] md:text-[17px] font-normal'>Match {match.matchNumber} - {match.round} Match</span>
+            <div className='relative flex w-full h-[150px] md:h-[230px] border border-[#d9d9d9] rounded-lg shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:scale-[1.02] group-hover:border-[#123836]'>
+                <div className='flex flex-col w-[50%] mt-1'>
+                    <span className='text-[15px] h-[10%]'>Date: {match.date}</span>
+                    <span className='text-[15px] h-[10%]'>Time: {match.time}</span>
+                    <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team1Losing ? 'opacity-40' : ''}`}>
+                        <img src={logo1} alt='logoteam1' className='w-10 h-10 md:h-15 md:w-15 object-contain' />
+                        <span className='text-[15px] font-black'>{match.team1}</span>
+                    </div>
                 </div>
-                <div className='w-[50%] bg-[#123836] rounded-tr-lg rounded-br-lg'>
-
+                <div className='flex flex-col w-[50%] bg-[#123836] rounded-tr-lg rounded-br-lg text-white'>
+                    <div className='text-[20px] h-[20%] text-right mt-1 flex items-center justify-end'>
+                        {isCompleted ? (
+                            <FontAwesomeIcon icon={faCircle} className='text-green-400 mr-1' />
+                        ) : (
+                            <FontAwesomeIcon icon={faCircle} className='text-red-500 mr-1 animate-pulse' />
+                        )}
+                        <span className='mr-2 text-[13px] md:text-[16px]'>
+                            {isCompleted ? 'Completed' : `${match.minute}'`}
+                        </span>
+                    </div>
+                    <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team2Losing ? 'opacity-40' : ''}`}>
+                        <img src={logo2} alt='logoteam2' className='w-10 h-10 md:h-15 md:w-15 object-contain' />
+                        <span className='text-[15px] font-black'>{match.team2}</span>
+                    </div>
+                </div>
+                <div className='absolute inset-0 flex flex-col items-center justify-center gap-4 pointer-events-none'>
+                    <div className='flex items-center mt-[5%]'>
+                        <span className='text-[20px] md:text-[32px] font-bold text-black mr-1'>{match.score1}</span>
+                        <span className='text-[20px] md:text-[28px] font-bold text-black'>—</span>
+                        <span className='text-[20px] md:text-[28px] font-bold text-white'>—</span>
+                        <span className='text-[20px] md:text-[32px] font-bold text-white ml-1'>{match.score2}</span>
+                    </div>
+                    <img src={trophy} alt='trophy' className='w-10 h-10 md:h-13 md:w-13 object-contain' />
                 </div>
             </div>
         </div>

@@ -42,7 +42,7 @@ const TopNavBar = () => {
           />
         </div>
         <div className='hidden md:flex w-[50%] justify-between items-center'>
-          <Link to="/sports" className='text-[18px] text-[#123826] no-underline'>
+          <Link to="/sports/football" className='text-[18px] text-[#123826] no-underline'>
             <div><b>Sports</b></div>
             <div className='font-medium text-[12px]'>Opportunities to explore sports world</div>
           </Link>
@@ -72,14 +72,14 @@ const TopNavBar = () => {
           <div className='hover:bg-gray-300 rounded-[5px] p-1'>
             {isLogin ?
               (
-                <div className='flex flex-col items-center w-full cursor-pointer hover:bg-gray-300 rounded-[5px] p-1 cursor-pointer'  onClick={handleLogout}>
+                <div className='flex flex-col items-center w-full cursor-pointer hover:bg-gray-300 rounded-[5px] p-1 cursor-pointer' onClick={handleLogout}>
                   <FontAwesomeIcon icon={faRightFromBracket} className='text-[28px]' />
                   <span className='text-[12px] text-[#123826]'>Sign out</span>
                 </div>
               )
-              : 
+              :
               (
-                <div className='flex flex-col items-center w-full cursor-pointer hover:bg-gray-300 rounded-[5px] p-1 cursor-pointer'  onClick={handleLogin}>
+                <div className='flex flex-col items-center w-full cursor-pointer hover:bg-gray-300 rounded-[5px] p-1 cursor-pointer' onClick={handleLogin}>
                   <FontAwesomeIcon icon={faRightToBracket} className='text-[28px]' />
                   <span className='text-[12px] text-[#123826]'>Sign in</span>
                 </div>
