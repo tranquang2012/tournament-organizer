@@ -16,16 +16,19 @@ const MatchScoreCard = ({ match }) => {
     const team2Losing = match.score2 < match.score1;
 
     return (
-        <div className='w-full flex flex-col gap-3 cursor-pointer group' onClick={() => navigate(`./matches/${match.matchNumber}`)}>
+        <div className='w-full flex flex-col gap-3'>
             <span className='text-[18px] md:text-[25px] font-semibold'>{match.tournamentName}</span>
             <span className='text-[12px] md:text-[17px] font-normal'>Match {match.matchNumber} - {match.round} Match</span>
-            <div className='relative flex w-full h-[150px] md:h-[230px] border border-[#d9d9d9] rounded-lg shadow-md transition-all duration-300 group-hover:shadow-xl group-hover:scale-[1.02] group-hover:border-[#123836]'>
+            <div className='relative flex w-full h-[150px] md:h-[230px] border border-[#d9d9d9] cursor-pointer 
+                rounded-lg shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-[#123836]'
+                onClick={() => navigate(`./matches/${match.matchNumber}`)}
+            >
                 <div className='flex flex-col w-[50%] mt-1'>
                     <span className='text-[15px] h-[10%]'>Date: {match.date}</span>
                     <span className='text-[15px] h-[10%]'>Time: {match.time}</span>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team1Losing ? 'opacity-40' : ''}`}>
                         <img src={logo1} alt='logoteam1' className='w-10 h-10 md:h-15 md:w-15 object-contain' />
-                        <span className='text-[15px] font-black'>{match.team1}</span>
+                        <span className='text-[15px] font-black uppercase'>{match.team1}</span>
                     </div>
                 </div>
                 <div className='flex flex-col w-[50%] bg-[#123836] rounded-tr-lg rounded-br-lg text-white'>
@@ -41,7 +44,7 @@ const MatchScoreCard = ({ match }) => {
                     </div>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team2Losing ? 'opacity-40' : ''}`}>
                         <img src={logo2} alt='logoteam2' className='w-10 h-10 md:h-15 md:w-15 object-contain' />
-                        <span className='text-[15px] font-black'>{match.team2}</span>
+                        <span className='text-[15px] font-black uppercase'>{match.team2}</span>
                     </div>
                 </div>
                 <div className='absolute inset-0 flex flex-col items-center justify-center gap-4 pointer-events-none'>

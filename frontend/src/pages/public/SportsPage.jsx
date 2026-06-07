@@ -1,10 +1,13 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
+import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { useParams } from 'react-router-dom'
+import { useState } from 'react'
 
 import football from '../../assets/sportImages/football.jpg'
 
 //import component
 import MatchScoreCard from '../../components/match_public/MatchScoreCard'
+import TournamentCard from '../../components/tournament_public/TournamentCard'
 
 
 const matchItems = [
@@ -13,13 +16,31 @@ const matchItems = [
   { tournamentName: 'Tournament Football 2', matchNumber: '5', round: 'Group B', date: '06/02/2027', time: '05:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 0, score2: 2, status: 'completed', minute: '90:00' },
 ];
 
+const tournamentItemsOnGoing = [
+  { name: 'Tournament Football 1', startDate: '27/01/2027', endDate: '10/02/2027', status: 'Ongoing' },
+  { name: 'Tournament Football 2', startDate: '28/01/2027', endDate: '11/02/2027', status: 'Ongoing' },
+];
+
+const tournamentItemsCompleted = [
+  { name: 'Tournament Football 3', startDate: '20/01/2027', endDate: '30/01/2027', status: 'Ended' },
+  { name: 'Tournament Football 4', startDate: '22/01/2027', endDate: '01/02/2027', status: 'Ended' },
+];
+
+const tournamentItemsUpcoming = [
+  { name: 'Tournament Football 5', startDate: '01/02/2027', endDate: '15/02/2027', status: 'Upcoming' },
+  { name: 'Tournament Football 6', startDate: '05/02/2027', endDate: '20/02/2027', status: 'Upcoming' },
+];
+
 const SportsPage = () => {
 
   const { id } = useParams()
 
+  const [isOpenOngoing, setIsOpenOngoing] = useState(true);
+  const [isOpenUpcoming, setIsOpenUpcoming] = useState(false);
+  const [isOpenCompleted, setIsOpenCompleted] = useState(false);
+
   return (
     <div>
-      {/* sport title */}
       <div className='relative h-[150px] w-full overflow-hidden bg-black'>
         <img src={football} alt={id} className='h-full w-full object-cover object-center opacity-70' />
         <div className='absolute inset-0 left-[50%] flex items-center justify-center'>
@@ -38,8 +59,40 @@ const SportsPage = () => {
             <MatchScoreCard key={index} match={match} />
           ))}
         </div>
-        <div className='w-full md:w-[40%] h-[400px] ml-5'>
-          <span className='text-[18px] md:text-[25px] font-semibold text-[#123836]'>Tournament 1</span>
+        <div className='flex flex-col w-full md:w-[40%] ml-5 gap-3'>
+          <div className='flex items-center justify-between cursor-pointer' onClick={() => setIsOpenOngoing(!isOpenOngoing)}>
+            <span className='text-[18px] md:text-[25px] font-semibold text-[#123836]' >Ongoing Tournaments</span>
+            <FontAwesomeIcon icon={faChevronDown} className={`text-[20px] transition-transform duration-300 ${isOpenOngoing ? 'rotate-180' : ''}`} />
+          </div>
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpenOngoing ? 'max-h-[600px] mb-3' : 'max-h-0'}`}>
+            <div className='flex flex-col gap-5'>
+              {tournamentItemsOnGoing.map((tournament, index) => (
+                <TournamentCard key={index} tournament={tournament} />
+              ))}
+            </div>
+          </div>
+          <div className='flex items-center justify-between cursor-pointer' onClick={() => setIsOpenUpcoming(!isOpenUpcoming)}>
+            <span className='text-[18px] md:text-[25px] font-semibold text-[#123836]' >Upcoming Tournaments</span>
+            <FontAwesomeIcon icon={faChevronDown} className={`text-[20px] transition-transform duration-300 ${isOpenUpcoming ? 'rotate-180' : ''}`} />
+          </div>
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpenUpcoming ? 'max-h-[600px] mb-3' : 'max-h-0'}`}>
+            <div className='flex flex-col gap-5'>
+              {tournamentItemsUpcoming.map((tournament, index) => (
+                <TournamentCard key={index} tournament={tournament} />
+              ))}
+            </div>
+          </div>
+          <div className='flex items-center justify-between cursor-pointer' onClick={() => setIsOpenCompleted(!isOpenCompleted)}>
+            <span className='text-[18px] md:text-[25px] font-semibold text-[#123836]' >Past Tournaments</span>
+            <FontAwesomeIcon icon={faChevronDown} className={`text-[20px] transition-transform duration-300 ${isOpenCompleted ? 'rotate-180' : ''}`} />
+          </div>
+          <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpenCompleted ? 'max-h-[600px] mb-3' : 'max-h-0'}`}>
+            <div className='flex flex-col gap-5'>
+              {tournamentItemsCompleted.map((tournament, index) => (
+                <TournamentCard key={index} tournament={tournament} />
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </div>

@@ -8,7 +8,7 @@ const PublicFooter = () => {
             <div className='grid grid-cols-2 md:grid-cols-4 gap-15 md:gap-53'>
                 <div className='flex flex-col gap-3'>
                     <span className='font-bold text-[20px] tracking-widest uppercase'>Footer Content</span>
-                    <p className='text-[15px] text-gray-300 leading-relaxed'>
+                    <p className='text-[15px] text-gray-300'>
                         This is a web application developed by DTech Team for Netcompany
                     </p>
                 </div>
