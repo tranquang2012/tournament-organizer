@@ -1,5 +1,4 @@
 /**
- * Validates and sanitizes the General Details (Step 1) payload.
  * @param {object} body - req.body
  * @returns {{ data: object|null, errors: string[]|null }}
  */
@@ -15,7 +14,6 @@ function validateCreateTournamentDto(body) {
     banner_image_url,
   } = body;
 
-  // --- Required fields ---
   if (!tournament_name || typeof tournament_name !== 'string' || !tournament_name.trim()) {
     errors.push('tournament_name is required.');
   } else if (tournament_name.trim().length > 150) {
@@ -34,14 +32,12 @@ function validateCreateTournamentDto(body) {
     errors.push('end_date must be a valid date (mm/dd/yyyy or ISO format).');
   }
 
-  // Cross-field: end must be after start
   if (start_date && end_date && !isNaN(Date.parse(start_date)) && !isNaN(Date.parse(end_date))) {
     if (new Date(end_date) < new Date(start_date)) {
       errors.push('end_date must be on or after start_date.');
     }
   }
 
-  // --- Optional fields ---
   if (description && typeof description === 'string' && description.trim().length > 2000) {
     errors.push('description must be 2000 characters or fewer.');
   }

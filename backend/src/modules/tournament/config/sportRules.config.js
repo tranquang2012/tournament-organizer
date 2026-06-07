@@ -13,12 +13,9 @@ const ALL_EXCEPT_ROUND_SCORING = [
 
 const ROUND_SCORING_ONLY = [FORMATS.ROUND_SCORING];
 
-/**
- * Key = sp_id (integer) matching your sport table.
- * Update sp_id values to match whatever is in your DB.
- */
+
 const SPORT_RULES = {
-  // ── Common Sports ──────────────────────────────────────────────
+  //Common Sports
   1: {
     sport_name:        'Football',
     participant_types: ['team'],
@@ -50,7 +47,7 @@ const SPORT_RULES = {
     formats:           ROUND_SCORING_ONLY,
   },
 
-  // ── E-Sports ───────────────────────────────────────────────────
+  //E-Sports
   7: {
     sport_name:        'League of Legends',
     participant_types: ['individual', 'team'],
@@ -83,9 +80,6 @@ const SPORT_RULES = {
   },
 };
 
-/**
- * Helper: get rules for a sport, throws if not found.
- */
 function getSportRules(sp_id) {
   const rules = SPORT_RULES[Number(sp_id)];
   if (!rules) return null;

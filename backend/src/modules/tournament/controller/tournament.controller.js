@@ -1,7 +1,7 @@
 const service = require('../service/tournament.service');
 
 class TournamentController {
-  // Step 1
+  //Step 1
   async createGeneralDetails(req, res, next) {
     try {
       const data = await service.createGeneralDetails(req.body, req.user.id);
@@ -16,7 +16,7 @@ class TournamentController {
     } catch (err) { next(err); }
   }
 
-  // Step 2
+  //Step 2
   async saveSportAndParticipants(req, res, next) {
     try {
       const data = await service.saveSportAndParticipants(req.params.id, req.body, req.user.id);
@@ -24,7 +24,7 @@ class TournamentController {
     } catch (err) { next(err); }
   }
 
-  // Step 3
+  //Step 3
   async saveFormatConfig(req, res, next) {
     try {
       const data = await service.saveFormatConfig(req.params.id, req.body, req.user.id);
@@ -32,7 +32,7 @@ class TournamentController {
     } catch (err) { next(err); }
   }
 
-  // Step 4
+  //Step 4
   async getReview(req, res, next) {
     try {
       const data = await service.getReviewData(req.params.id, req.user.id);

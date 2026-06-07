@@ -9,7 +9,6 @@ function validateFormatConfigDto(body, sp_id) {
     return { data: null, errors };
   }
 
-  // ── Validate against sport rules ─────────────────────────────────
   if (!sp_id) {
     errors.push('Sport must be selected (Step 2) before configuring format.');
     return { data: null, errors };

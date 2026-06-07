@@ -5,7 +5,7 @@ const { validateSportParticipantsDto }   = require('../dto/sportParticipants.dto
 const { validateFormatConfigDto }        = require('../dto/formatConfig.dto');
 
 class TournamentService {
-  // ── Step 1 ────────────────────────────────────────────────────────
+  //Step 1
   async createGeneralDetails(body, organizerId) {
     const { data, errors } = validateCreateTournamentDto(body);
     if (errors) throw new AppError(errors.join(' | '), 400);
@@ -21,7 +21,7 @@ class TournamentService {
     return updated;
   }
 
-  // ── Step 2 ────────────────────────────────────────────────────────
+  //Step 2
   async saveSportAndParticipants(tourId, body, organizerId) {
     await this._assertExists(tourId, organizerId);
     const { data, errors } = validateSportParticipantsDto(body);
@@ -29,7 +29,7 @@ class TournamentService {
     return repo.saveSportAndParticipants(tourId, data, organizerId);
   }
 
-  // ── Step 3 ────────────────────────────────────────────────────────
+  //Step 3
   async saveFormatConfig(tourId, body, organizerId) {
     // Fetch current tournament to get its sp_id for format validation
     const tournament = await this._assertExists(tourId, organizerId);
@@ -45,7 +45,7 @@ class TournamentService {
     return updated;
   }
 
-  // ── Step 4 ────────────────────────────────────────────────────────
+  //Step 4
   async getReviewData(tourId, organizerId) {
     const tournament = await repo.getFullTournament(tourId, organizerId);
     if (!tournament) throw new AppError('Tournament not found.', 404);
@@ -65,7 +65,7 @@ class TournamentService {
     return published;
   }
 
-  // ── Helper ────────────────────────────────────────────────────────
+
   async _assertExists(tourId, organizerId) {
     const t = await repo.findById(tourId, organizerId);
     if (!t) throw new AppError('Tournament not found or access denied.', 404);

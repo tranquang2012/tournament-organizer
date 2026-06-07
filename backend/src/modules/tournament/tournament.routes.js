@@ -10,17 +10,17 @@ router.get('/sport-rules', (req, res) => {
   res.json({ success: true, data: SPORT_RULES });
 });
 
-// Step 1
+//Step 1
 router.post('/',                              ctrl.createGeneralDetails.bind(ctrl));
 router.patch('/:id/general-details',          ctrl.updateGeneralDetails.bind(ctrl));
 
-// Step 2
+//Step 2
 router.patch('/:id/sport-participants',       ctrl.saveSportAndParticipants.bind(ctrl));
 
-// Step 3
+//Step 3
 router.patch('/:id/format-config',            ctrl.saveFormatConfig.bind(ctrl));
 
-// Step 4
+//Step 4
 router.get('/:id/review',                     ctrl.getReview.bind(ctrl));
 router.post('/:id/publish',                   ctrl.publish.bind(ctrl));
 

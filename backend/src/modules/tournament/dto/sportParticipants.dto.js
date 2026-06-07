@@ -6,10 +6,9 @@ function validateSportParticipantsDto(body) {
   const errors = [];
   const { sp_id, participant_type, participants } = body;
 
-  // ── sp_id ────────────────────────────────────────────────────────
   if (sp_id === undefined || sp_id === null || sp_id === '') {
     errors.push('sp_id (sport) is required.');
-    return { data: null, errors }; // can't continue without a valid sport
+    return { data: null, errors }; 
   }
 
   const rules = getSportRules(sp_id);
@@ -18,25 +17,21 @@ function validateSportParticipantsDto(body) {
     return { data: null, errors };
   }
 
-  // ── participant_type ─────────────────────────────────────────────
   if (!participant_type) {
     errors.push('participant_type is required.');
   } else if (!['individual', 'team'].includes(participant_type.toLowerCase())) {
     errors.push("participant_type must be 'individual' or 'team'.");
   } else if (!rules.participant_types.includes(participant_type.toLowerCase())) {
-    // Core constraint: sport doesn't support this type
     errors.push(
       `'${rules.sport_name}' does not support '${participant_type}' participants. ` +
       `Allowed: ${rules.participant_types.join(', ')}.`
     );
   }
 
-  // Stop here if type is invalid — participant validation depends on it
   if (errors.length > 0) return { data: null, errors };
 
   const type = participant_type.toLowerCase();
 
-  // ── participants array ───────────────────────────────────────────
   if (participants !== undefined) {
     if (!Array.isArray(participants)) {
       errors.push('participants must be an array.');
@@ -87,7 +82,7 @@ function validateSportParticipantsDto(body) {
       sp_id:            Number(sp_id),
       participant_type: type,
       participants:     participants || [],
-      _rules:           rules, // pass to service layer for format pre-validation
+      _rules:           rules,
     },
   };
 }
