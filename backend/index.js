@@ -4,21 +4,19 @@ require("dotenv").config();
 
 const app = express();
 
-const userRoutes = require("./src/modules/user/user.routes");
-const errorHandler = require("./src/shared/middleware/errorHandler");
-
-const tournamentRoutes = require('./src/modules/tournament/tournament.routes');
-app.use('/api/tournaments', tournamentRoutes);
-
-
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
+
+const userRoutes = require("./src/modules/user/user.routes");
+const errorHandler = require("./src/shared/middleware/errorHandler");
+const tournamentRoutes = require('./src/modules/tournament/tournament.routes');
 
 app.get("/", (req, res) => {
   res.send("Backend running");
 });
 
 app.use("/api/users", userRoutes);
+app.use('/api/tournaments', tournamentRoutes);
 
 app.use(errorHandler);
 

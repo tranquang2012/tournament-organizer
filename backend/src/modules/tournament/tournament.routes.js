@@ -4,11 +4,11 @@ const ctrl = require('./controller/tournament.controller');
 const auth = require('../../shared/middleware/authenticateSupabaseUser');
 const { SPORT_RULES } = require('./config/sportRules.config');
 
-router.use(auth);
-
 router.get('/sport-rules', (req, res) => {
   res.json({ success: true, data: SPORT_RULES });
 });
+
+router.use(auth);
 
 //Step 1
 router.post('/',                              ctrl.createGeneralDetails.bind(ctrl));
