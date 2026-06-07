@@ -2,10 +2,14 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
+const app = express();
+
 const userRoutes = require("./src/modules/user/user.routes");
 const errorHandler = require("./src/shared/middleware/errorHandler");
 
-const app = express();
+const tournamentRoutes = require('./src/modules/tournament/tournament.routes');
+app.use('/api/tournaments', tournamentRoutes);
+
 
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
