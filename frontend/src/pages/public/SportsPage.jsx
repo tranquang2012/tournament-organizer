@@ -33,7 +33,7 @@ const SportsPage = () => {
         <div className='w-[40%]'>Tournament List</div>
       </div>
       <div className='flex px-[5%] md:px-[10%] py-5'>
-        <div className='flex flex-col gap-10 w-full pr-5 md:w-[60%] h-[100vh] border-r border-[#d9d9d9]'>
+        <div className='flex flex-col gap-10 w-full pr-5 md:w-[60%] border-r border-[#d9d9d9]'>
           {matchItems.map((match, index) => (
             <MatchScoreCard key={index} match={match} />
           ))}

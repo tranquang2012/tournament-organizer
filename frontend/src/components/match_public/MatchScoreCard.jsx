@@ -47,8 +47,8 @@ const MatchScoreCard = ({ match }) => {
                 <div className='absolute inset-0 flex flex-col items-center justify-center gap-4 pointer-events-none'>
                     <div className='flex items-center mt-[3%]'>
                         <span className='text-[20px] md:text-[32px] font-bold text-black mr-1'>{match.score1}</span>
-                        <span className='text-[20px] md:text-[28px] font-bold text-black'>—</span>
-                        <span className='text-[20px] md:text-[28px] font-bold text-white'>—</span>
+                        <span className='text-[20px] md:text-[15px] font-black text-black'>—</span>
+                        <span className='text-[20px] md:text-[15px] font-black text-white'>—</span>
                         <span className='text-[20px] md:text-[32px] font-bold text-white ml-1'>{match.score2}</span>
                     </div>
                     <img src={trophy} alt='trophy' className='w-10 h-10 md:h-13 md:w-13 object-contain' />
