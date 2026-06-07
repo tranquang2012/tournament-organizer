@@ -4,9 +4,9 @@ import PublicFooter from './PublicFooter'
 
 const PublicLayout = () => {
   return (
-    <div className="min-h-screen bg-[#ffffff]">
+    <div className="flex flex-col min-h-screen">
       <TopNavBar />
-      <main>
+      <main className='flex-1'>
         <Outlet />
       </main>
       <PublicFooter />

@@ -45,7 +45,7 @@ const TournamentCard = ({ tournament }) => {
                     <FontAwesomeIcon icon={faStar} className='text-gray-400 text-[18px] mr-1 hover:text-yellow-500/50 transition-colors duration-300'
                         onClick={(e) => {
                             e.stopPropagation();
-                            setFavorite(true);
+                            setFavorite(!favorite);
                         }}
                     />
                 )}

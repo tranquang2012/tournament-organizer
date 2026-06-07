@@ -10,10 +10,32 @@ import trophy from '../../assets/trophy.png'
 
 const MatchScoreCard = ({ match }) => {
     const isCompleted = match.status === 'completed';
+    const isOngoing = match.status === 'ongoing';
     const navigate = useNavigate();
 
     const team1Losing = match.score1 < match.score2;
     const team2Losing = match.score2 < match.score1;
+
+    const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+    useEffect(() => {
+        if (!isOngoing || !match.startTime) return;
+        const updateElapsed = () => {
+            const start = new Date(match.startTime).getTime();
+            const now = Date.now();
+            const diff = Math.floor((now - start) / 1000);
+            setElapsedSeconds(diff > 0 ? diff : 0);
+        };
+        updateElapsed();
+        const interval = setInterval(updateElapsed, 1000);
+        return () => clearInterval(interval);
+    }, [isOngoing, match.startTime]);
+
+    const formatTime = (totalSeconds) => {
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}'`;
+    };
 
     return (
         <div className='w-full flex flex-col gap-3'>
@@ -39,7 +61,7 @@ const MatchScoreCard = ({ match }) => {
                             <FontAwesomeIcon icon={faCircle} className='text-red-500 mr-1 animate-pulse' />
                         )}
                         <span className='mr-2 text-[13px] md:text-[16px]'>
-                            {isCompleted ? 'Completed' : `${match.minute}'`}
+                            {isCompleted ? 'Completed' : formatTime(elapsedSeconds)}
                         </span>
                     </div>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team2Losing ? 'opacity-40' : ''}`}>
