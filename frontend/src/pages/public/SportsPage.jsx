@@ -3,7 +3,8 @@ import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { useParams } from 'react-router-dom'
 import { useState } from 'react'
 
-import football from '../../assets/sportImages/football.jpg'
+import football from '../../assets/sportImages/footbtall.png'
+import basketball from '../../assets/sportImages/basketball.png'
 
 //import component
 import MatchScoreCard from '../../components/match_public/MatchScoreCard'
@@ -55,13 +56,8 @@ const SportsPage = () => {
 
   return (
     <div>
-      <div className='relative h-[150px] w-full overflow-hidden bg-black'>
-        <img src={football} alt={id} className='h-full w-full object-cover object-center opacity-70' />
-        <div className='absolute inset-0 left-[50%] flex items-center justify-center'>
-          <span className='font-aoboshi text-[#123836] text-[25px] md:text-[50px] font-semibold drop-shadow-sm'>
-            Netcompany {id} Event
-          </span>
-        </div>
+      <div className='h-[80px] md:h-[200px] w-full overflow-hidden'>
+        <img src={basketball} alt={id} className='h-full w-full object-cover object-center'/>
       </div>
       <div className='flex items-center bg-[#d9d9d9] h-[70px] px-[5%] md:px-[10%] text-[#123836] text-[20px] md:text-[30px] font-semibold w-full'>
         <div className='w-[60%]'>Recent Matches</div>

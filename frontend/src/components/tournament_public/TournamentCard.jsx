@@ -13,7 +13,7 @@ const TournamentCard = ({ tournament }) => {
     const [favorite, setFavorite] = useState(false);
 
     return (
-        <div className='relative flex w-full h-[100px] md:h-[150px] border border-[#d9d9d9] cursor-pointer gap-3 mt-1
+        <div className='relative flex w-full h-[50px] md:h-[150px] border border-[#d9d9d9] cursor-pointer gap-3 mt-1
             rounded-lg shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#123836]'
             onClick={() => navigate(`/tournaments`)}
         >
