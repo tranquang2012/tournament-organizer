@@ -24,12 +24,15 @@ const roleMeta = {
 }
 
 const UserProfileManagement = () => {
-    const { profile: userData, accessToken, refreshProfile } = useAuth()
+    const { profile: userData, accessToken, refreshProfile, session } = useAuth()
     const [avatarUrl, setAvatarUrl] = useState(userData?.avatarUrl || null)
     const [sectionChoose, setSectionChoose] = useState('profile')
     const [isLoading, setIsLoading] = useState(true)
     const [toast, setToast] = useState(null)
     const role = roleMeta[userData?.role] || roleMeta.USER
+    const currentProvider = session?.user?.app_metadata?.provider
+
+    console.log('userData:', userData)
 
     const initials = userData?.fullName
         .split(' ')
@@ -112,8 +115,8 @@ const UserProfileManagement = () => {
                                     <FontAwesomeIcon icon={faPencil} /> Change your avatar
                                 </label>
                                 <div>
-                                    <FontAwesomeIcon icon={userData.providers[0] === 'google' ? faGoogle : faFacebook} className={userData.providers[0] === 'google' ? 'text-[#ea4335]' : 'text-[#1877f2]'}/>
-                                    <span className="ml-1 text-[15px]">{userData.providers[0] === 'google' ? 'Google Account' : 'Facebook Account'}</span>
+                                    <FontAwesomeIcon icon={currentProvider === 'google' ? faGoogle : faFacebook} className={currentProvider === 'google' ? 'text-[#ea4335]' : 'text-[#1877f2]'}/>
+                                    <span className="ml-1 text-[15px]">{currentProvider === 'google' ? 'Google Account' : 'Facebook Account'}</span>
                                 </div>
                             </div>
                         </div>

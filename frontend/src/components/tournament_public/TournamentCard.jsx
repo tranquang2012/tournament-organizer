@@ -17,7 +17,7 @@ const TournamentCard = ({ tournament }) => {
     const [favorite, setFavorite] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false)
 
-    const handleAddFavorite = () => {
+    const handleRedirectToLogin = () => {
         navigate('/login')
     }
 
@@ -26,8 +26,8 @@ const TournamentCard = ({ tournament }) => {
             <ConfirmationModal
                 open={showConfirm}
                 onClose={() => setShowConfirm(false)}
-                onConfirm={handleAddFavorite}
-                title="Favovrite Tournament"
+                onConfirm={handleRedirectToLogin}
+                title="Favourite Tournament"
                 description="You need to login to add this tournament to your favorite list. Do you want to login now?"
                 intent="info"
                 confirmLabel="Sign In"

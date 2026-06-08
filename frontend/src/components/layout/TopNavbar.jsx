@@ -74,14 +74,14 @@ const TopNavBar = () => {
               (
                 <div className='flex flex-col items-center w-full cursor-pointer hover:bg-gray-300 rounded-[5px] p-1 cursor-pointer' onClick={handleLogout}>
                   <FontAwesomeIcon icon={faRightFromBracket} className='text-[28px]' />
-                  <span className='text-[12px] text-[#123826]'>Sign out</span>
+                  <span className='text-[12px] text-[#123826]'>Sign Out</span>
                 </div>
               )
               :
               (
                 <div className='flex flex-col items-center w-full cursor-pointer hover:bg-gray-300 rounded-[5px] p-1 cursor-pointer' onClick={handleLogin}>
                   <FontAwesomeIcon icon={faRightToBracket} className='text-[28px]' />
-                  <span className='text-[12px] text-[#123826]'>Sign in</span>
+                  <span className='text-[12px] text-[#123826]'>Sign In</span>
                 </div>
               )
             }
