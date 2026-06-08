@@ -56,21 +56,21 @@ const SportsPage = () => {
 
   return (
     <div>
-      <div className='h-[80px] md:h-[200px] w-full overflow-hidden'>
-        <img src={basketball} alt={id} className='h-full w-full object-cover object-center'/>
+      <div className='h-[80px] md:h-full w-full overflow-hidden'>
+        <img src={football} alt={id} className='h-full w-full object-cover object-center'/>
       </div>
       <div className='flex items-center bg-[#d9d9d9] h-[70px] px-[5%] md:px-[10%] text-[#123836] text-[20px] md:text-[30px] font-semibold w-full'>
         <div className='w-[60%]'>Recent Matches</div>
         <div className='w-[40%] ml-5'>Tournament List</div>
       </div>
-      <div className='flex px-[5%] md:px-[10%] py-5'>
-        <div className='flex flex-col gap-10 w-full pr-5 md:w-[60%] border-r border-[#d9d9d9]'>
+      <div className='flex flex-col md:flex-row px-[5%] md:px-[10%] py-5'>
+        <div className='flex flex-col gap-10 w-full md:pr-5 md:w-[60%] md:border-r border-[#d9d9d9]'>
           {matchItems.map((match, index) => (
             <MatchScoreCard key={index} match={match} />
           ))}
         </div>
-        <div className='flex flex-col w-full md:w-[40%] ml-5 gap-3'>
-          <div className='flex items-center justify-between cursor-pointer' onClick={() => setIsOpenOngoing(!isOpenOngoing)}>
+        <div className='flex flex-col w-full md:w-[40%] md:ml-5 gap-3'>
+          <div className='flex items-center justify-between cursor-pointer mt-5 md:mt-0' onClick={() => setIsOpenOngoing(!isOpenOngoing)}>
             <span className='text-[18px] md:text-[25px] font-semibold text-[#123836]' >Ongoing Tournaments</span>
             <FontAwesomeIcon icon={faChevronDown} className={`text-[20px] transition-transform duration-300 ${isOpenOngoing ? 'rotate-180' : ''}`} />
           </div>

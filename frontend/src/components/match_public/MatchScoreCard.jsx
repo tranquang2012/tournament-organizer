@@ -46,11 +46,11 @@ const MatchScoreCard = ({ match }) => {
                 onClick={() => navigate(`./matches/${match.matchNumber}`)}
             >
                 <div className='flex flex-col w-[50%] mt-1'>
-                    <span className='text-[15px] h-[10%]'>Date: {match.date}</span>
-                    <span className='text-[15px] h-[10%]'>Time: {match.time}</span>
+                    <span className='text-[10px] md:text-[15px] h-[10%]'>Date: {match.date}</span>
+                    <span className='text-[10px] md:text-[15px] h-[10%]'>Time: {match.time}</span>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team1Losing ? 'opacity-40' : ''}`}>
                         <img src={logo1} alt='logoteam1' className='w-10 h-10 md:h-15 md:w-15 object-contain' />
-                        <span className='text-[15px] font-black uppercase'>{match.team1}</span>
+                        <span className='text-[10px] md:text-[15px] font-black uppercase'>{match.team1}</span>
                     </div>
                 </div>
                 <div className='flex flex-col w-[50%] bg-[#123836] rounded-tr-lg rounded-br-lg text-white'>
@@ -60,13 +60,13 @@ const MatchScoreCard = ({ match }) => {
                         ) : (
                             <FontAwesomeIcon icon={faCircle} className='text-red-500 mr-1 animate-pulse' />
                         )}
-                        <span className='mr-2 text-[13px] md:text-[16px]'>
+                        <span className='mr-2 text-[10px] md:text-[13px] md:text-[16px]'>
                             {isCompleted ? 'Completed' : formatTime(elapsedSeconds)}
                         </span>
                     </div>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team2Losing ? 'opacity-40' : ''}`}>
                         <img src={logo2} alt='logoteam2' className='w-10 h-10 md:h-15 md:w-15 object-contain' />
-                        <span className='text-[15px] font-black uppercase'>{match.team2}</span>
+                        <span className='text-[10px] md:text-[15px] font-black uppercase'>{match.team2}</span>
                     </div>
                 </div>
                 <div className='absolute inset-0 flex flex-col items-center justify-center gap-4 pointer-events-none'>
