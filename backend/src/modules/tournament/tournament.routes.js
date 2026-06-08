@@ -22,6 +22,6 @@ router.patch('/:id/format-config',            ctrl.saveFormatConfig.bind(ctrl));
 
 //Step 4
 router.get('/:id/review',                     ctrl.getReview.bind(ctrl));
-router.post('/:id/publish',                   ctrl.publish.bind(ctrl));
+router.patch('/:id/publish',                   ctrl.publish.bind(ctrl));
 
 module.exports = router;
