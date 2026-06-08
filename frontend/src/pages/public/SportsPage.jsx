@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { useParams } from 'react-router-dom'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 import football from '../../assets/sportImages/footbtall.png'
 import basketball from '../../assets/sportImages/basketball.png'
@@ -40,24 +40,41 @@ const tournamentItemsCompleted = [
 ];
 
 const tournamentItemsUpcoming = [
-  { name: 'Tournament Football 5', startDate: '01/02/2027', endDate: '15/02/2027', status: 'Upcoming' },
+  { name: 'Tournament Basketball 5', startDate: '01/02/2027', endDate: '15/02/2027', status: 'Upcoming' },
   { name: 'Tournament Football 6', startDate: '05/02/2027', endDate: '20/02/2027', status: 'Upcoming' },
   { name: 'Tournament Football 5', startDate: '01/02/2027', endDate: '15/02/2027', status: 'Upcoming' },
   { name: 'Tournament Football 6', startDate: '05/02/2027', endDate: '20/02/2027', status: 'Upcoming' },
 ];
 
 const SportsPage = () => {
-
   const { id } = useParams()
 
   const [isOpenOngoing, setIsOpenOngoing] = useState(true);
-  const [isOpenUpcoming, setIsOpenUpcoming] = useState(false);
-  const [isOpenCompleted, setIsOpenCompleted] = useState(false);
+  const [isOpenUpcoming, setIsOpenUpcoming] = useState(true);
+  const [isOpenCompleted, setIsOpenCompleted] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filterTournaments = (items) => {
+    if (!searchQuery.trim()) return items;
+    return items.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
+  };
+
+  const filteredOngoing = filterTournaments(tournamentItemsOnGoing);
+  const filteredUpcoming = filterTournaments(tournamentItemsUpcoming);
+  const filteredCompleted = filterTournaments(tournamentItemsCompleted);
+
+  useEffect(() => {
+    if (searchQuery.trim()) {
+        setIsOpenOngoing(true);
+        setIsOpenUpcoming(true);
+        setIsOpenCompleted(true);
+    }
+}, [searchQuery]);
 
   return (
     <div>
       <div className='h-[80px] md:h-full w-full overflow-hidden'>
-        <img src={football} alt={id} className='h-full w-full object-cover object-center'/>
+        <img src={football} alt={id} className='h-full w-full object-cover object-center' />
       </div>
       <div className='flex items-center bg-[#d9d9d9] h-[70px] px-[5%] md:px-[10%] text-[#123836] text-[20px] md:text-[30px] font-semibold w-full'>
         <div className='w-[60%]'>Recent Matches</div>
@@ -70,37 +87,50 @@ const SportsPage = () => {
           ))}
         </div>
         <div className='flex flex-col w-full md:w-[40%] md:ml-5 gap-3'>
-          <div className='flex items-center justify-between cursor-pointer mt-5 md:mt-0' onClick={() => setIsOpenOngoing(!isOpenOngoing)}>
-            <span className='text-[18px] md:text-[25px] font-semibold text-[#123836]' >Ongoing Tournaments</span>
+          <input
+            type='text'
+            placeholder='Search tournament...'
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className='w-full border border-[#d9d9d9] rounded-lg px-3 py-2 text-[14px] outline-none focus:border-[#123836] transition-colors duration-200 mt-5 md:mt-0'
+          />
+          <div className='flex items-center justify-between cursor-pointer' onClick={() => setIsOpenOngoing(!isOpenOngoing)}>
+            <span className='text-[18px] md:text-[25px] font-semibold text-[#123836]'>Ongoing Tournaments</span>
             <FontAwesomeIcon icon={faChevronDown} className={`text-[20px] transition-transform duration-300 ${isOpenOngoing ? 'rotate-180' : ''}`} />
           </div>
           <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpenOngoing ? 'max-h-[600px] mb-3' : 'max-h-0'}`}>
             <div className='flex flex-col gap-5 max-h-[510px] overflow-y-auto pr-1'>
-              {tournamentItemsOnGoing.map((tournament, index) => (
+              {filteredOngoing.length > 0 ? filteredOngoing.map((tournament, index) => (
                 <TournamentCard key={index} tournament={tournament} />
-              ))}
+              )) : (
+                <span className='text-[14px] text-gray-400'>No tournaments found</span>
+              )}
             </div>
           </div>
           <div className='flex items-center justify-between cursor-pointer' onClick={() => setIsOpenUpcoming(!isOpenUpcoming)}>
-            <span className='text-[18px] md:text-[25px] font-semibold text-[#123836]' >Upcoming Tournaments</span>
+            <span className='text-[18px] md:text-[25px] font-semibold text-[#123836]'>Upcoming Tournaments</span>
             <FontAwesomeIcon icon={faChevronDown} className={`text-[20px] transition-transform duration-300 ${isOpenUpcoming ? 'rotate-180' : ''}`} />
           </div>
           <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpenUpcoming ? 'max-h-[600px] mb-3' : 'max-h-0'}`}>
             <div className='flex flex-col gap-5 max-h-[510px] overflow-y-auto pr-1'>
-              {tournamentItemsUpcoming.map((tournament, index) => (
+              {filteredUpcoming.length > 0 ? filteredUpcoming.map((tournament, index) => (
                 <TournamentCard key={index} tournament={tournament} />
-              ))}
+              )) : (
+                <span className='text-[14px] text-gray-400'>No tournaments found</span>
+              )}
             </div>
           </div>
           <div className='flex items-center justify-between cursor-pointer' onClick={() => setIsOpenCompleted(!isOpenCompleted)}>
-            <span className='text-[18px] md:text-[25px] font-semibold text-[#123836]' >Past Tournaments</span>
+            <span className='text-[18px] md:text-[25px] font-semibold text-[#123836]'>Past Tournaments</span>
             <FontAwesomeIcon icon={faChevronDown} className={`text-[20px] transition-transform duration-300 ${isOpenCompleted ? 'rotate-180' : ''}`} />
           </div>
           <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpenCompleted ? 'max-h-[600px] mb-3' : 'max-h-0'}`}>
             <div className='flex flex-col gap-5 max-h-[510px] overflow-y-auto pr-1'>
-              {tournamentItemsCompleted.map((tournament, index) => (
+              {filteredCompleted.length > 0 ? filteredCompleted.map((tournament, index) => (
                 <TournamentCard key={index} tournament={tournament} />
-              ))}
+              )) : (
+                <span className='text-[14px] text-gray-400'>No tournaments found</span>
+              )}
             </div>
           </div>
         </div>
