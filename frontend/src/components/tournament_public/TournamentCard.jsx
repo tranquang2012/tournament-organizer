@@ -41,8 +41,8 @@ const TournamentCard = ({ tournament }) => {
                 <div className='flex flex-col w-[55%]'>
                     <div className='flex flex-col mt-[5%] items-start h-[90%]'>
                         <span className='text-[15px] md:text-[21px] text-[#123836] font-semibold'>{tournament.name}</span>
-                        <span className='text-[10px] md:text-[14px] text-[#666]'>Start Date: {tournament.startDate}</span>
-                        <span className='text-[10px] md:text-[14px] text-[#666]'>End Date: {tournament.endDate}</span>
+                        <span className='text-[10px] md:text-[14px] text-gray-500'>Start Date: {tournament.startDate}</span>
+                        <span className='text-[10px] md:text-[14px] text-gray-500'>End Date: {tournament.endDate}</span>
                     </div>
                     <div>
                         <span className='text-[10px] md:text-[14px]'>Status: </span>

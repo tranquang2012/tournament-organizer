@@ -39,7 +39,11 @@ const MatchScoreCard = ({ match }) => {
 
     return (
         <div className='w-full flex flex-col gap-3'>
-            <span className='text-[18px] md:text-[25px] font-semibold'>{match.tournamentName}</span>
+            <span className='text-[18px] md:text-[25px] font-semibold text-[#123836] hover:underline cursor-pointer hover:opacity-70'
+                onClick={() => navigate(`/tournaments`)}
+            >
+                {match.tournamentName}
+            </span>
             <span className='text-[12px] md:text-[17px] font-normal'>Match {match.matchNumber} - {match.round} Match</span>
             <div className='relative flex w-full h-[150px] md:h-[230px] border border-[#d9d9d9] cursor-pointer 
                 rounded-lg shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-[#123836]'
@@ -61,7 +65,7 @@ const MatchScoreCard = ({ match }) => {
                             <FontAwesomeIcon icon={faCircle} className='text-red-500 mr-1 animate-pulse' />
                         )}
                         <span className='mr-2 text-[10px] md:text-[13px] md:text-[16px]'>
-                            {isCompleted ? 'Completed' : formatTime(elapsedSeconds)}
+                            {isCompleted ? 'Finished' : formatTime(elapsedSeconds)}
                         </span>
                     </div>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team2Losing ? 'opacity-40' : ''}`}>
