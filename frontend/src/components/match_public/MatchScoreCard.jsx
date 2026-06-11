@@ -11,6 +11,7 @@ import trophy from '../../assets/trophy.png'
 const MatchScoreCard = ({ match }) => {
     const isCompleted = match.status === 'completed';
     const isOngoing = match.status === 'ongoing';
+    const isPausing = match.status === 'pausing';
     const navigate = useNavigate();
 
     const team1Losing = match.score1 < match.score2;
@@ -19,17 +20,26 @@ const MatchScoreCard = ({ match }) => {
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
 
     useEffect(() => {
-        if (!isOngoing || !match.startTime) return;
+        if (!match.startTime) return;
+        if (isPausing) {
+            const start = new Date(match.startTime).getTime();
+            const pausedAt = new Date(match.pausedTime).getTime();
+            const diff = Math.floor((pausedAt - start) / 1000);
+            setElapsedSeconds(diff > 0 ? diff : 0);
+            return;
+        }
+        if (!isOngoing) return;
+
         const updateElapsed = () => {
             const start = new Date(match.startTime).getTime();
-            const now = Date.now();
-            const diff = Math.floor((now - start) / 1000);
+            const diff = Math.floor((Date.now() - start) / 1000);
             setElapsedSeconds(diff > 0 ? diff : 0);
         };
+
         updateElapsed();
         const interval = setInterval(updateElapsed, 1000);
         return () => clearInterval(interval);
-    }, [isOngoing, match.startTime]);
+    }, [isOngoing, isPausing, match.startTime, match.pausedTime]);
 
     const formatTime = (totalSeconds) => {
         const mins = Math.floor(totalSeconds / 60);
@@ -61,11 +71,13 @@ const MatchScoreCard = ({ match }) => {
                     <div className='text-[20px] h-[20%] text-right mt-1 flex items-center justify-end'>
                         {isCompleted ? (
                             <FontAwesomeIcon icon={faCircle} className='text-green-400 mr-1' />
+                        ) : isPausing ? (
+                            <FontAwesomeIcon icon={faCircle} className='text-yellow-500 mr-1 animate-pulse' />
                         ) : (
                             <FontAwesomeIcon icon={faCircle} className='text-red-500 mr-1 animate-pulse' />
                         )}
                         <span className='mr-2 text-[10px] md:text-[13px] md:text-[16px]'>
-                            {isCompleted ? 'Finished' : formatTime(elapsedSeconds)}
+                            {isCompleted ? 'Finished' : isPausing ? 'Pausing' : formatTime(elapsedSeconds)}
                         </span>
                     </div>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team2Losing ? 'opacity-40' : ''}`}>
