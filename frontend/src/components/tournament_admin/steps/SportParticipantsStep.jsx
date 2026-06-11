@@ -431,6 +431,18 @@ const SportParticipantsStep = ({ data, onChange }) => {
               </div>
             </div>
 
+            <div className="mb-6">
+              <InputField
+                label="Number of members in a team"
+                type="number"
+                placeholder="e.g. 5"
+                value={data.membersPerTeam || ''}
+                onChange={(e) => update('membersPerTeam', e.target.value)}
+                required
+                className="max-w-[250px]"
+              />
+            </div>
+
             {/*  Pre-define Teams  */}
             {data.teamMode === 'predefine' && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -682,18 +694,6 @@ const SportParticipantsStep = ({ data, onChange }) => {
             {/* ── Auto-randomize mode ── */}
             {data.teamMode === 'randomize' && (
               <div>
-                <div className="mb-5">
-                  <InputField
-                    label="Number of Teams"
-                    type="number"
-                    placeholder="e.g. 4"
-                    value={data.numberOfTeams || ''}
-                    onChange={(e) => update('numberOfTeams', e.target.value)}
-                    required
-                    className="max-w-[200px]"
-                  />
-                </div>
-
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 m-0">
                   Player Pool (will be randomized into teams)
                 </p>
@@ -807,8 +807,8 @@ const SportParticipantsStep = ({ data, onChange }) => {
 
                 <p className="text-xs text-slate-400 mt-3 m-0">
                   {(data.participants || []).length} player{(data.participants || []).length !== 1 ? 's' : ''} added
-                  {data.numberOfTeams > 0 && (
-                    <> · will be split into {data.numberOfTeams} team{data.numberOfTeams != 1 ? 's' : ''}</>
+                  {data.membersPerTeam > 0 && (
+                    <> · will be split into teams of {data.membersPerTeam}</>
                   )}
                 </p>
               </div>
