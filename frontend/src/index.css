@@ -67,7 +67,7 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --text: #9ca3af;
+    --text: #000000;
     --text-h: #000000;
     --bg: #fff;
     --border: #2e303a;
