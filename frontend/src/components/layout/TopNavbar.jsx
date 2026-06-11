@@ -26,7 +26,7 @@ const TopNavBar = () => {
   const handleLogin = () => navigate('/login')
 
   return (
-    <div className='h-[80px] w-full px-[3%] flex items-center'>
+    <div className='sticky top-0 bg-white h-[80px] w-full px-[3%] flex items-center z-50'>
       <div className='w-full h-full flex font-[Poppins,sans-serif]'>
         <div className='flex items-center w-[25%] md:w-[25%]'>
           <FontAwesomeIcon
@@ -42,7 +42,7 @@ const TopNavBar = () => {
           />
         </div>
         <div className='hidden md:flex w-[50%] justify-between items-center'>
-          <Link to="/sports" className='text-[18px] text-[#123826] no-underline'>
+          <Link to="/sports/football" className='text-[18px] text-[#123826] no-underline'>
             <div><b>Sports</b></div>
             <div className='font-medium text-[12px]'>Opportunities to explore sports world</div>
           </Link>
@@ -56,13 +56,13 @@ const TopNavBar = () => {
           </Link>
         </div>
         <div className='hidden md:flex w-[25%] justify-end items-center'>
-          <div className='flex items-center justify-center mx-[20%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'>
+          <div className='flex items-center justify-center mx-[15%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'>
             <FontAwesomeIcon icon={faHeadset} className='text-[28px]' />
             <span className='text-[12px] text-[#123826] ml-1'>Support</span>
           </div>
 
           <div
-            className='flex flex-col items-center w-[20%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'
+            className='flex flex-col items-center w-[26%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'
             onClick={() => navigate('/account-management')}
           >
             <FontAwesomeIcon icon={faUser} className='text-[28px]' />
@@ -70,13 +70,23 @@ const TopNavBar = () => {
           </div>
 
           <div className='hover:bg-gray-300 rounded-[5px] p-1'>
-            {isLogin
-              ? <FontAwesomeIcon icon={faRightFromBracket} className='text-[28px] cursor-pointer' onClick={handleLogout} />
-              : <FontAwesomeIcon icon={faRightToBracket} className='text-[28px] cursor-pointer' onClick={handleLogin} />
+            {isLogin ?
+              (
+                <div className='flex flex-col items-center w-full cursor-pointer hover:bg-gray-300 rounded-[5px] p-1 cursor-pointer' onClick={handleLogout}>
+                  <FontAwesomeIcon icon={faRightFromBracket} className='text-[28px]' />
+                  <span className='text-[12px] text-[#123826]'>Sign Out</span>
+                </div>
+              )
+              :
+              (
+                <div className='flex flex-col items-center w-full cursor-pointer hover:bg-gray-300 rounded-[5px] p-1 cursor-pointer' onClick={handleLogin}>
+                  <FontAwesomeIcon icon={faRightToBracket} className='text-[28px]' />
+                  <span className='text-[12px] text-[#123826]'>Sign In</span>
+                </div>
+              )
             }
           </div>
         </div>
-
       </div>
       <PublicSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
     </div>
