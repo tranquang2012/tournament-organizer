@@ -7,18 +7,18 @@ import { supabase } from '../../config/supabaseClient'
 import logo from '../../assets/logo.png'
 
 const sports = [
-    { name: 'Football', path: '/sports/football' },
-    { name: 'Basketball', path: '/sports/basketball' },
-    { name: 'Badminton', path: '/sports/badminton' },
-    { name: 'Ping Pong', path: '/sports/ping-pong' },
-    { name: 'Running', path: '/sports/running' },
-    { name: 'Bowling', path: '/sports/bowling' },
-    { name: 'League of Legends', path: '/sports/league-of-legends' },
-    { name: 'Valorant', path: '/sports/valorant' },
-    { name: 'Dota 2', path: '/sports/dota-2' },
-    { name: 'Counter Strike 2', path: '/sports/counter-strike-2' },
-    { name: 'Teamfight Tactics', path: '/sports/teamfight-tactics' },
-    { name: 'Programming', path: '/sports/programming' },
+    { name: 'Football', path: '/sports/01' },
+    { name: 'Basketball', path: '/sports/02' },
+    { name: 'Badminton', path: '/sports/03' },
+    { name: 'Ping Pong', path: '/sports/04' },
+    { name: 'Running', path: '/sports/05' },
+    { name: 'Bowling', path: '/sports/06' },
+    { name: 'League of Legends', path: '/sports/07' },
+    { name: 'Valorant', path: '/sports/08' },
+    { name: 'Dota 2', path: '/sports/09' },
+    { name: 'Counter Strike 2', path: '/sports/10' },
+    { name: 'Teamfight Tactics', path: '/sports/11' },
+    { name: 'Programming', path: '/sports/12' },
 ]
 
 const PublicSidebar = ({ isOpen, onClose }) => {
