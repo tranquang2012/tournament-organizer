@@ -67,8 +67,8 @@
 
 @media (prefers-color-scheme: light) {
   :root {
-    --text: black;
-    --text-h: #f3f4f6;
+    --text: #000000;
+    --text-h: #000000;
     --bg: #fff;
     --border: #2e303a;
     --code-bg: #1f2028;
