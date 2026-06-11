@@ -3,12 +3,12 @@ import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 
-import football from '../../assets/sportImages/footbtall.png'
-import basketball from '../../assets/sportImages/basketball.png'
-
 //import component
 import MatchScoreCard from '../../components/match_public/MatchScoreCard'
 import TournamentCard from '../../components/tournament_public/TournamentCard'
+
+//import endpoints
+import { getSportInformation } from '../../services/SportService'
 
 
 const matchItems = [
@@ -49,6 +49,7 @@ const tournamentItemsUpcoming = [
 const SportsPage = () => {
   const { id } = useParams()
 
+  const [sportInfo, setSportInfo] = useState(null);
   const [isOpenOngoing, setIsOpenOngoing] = useState(true);
   const [isOpenUpcoming, setIsOpenUpcoming] = useState(true);
   const [isOpenCompleted, setIsOpenCompleted] = useState(true);
@@ -71,10 +72,20 @@ const SportsPage = () => {
     }
   }, [searchQuery]);
 
+  useEffect(() => {
+    const fetchSportInfo = async () => {
+      const info = await getSportInformation(id);
+      setSportInfo(info);
+    };
+    fetchSportInfo();
+  }, [id]);
+
+  console.log('Sport information:', sportInfo);
+
   return (
     <div>
       <div className='h-[80px] md:h-full w-full overflow-hidden'>
-        <img src={football} alt={id} className='h-full w-full object-cover object-center' />
+        <img src={sportInfo?.data?.banner} alt={id} className='h-full w-full object-cover object-center' />
       </div>
       <div className='flex items-center bg-[#d9d9d9] h-[70px] px-[5%] md:px-[10%] text-[#123836] text-[20px] md:text-[30px] font-semibold w-full'>
         <div className='w-[60%]'>Recent Matches</div>
