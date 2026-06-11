@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 //import component
 import MatchScoreCard from '../../components/match_public/MatchScoreCard'
 import TournamentCard from '../../components/tournament_public/TournamentCard'
+import TopLoadingBar from '../../components/common/TopLoadingBar'
 
 //import endpoints
 import { getSportInformation } from '../../services/SportService'
@@ -54,6 +55,7 @@ const SportsPage = () => {
   const [isOpenUpcoming, setIsOpenUpcoming] = useState(true);
   const [isOpenCompleted, setIsOpenCompleted] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const filterTournaments = (items) => {
     if (!searchQuery.trim()) return items;
@@ -74,8 +76,10 @@ const SportsPage = () => {
 
   useEffect(() => {
     const fetchSportInfo = async () => {
+      setIsLoading(true);
       const info = await getSportInformation(id);
       setSportInfo(info);
+      setIsLoading(false);
     };
     fetchSportInfo();
   }, [id]);
@@ -84,6 +88,7 @@ const SportsPage = () => {
 
   return (
     <div>
+      <TopLoadingBar isLoading={isLoading}/>
       <div className='h-[80px] md:h-full w-full overflow-hidden'>
         <img src={sportInfo?.data?.banner} alt={id} className='h-full w-full object-cover object-center' />
       </div>
