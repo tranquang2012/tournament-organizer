@@ -7,18 +7,18 @@ import { supabase } from '../../config/supabaseClient'
 import logo from '../../assets/logo.png'
 
 const sports = [
-    { name: 'Football', path: '/sports/football' },
-    { name: 'Basketball', path: '/sports/basketball' },
-    { name: 'Badminton', path: '/sports/badminton' },
-    { name: 'Ping Pong', path: '/sports/ping-pong' },
-    { name: 'Running', path: '/sports/running' },
-    { name: 'Bowling', path: '/sports/bowling' },
-    { name: 'League of Legends', path: '/sports/league-of-legends' },
-    { name: 'Valorant', path: '/sports/valorant' },
-    { name: 'Dota 2', path: '/sports/dota-2' },
-    { name: 'Counter Strike 2', path: '/sports/counter-strike-2' },
-    { name: 'Teamfight Tactics', path: '/sports/teamfight-tactics' },
-    { name: 'Programming', path: '/sports/programming' },
+    { name: 'Football', path: '/sports/01' },
+    { name: 'Basketball', path: '/sports/02' },
+    { name: 'Badminton', path: '/sports/03' },
+    { name: 'Ping Pong', path: '/sports/04' },
+    { name: 'Running', path: '/sports/05' },
+    { name: 'Bowling', path: '/sports/06' },
+    { name: 'League of Legends', path: '/sports/07' },
+    { name: 'Valorant', path: '/sports/08' },
+    { name: 'Dota 2', path: '/sports/09' },
+    { name: 'Counter Strike 2', path: '/sports/10' },
+    { name: 'Teamfight Tactics', path: '/sports/11' },
+    { name: 'Programming', path: '/sports/12' },
 ]
 
 const PublicSidebar = ({ isOpen, onClose }) => {
@@ -47,7 +47,6 @@ const PublicSidebar = ({ isOpen, onClose }) => {
             )}
             <aside className={`fixed top-0 left-0 h-full bg-white z-50 shadow-xl transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'w-[400px]' : 'w-0'}`}
             >
-                {/* Header */}
                 <div className='h-[80px] w-full px-5 overflow-hidden flex items-center'>
                     <FontAwesomeIcon icon={faBars} className='text-[30px] mr-[7%] cursor-pointer' onClick={onClose} />
                     <img
@@ -57,13 +56,10 @@ const PublicSidebar = ({ isOpen, onClose }) => {
                         onClick={() => navigate('/')}
                     />
                 </div>
-                {/* Navigation Section */}
                 <div className="w-full flex flex-col">
                     <div className={section} onClick={() => { navigate('/'); onClose() }}>
                         Home Page
                     </div>
-
-                    {/* Sport DropDown */}
                     <div>
                         <div className={`${section} flex items-center justify-between`} onClick={() => setSportsOpen(!sportsOpen)}>
                             <span>Sports</span>
@@ -114,5 +110,4 @@ const PublicSidebar = ({ isOpen, onClose }) => {
         </>
     )
 }
-
 export default PublicSidebar

@@ -1,5 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faPencil, faBell, faCalendarCheck } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faPencil, faBell, faCalendarCheck, faShieldHalved, faUserShield } from '@fortawesome/free-solid-svg-icons';
+import { faFacebook, faGoogle } from '@fortawesome/free-brands-svg-icons'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuth';
 import clsx from 'clsx';
@@ -15,14 +16,29 @@ import FollowedTournaments from '../../components/user_dashboard/FollowedTournam
 import TopLoadingBar from '../../components/common/TopLoadingBar';
 import NotificationToast from '../../components/common/NotificationToast';
 
+
+const roleMeta = {
+    superadmin: { label: 'Super Admin', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: faShieldHalved },
+    admin: { label: 'Admin', color: '#3b82f6', bg: 'rgba(59,130,246,0.12)', icon: faUserShield },
+    user: { label: 'User', color: '#94a3b8', bg: 'rgba(148,163,184,0.10)', icon: faUser },
+}
+
 const UserProfileManagement = () => {
-
-
-    const { profile: userData, accessToken, refreshProfile } = useAuth()
+    const { profile: userData, accessToken, refreshProfile, session } = useAuth()
     const [avatarUrl, setAvatarUrl] = useState(userData?.avatarUrl || null)
     const [sectionChoose, setSectionChoose] = useState('profile')
     const [isLoading, setIsLoading] = useState(true)
     const [toast, setToast] = useState(null)
+    const role = roleMeta[userData?.role] || roleMeta.USER
+    const currentProvider = session?.user?.app_metadata?.provider
+
+    console.log('userData:', userData)
+
+    const initials = userData?.fullName
+        .split(' ')
+        .map((w) => w[0])
+        .join('')
+        .slice(0, 2)
 
     useEffect(() => {
         if (userData) {
@@ -77,11 +93,19 @@ const UserProfileManagement = () => {
                     <div className='w-full md:w-[30%]'>
                         {/* Avatar */}
                         <div className='flex items-center mb-5 gap-4'>
-                            <div className='profile-image border border-black rounded-full h-[80px] w-[80px] md:h-[120px] md:w-[120px] flex items-center justify-center overflow-hidden shrink-0'>
+                            <div className='profile-image rounded-full h-[80px] w-[80px] md:h-[120px] md:w-[120px] flex items-center justify-center overflow-hidden shrink-0'>
                                 {avatarUrl ? (
                                     <img src={avatarUrl} alt="avatar" className='w-full h-full object-cover' />
                                 ) : (
-                                    <FontAwesomeIcon icon={faUser} className='text-[50px] md:text-[80px]' />
+                                    <div
+                                        className="w-full h-full rounded-full flex items-center justify-center text-[50px] font-bold shrink-0 uppercase tracking-wide"
+                                        style={{
+                                            background: `linear-gradient(135deg, ${role.color}30, ${role.color}18)`,
+                                            color: role.color,
+                                        }}
+                                    >
+                                        {initials}
+                                    </div>
                                 )}
                             </div>
                             <div className='flex flex-col justify-center'>
@@ -90,6 +114,10 @@ const UserProfileManagement = () => {
                                 <label htmlFor='avatar-upload' className='cursor-pointer text-gray-600 text-[14px] md:text-[16px] mt-1 hover:underline hover:text-[#123826]'>
                                     <FontAwesomeIcon icon={faPencil} /> Change your avatar
                                 </label>
+                                <div>
+                                    <FontAwesomeIcon icon={currentProvider === 'google' ? faGoogle : faFacebook} className={currentProvider === 'google' ? 'text-[#ea4335]' : 'text-[#1877f2]'}/>
+                                    <span className="ml-1 text-[15px]">{currentProvider === 'google' ? 'Google Account' : 'Facebook Account'}</span>
+                                </div>
                             </div>
                         </div>
                         <div className='flex md:flex-col gap-1 overflow-x-auto'>

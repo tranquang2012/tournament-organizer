@@ -20,9 +20,9 @@ import Button from '../../common/Button';
 import { commonSports, eSports } from '../../../constants/sports';
 
 /* Default team logos */
-import teamLogo1 from '../../../assets/defaultTeamLogos/32897430_1.jpg';
-import teamLogo2 from '../../../assets/defaultTeamLogos/66194074_9593214.jpg';
-import teamLogo3 from '../../../assets/defaultTeamLogos/66240484_9593211.jpg';
+import teamLogo1 from '../../../assets/defaultTeamLogos/logo1.jpg';
+import teamLogo2 from '../../../assets/defaultTeamLogos/logo2.jpg';
+import teamLogo3 from '../../../assets/defaultTeamLogos/logo3.jpg';
 
 const DEFAULT_TEAM_LOGOS = [
   { id: 'logo1', src: teamLogo1 },
@@ -143,12 +143,12 @@ const SportParticipantsStep = ({ data, onChange }) => {
     const teams = (data.teams || []).map((t) =>
       t.id === teamId
         ? {
-            ...t,
-            members: [
-              ...t.members,
-              { id: `m-${Date.now()}`, name: member.name, experience: member.experience || 'Beginner' },
-            ],
-          }
+          ...t,
+          members: [
+            ...t.members,
+            { id: `m-${Date.now()}`, name: member.name, experience: member.experience || 'Beginner' },
+          ],
+        }
         : t,
     );
     update('teams', teams);
@@ -199,9 +199,8 @@ const SportParticipantsStep = ({ data, onChange }) => {
             >
               <img src={sport.icon} alt={sport.name} className="w-10 h-10 object-contain" />
               <span
-                className={`text-xs font-medium text-center leading-tight ${
-                  data.sport === sport.name ? 'text-[#123836] font-semibold' : 'text-slate-600'
-                }`}
+                className={`text-xs font-medium text-center leading-tight ${data.sport === sport.name ? 'text-[#123836] font-semibold' : 'text-slate-600'
+                  }`}
               >
                 {sport.name}
               </span>
@@ -230,9 +229,8 @@ const SportParticipantsStep = ({ data, onChange }) => {
             >
               <img src={sport.icon} alt={sport.name} className="w-10 h-10 object-contain" />
               <span
-                className={`text-xs font-medium text-center leading-tight ${
-                  data.sport === sport.name ? 'text-[#123836] font-semibold' : 'text-slate-600'
-                }`}
+                className={`text-xs font-medium text-center leading-tight ${data.sport === sport.name ? 'text-[#123836] font-semibold' : 'text-slate-600'
+                  }`}
               >
                 {sport.name}
               </span>

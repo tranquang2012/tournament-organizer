@@ -1,7 +1,14 @@
 import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../config/supabaseClient'
-import { getCurrentUserProfile, normalizeRole } from '../../services/AuthService'
+import {
+  getAuthErrorMessage,
+  getCurrentUserProfile,
+  isDisabledAccountError,
+  normalizeRole,
+} from '../../services/AuthService'
+
+const disabledAccountLoginPath = '/login?error_description=Your%20account%20has%20been%20disabled'
 
 const getOAuthError = () => {
   const searchParams = new URLSearchParams(window.location.search)
@@ -45,6 +52,17 @@ const OAuthCallbackPage = () => {
           replace: true,
         })
       } catch (profileError) {
+        if (isDisabledAccountError(profileError)) {
+          console.log(getAuthErrorMessage(profileError))
+          navigate(disabledAccountLoginPath, { replace: true })
+
+          void supabase.auth.signOut({ scope: 'local' }).catch((signOutError) => {
+            console.error('Failed to clear disabled account session:', signOutError.message)
+          })
+
+          return
+        }
+
         console.error('Failed to load profile after login:', profileError.message)
         navigate('/', { replace: true })
       }
