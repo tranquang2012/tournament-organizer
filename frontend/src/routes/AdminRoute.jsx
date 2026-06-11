@@ -5,7 +5,7 @@ const AdminRoute = ({ allowedRoles = ['ADMIN', 'SUPER_ADMIN'], redirectTo = '/',
   const { isLogin, loading, profileLoading, role, loginRedirectPath } = useAuth()
   const location = useLocation()
 
-  if (loading || profileLoading) {
+  if (loading || (profileLoading && !role)) {
     return <div className="min-h-screen bg-[#f5f7fa]" />
   }
 

@@ -2,13 +2,14 @@ const express = require('express');
 const router = express.Router();
 const ctrl = require('./controller/tournament.controller');
 const auth = require('../../shared/middleware/authenticateSupabaseUser');
+const requireAdminUser = require('../../shared/middleware/requireAdminUser');
 const { SPORT_RULES } = require('./config/sportRules.config');
 
 router.get('/sport-rules', (req, res) => {
   res.json({ success: true, data: SPORT_RULES });
 });
 
-router.use(auth);
+router.use(auth, requireAdminUser);
 
 //Step 1
 router.post('/',                              ctrl.createGeneralDetails.bind(ctrl));

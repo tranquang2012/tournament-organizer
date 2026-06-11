@@ -13,7 +13,7 @@ const LandingPage = () => {
   const { isAdmin, loading, profileLoading } = useAuth()
   const navigate = useNavigate()
 
-  if (loading || profileLoading) {
+  if (loading) {
     return <div className="min-h-screen bg-white" />
   }
 
