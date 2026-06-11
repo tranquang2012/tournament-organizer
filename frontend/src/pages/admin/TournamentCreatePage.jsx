@@ -58,106 +58,57 @@ const TournamentCreatePage = () => {
   const [toast, setToast] = useState(null);
   const [publishing, setPublishing] = useState(false);
 
-  /* Navigation */
-  const goToStep = (idx) => {
-    if (idx >= 0 && idx <= currentStep && idx < STEPS.length) {
-      setCurrentStep(idx);
+  /* Validation */
+  const isStepCompleted = (idx) => {
+    if (idx === 0) {
+      return !!(formData.name.trim() && formData.startDate && formData.endDate);
     }
-  };
-
-  const validateCurrentStep = () => {
-    /* Validate required fields for current step */
-    if (currentStep === 0) {
-      if (!formData.name.trim()) {
-        setToast({ message: 'Tournament name is required', type: 'error' });
-        return false;
+    if (idx === 1) {
+      if (!formData.sport) return false;
+      if (formData.participantType === 'individual') {
+        return formData.participants?.length > 0;
       }
-      if (!formData.startDate) {
-        setToast({ message: 'Start date is required', type: 'error' });
-        return false;
-      }
-      if (!formData.endDate) {
-        setToast({ message: 'End date is required', type: 'error' });
-        return false;
-      }
-    }
-
-    if (currentStep === 1) {
-      if (!formData.sport) {
-        setToast({ message: 'Sport is required', type: 'error' });
-        return false;
-      }
-
-      if (formData.participantType === 'individual' && !formData.participants.length) {
-        setToast({ message: 'At least one participant is required', type: 'error' });
-        return false;
-      }
-
-      if (formData.participantType === 'team' && formData.teamMode === 'predefine') {
-        if (!formData.teams.length) {
-          setToast({ message: 'At least one team is required', type: 'error' });
-          return false;
-        }
-
-        if (formData.teams.some((team) => !team.members.length)) {
-          setToast({ message: 'Every team needs at least one member', type: 'error' });
-          return false;
+      if (formData.participantType === 'team') {
+        if (!formData.membersPerTeam || formData.membersPerTeam <= 0) return false;
+        if (formData.teamMode === 'predefine') {
+          return formData.teams?.length > 0;
+        } else {
+          return formData.participants?.length > 0;
         }
       }
-
-      if (formData.participantType === 'team' && formData.teamMode === 'randomize') {
-        const teamCount = Number(formData.numberOfTeams) || 0;
-        if (teamCount < 1) {
-          setToast({ message: 'Number of teams is required', type: 'error' });
-          return false;
-        }
-
-        if (formData.participants.length < teamCount) {
-          setToast({ message: 'Player count must be at least the number of teams', type: 'error' });
-          return false;
-        }
-      }
-    }
-
-    if (currentStep === 2 && !formData.format) {
-      setToast({ message: 'Tournament format is required', type: 'error' });
       return false;
     }
+    if (idx === 2) {
+      return !!formData.format;
+    }
+    return false; // Step 3 (Review) is not marked as complete
+  };
 
+  const canGoToStep = (idx) => {
+    if (idx === currentStep) return true;
+    if (idx === 3) return true; // Always allow going to the Review step
+    for (let i = 0; i < idx; i++) {
+      if (!isStepCompleted(i)) return false;
+    }
     return true;
   };
 
-  const persistCurrentStep = async () => {
-    if (currentStep === 0) {
-      const response = tournamentId
-        ? await updateGeneralDetails(tournamentId, formData)
-        : await createGeneralDetails(formData);
-
-      if (!tournamentId) {
-        setTournamentId(response.data?.tour_id);
+  /* Navigation */
+  const goToStep = (idx) => {
+    if (idx >= 0 && idx < STEPS.length) {
+      if (canGoToStep(idx)) {
+        setCurrentStep(idx);
+      } else if (idx > currentStep) {
+        setToast({ message: 'Please complete all required fields in previous steps', type: 'error' });
       }
-    }
-
-    if (currentStep === 1) {
-      await saveSportAndParticipants(tournamentId, formData);
-    }
-
-    if (currentStep === 2) {
-      await saveFormatConfig(tournamentId, formData);
     }
   };
 
-  const handleNext = async () => {
-    if (!validateCurrentStep()) return;
-
-    setSavingStep(true);
-    try {
-      await persistCurrentStep();
-      setCurrentStep((step) => Math.min(step + 1, STEPS.length - 1));
-    } catch (error) {
-      setToast({ message: getErrorMessage(error), type: 'error' });
-    } finally {
-      setSavingStep(false);
+  const handleNext = () => {
+    if (canGoToStep(currentStep + 1)) {
+      goToStep(currentStep + 1);
+    } else {
+      setToast({ message: 'Please complete all required fields in this step', type: 'error' });
     }
   };
 
@@ -228,6 +179,7 @@ const TournamentCreatePage = () => {
           steps={STEPS}
           currentStep={currentStep}
           onStepClick={goToStep}
+          isStepCompleted={isStepCompleted}
         />
       </div>
 

@@ -1,11 +1,11 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheck } from '@fortawesome/free-solid-svg-icons';
 
-const SetupWizardStepper = ({ steps = [], currentStep = 0, onStepClick }) => {
+const SetupWizardStepper = ({ steps = [], currentStep = 0, onStepClick, isStepCompleted }) => {
   return (
     <div className="flex items-center justify-center w-full max-w-[700px] mx-auto select-none">
       {steps.map((step, idx) => {
-        const isCompleted = idx < currentStep;
+        const isCompleted = isStepCompleted ? isStepCompleted(idx) : idx < currentStep;
         const isActive = idx === currentStep;
         const isUpcoming = idx > currentStep;
 
