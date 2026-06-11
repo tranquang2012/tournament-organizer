@@ -51,6 +51,7 @@ const SportsPage = () => {
   const { id } = useParams()
 
   const [sportInfo, setSportInfo] = useState(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [isOpenOngoing, setIsOpenOngoing] = useState(true);
   const [isOpenUpcoming, setIsOpenUpcoming] = useState(true);
   const [isOpenCompleted, setIsOpenCompleted] = useState(true);
@@ -77,20 +78,27 @@ const SportsPage = () => {
   useEffect(() => {
     const fetchSportInfo = async () => {
       setIsLoading(true);
+      setImageLoaded(false);
       const info = await getSportInformation(id);
       setSportInfo(info);
-      setIsLoading(false);
     };
     fetchSportInfo();
   }, [id]);
 
-  console.log('Sport information:', sportInfo);
+  useEffect(() => {
+    if (imageLoaded) setIsLoading(false);
+  }, [imageLoaded]);
 
   return (
     <div>
-      <TopLoadingBar isLoading={isLoading}/>
+      <TopLoadingBar isLoading={isLoading} />
       <div className='h-[80px] md:h-full w-full overflow-hidden'>
-        <img src={sportInfo?.data?.banner} alt={id} className='h-full w-full object-cover object-center' />
+        <img
+          src={sportInfo?.data?.banner}
+          alt={id}
+          className='h-full w-full object-cover object-center'
+          onLoad={() => setImageLoaded(true)}
+        />
       </div>
       <div className='flex items-center bg-[#d9d9d9] h-[70px] px-[5%] md:px-[10%] text-[#123836] text-[20px] md:text-[30px] font-semibold w-full'>
         <div className='w-[60%]'>Recent Matches</div>
