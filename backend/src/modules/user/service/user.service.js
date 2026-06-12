@@ -145,7 +145,7 @@ const updateCurrentUserProfile = async (userId, updateProfileDto) => {
       throw new AppError("Full name is required.", 400);
     }
 
-    if (fullName.length > MAX_NAME_LENGTH) {
+    if (Array.from(fullName).length > MAX_NAME_LENGTH) {
       throw new AppError(`Full name must be ${MAX_NAME_LENGTH} characters or fewer.`, 400);
     }
 

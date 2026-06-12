@@ -2,19 +2,23 @@ const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
 
-const userRoutes = require("./src/modules/user/user.routes");
-const errorHandler = require("./src/shared/middleware/errorHandler");
-
 const app = express();
 
 app.use(cors());
 app.use(express.json({ limit: "5mb" }));
+
+const userRoutes = require("./src/modules/user/user.routes");
+const errorHandler = require("./src/shared/middleware/errorHandler");
+const tournamentRoutes = require('./src/modules/tournament/tournament.routes');
+const sportRoutes = require("./src/modules/sport/sport.routes");
 
 app.get("/", (req, res) => {
   res.send("Backend running");
 });
 
 app.use("/api/users", userRoutes);
+app.use('/api/tournaments', tournamentRoutes);
+app.use("/api/sports", sportRoutes);
 
 app.use(errorHandler);
 

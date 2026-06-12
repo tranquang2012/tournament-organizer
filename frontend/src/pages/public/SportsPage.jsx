@@ -3,12 +3,13 @@ import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import { useParams } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 
-import football from '../../assets/sportImages/footbtall.png'
-import basketball from '../../assets/sportImages/basketball.png'
-
 //import component
 import MatchScoreCard from '../../components/match_public/MatchScoreCard'
 import TournamentCard from '../../components/tournament_public/TournamentCard'
+import TopLoadingBar from '../../components/common/TopLoadingBar'
+
+//import endpoints
+import { getSportInformation } from '../../services/SportService'
 
 
 const matchItems = [
@@ -17,8 +18,8 @@ const matchItems = [
     startTime: new Date(Date.now()).toISOString()
   },
   {
-    tournamentName: 'Tournament Football 1', matchNumber: '10', round: 'Group A', date: '07/02/2027', time: '01:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 2, score2: 1, status: 'completed',
-    startTime: null
+    tournamentName: 'Tournament Football 1', matchNumber: '10', round: 'Group A', date: '07/02/2027', time: '01:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 2, score2: 1, status: 'ongoing',
+    startTime: '2026-06-11T02:00:34.572Z', pausedTime: new Date().toISOString()
   },
   { tournamentName: 'Tournament Football 2', matchNumber: '5', round: 'Group B', date: '06/02/2027', time: '05:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 0, score2: 2, status: 'completed' },
   { tournamentName: 'Tournament Football 3', matchNumber: '5', round: 'Semi-Final', date: '06/02/2027', time: '06:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 3, score2: 2, status: 'completed', },
@@ -49,10 +50,12 @@ const tournamentItemsUpcoming = [
 const SportsPage = () => {
   const { id } = useParams()
 
+  const [sportInfo, setSportInfo] = useState(null);
   const [isOpenOngoing, setIsOpenOngoing] = useState(true);
   const [isOpenUpcoming, setIsOpenUpcoming] = useState(true);
   const [isOpenCompleted, setIsOpenCompleted] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const filterTournaments = (items) => {
     if (!searchQuery.trim()) return items;
@@ -71,10 +74,23 @@ const SportsPage = () => {
     }
   }, [searchQuery]);
 
+  useEffect(() => {
+    const fetchSportInfo = async () => {
+      setIsLoading(true);
+      const info = await getSportInformation(id);
+      setSportInfo(info);
+      setIsLoading(false);
+    };
+    fetchSportInfo();
+  }, [id]);
+
+  console.log('Sport information:', sportInfo);
+
   return (
     <div>
+      <TopLoadingBar isLoading={isLoading}/>
       <div className='h-[80px] md:h-full w-full overflow-hidden'>
-        <img src={football} alt={id} className='h-full w-full object-cover object-center' />
+        <img src={sportInfo?.data?.banner} alt={id} className='h-full w-full object-cover object-center' />
       </div>
       <div className='flex items-center bg-[#d9d9d9] h-[70px] px-[5%] md:px-[10%] text-[#123836] text-[20px] md:text-[30px] font-semibold w-full'>
         <div className='w-[60%]'>Recent Matches</div>
