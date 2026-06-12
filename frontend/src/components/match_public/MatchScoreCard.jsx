@@ -70,11 +70,11 @@ const MatchScoreCard = ({ match }) => {
                 <div className='flex flex-col w-[50%] bg-[#123836] rounded-tr-lg rounded-br-lg text-white'>
                     <div className='text-[20px] h-[20%] text-right mt-1 flex items-center justify-end'>
                         {isCompleted ? (
-                            <FontAwesomeIcon icon={faCircle} className='text-green-400 mr-1' />
+                            <FontAwesomeIcon icon={faCircle} className='text-[15px] text-green-400 mr-1' />
                         ) : isPausing ? (
-                            <FontAwesomeIcon icon={faCircle} className='text-yellow-500 mr-1 animate-pulse' />
+                            <FontAwesomeIcon icon={faCircle} className='text-[15px] text-yellow-500 mr-1 animate-pulse' />
                         ) : (
-                            <FontAwesomeIcon icon={faCircle} className='text-red-500 mr-1 animate-pulse' />
+                            <FontAwesomeIcon icon={faCircle} className='text-[15px] text-red-500 mr-1 animate-pulse' />
                         )}
                         <span className='mr-2 text-[10px] md:text-[13px] md:text-[16px]'>
                             {isCompleted ? 'Finished' : isPausing ? 'Pausing' : formatTime(elapsedSeconds)}

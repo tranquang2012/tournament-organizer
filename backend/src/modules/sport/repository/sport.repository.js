@@ -2,7 +2,7 @@ const pool = require("../../../shared/database/pool");
 const Sport = require("../model/sport.model");
 
 const SPORT_SELECT = `
-  SELECT sport_id, sport_name, sport_type, sport_banner
+  SELECT sport_id, sport_name, sport_type, sport_banner, sport_format
   FROM public.sport
 `;
 

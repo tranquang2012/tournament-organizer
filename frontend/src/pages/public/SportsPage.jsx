@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 
 //import component
 import MatchScoreCard from '../../components/match_public/MatchScoreCard'
+import MatchLeaderBoardCard from '../../components/match_public/MatchLeaderBoardCard'
 import TournamentCard from '../../components/tournament_public/TournamentCard'
 import TopLoadingBar from '../../components/common/TopLoadingBar'
 
@@ -100,11 +101,11 @@ const SportsPage = () => {
 
   useEffect(() => {
     if (searchQuery.trim() || dateFrom || dateTo) {
-        setIsOpenOngoing(true);
-        setIsOpenUpcoming(true);
-        setIsOpenCompleted(true);
+      setIsOpenOngoing(true);
+      setIsOpenUpcoming(true);
+      setIsOpenCompleted(true);
     }
-}, [searchQuery, dateFrom, dateTo]);
+  }, [searchQuery, dateFrom, dateTo]);
 
   useEffect(() => {
     const fetchSportInfo = async () => {
@@ -139,9 +140,15 @@ const SportsPage = () => {
       </div>
       <div className='flex flex-col md:flex-row px-[5%] md:px-[10%] py-5'>
         <div className='flex flex-col gap-10 w-full md:pr-5 md:w-[60%] md:border-r border-[#d9d9d9]'>
-          {matchItems.map((match, index) => (
-            <MatchScoreCard key={index} match={match} />
-          ))}
+          {sportInfo?.data?.format === 'versus' ? (
+            matchItems.map((match, index) => (
+              <MatchScoreCard key={index} match={match} />
+            ))
+          ) : (
+            matchItems.map((match, index) => (
+              <MatchLeaderBoardCard key={index} match={match} />
+            ))
+          )}
         </div>
         <div className='flex flex-col w-full md:w-[40%] md:ml-5 gap-3'>
           <input
@@ -153,7 +160,7 @@ const SportsPage = () => {
           />
           <div className='flex items-center gap-3'>
             <div className='flex flex-col gap-1 w-[50%]'>
-              <span className = 'text-[12px] text-gray-500'>From:</span>
+              <span className='text-[12px] text-gray-500'>From:</span>
               <input
                 type='date'
                 value={dateFrom}
@@ -162,7 +169,7 @@ const SportsPage = () => {
               />
             </div>
             <div className='flex flex-col gap-1 w-[50%]'>
-              <span className = 'text-[12px] text-gray-500'>To:</span>
+              <span className='text-[12px] text-gray-500'>To:</span>
               <input
                 type='date'
                 value={dateTo}
