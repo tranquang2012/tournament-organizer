@@ -58,10 +58,49 @@ const TournamentCreatePage = () => {
   const [toast, setToast] = useState(null);
   const [publishing, setPublishing] = useState(false);
 
+  /* Validation */
+  const isStepCompleted = (idx) => {
+    if (idx === 0) {
+      return !!(formData.name.trim() && formData.startDate && formData.endDate);
+    }
+    if (idx === 1) {
+      if (!formData.sport) return false;
+      if (formData.participantType === 'individual') {
+        return formData.participants?.length > 0;
+      }
+      if (formData.participantType === 'team') {
+        if (!formData.membersPerTeam || formData.membersPerTeam <= 0) return false;
+        if (formData.teamMode === 'predefine') {
+          return formData.teams?.length > 0;
+        } else {
+          return formData.participants?.length > 0;
+        }
+      }
+      return false;
+    }
+    if (idx === 2) {
+      return !!formData.format;
+    }
+    return false; // Step 3 (Review) is not marked as complete
+  };
+
+  const canGoToStep = (idx) => {
+    if (idx === currentStep) return true;
+    if (idx === 3) return true; // Always allow going to the Review step
+    for (let i = 0; i < idx; i++) {
+      if (!isStepCompleted(i)) return false;
+    }
+    return true;
+  };
+
   /* Navigation */
   const goToStep = (idx) => {
-    if (idx >= 0 && idx <= currentStep && idx < STEPS.length) {
-      setCurrentStep(idx);
+    if (idx >= 0 && idx < STEPS.length) {
+      if (canGoToStep(idx)) {
+        setCurrentStep(idx);
+      } else if (idx > currentStep) {
+        setToast({ message: 'Please complete all required fields in previous steps', type: 'error' });
+      }
     }
   };
 
@@ -228,6 +267,7 @@ const TournamentCreatePage = () => {
           steps={STEPS}
           currentStep={currentStep}
           onStepClick={goToStep}
+          isStepCompleted={isStepCompleted}
         />
       </div>
 
