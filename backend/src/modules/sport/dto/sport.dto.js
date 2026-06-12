@@ -3,6 +3,7 @@ const toSportDto = (sport) => ({
   name: sport.name,
   types: sport.types,
   banner: sport.banner,
+  format: sport.format,
 });
 
 module.exports = {
