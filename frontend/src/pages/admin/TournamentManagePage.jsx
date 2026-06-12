@@ -134,7 +134,7 @@ const TournamentManagePage = () => {
             <span className="block sm:inline">{error}</span>
           </div>
         ) : tournaments.length === 0 ? (
-          <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-200 max-w-[1200px]">
+          <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-200 w-full max-w-[1200px] mx-auto">
             <p className="text-slate-500 font-medium mb-2">No tournaments found.</p>
             <p className="text-slate-400 text-sm">Create a tournament using the setup wizard to get started.</p>
           </div>
