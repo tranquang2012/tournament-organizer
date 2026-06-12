@@ -176,3 +176,9 @@ export const getTournaments = async () => {
   const response = await axios.get('/api/tournaments', authConfig);
   return response.data || [];
 };
+
+export const getPublicTournaments = async (sportId) => {
+  const url = sportId ? `/api/tournaments/public?sportId=${sportId}` : '/api/tournaments/public';
+  const response = await axios.get(url);
+  return response.data || [];
+};

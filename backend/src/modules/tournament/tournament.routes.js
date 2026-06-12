@@ -9,6 +9,8 @@ router.get('/sport-rules', (req, res) => {
   res.json({ success: true, data: SPORT_RULES });
 });
 
+router.get('/public', ctrl.listPublicTournaments.bind(ctrl));
+
 router.use(auth, requireAdminUser);
 
 router.get('/',                               ctrl.listTournaments.bind(ctrl));
