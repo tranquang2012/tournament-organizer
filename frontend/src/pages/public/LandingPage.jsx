@@ -13,7 +13,7 @@ const LandingPage = () => {
   const { isAdmin, loading, profileLoading } = useAuth()
   const navigate = useNavigate()
 
-  if (loading || profileLoading) {
+  if (loading) {
     return <div className="min-h-screen bg-white" />
   }
 
@@ -23,7 +23,6 @@ const LandingPage = () => {
       <div className='h-200px md:h-[30vh] px-[10%] flex flex-col justify-center text-[#123836] text-l md:text-2xl font-semibold'>
         <span >Common Sports</span>
         <div className='mt-5 flex justify-between w-full'>
-          {/* Sport cards or list */}
           {commonSports.map((sport, index) => (
             <div key={index} className='flex flex-col items-center hover:scale-120 p-4 transition-colors cursor-pointer w-[15%]'
               onClick={() => navigate(sport.path)}>
@@ -36,7 +35,6 @@ const LandingPage = () => {
       <div className='h-200px md:h-[30vh] px-[10%] bg-[#f6f6f6] flex flex-col justify-center text-[#123836] text-l md:text-2xl font-semibold'>
         <span> E-Sports</span>
         <div className='mt-5 flex justify-between w-full'>
-          {/* Sport cards or list */}
           {eSports.map((sport, index) => (
             <div key={index} className='flex flex-col items-center hover:scale-120 p-4 transition-colors cursor-pointer w-[15%]'
               onClick={() => navigate(sport.path)}>

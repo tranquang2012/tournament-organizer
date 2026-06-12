@@ -51,15 +51,39 @@ const SportsPage = () => {
   const { id } = useParams()
 
   const [sportInfo, setSportInfo] = useState(null);
+  const [imageLoaded, setImageLoaded] = useState(false);
   const [isOpenOngoing, setIsOpenOngoing] = useState(true);
   const [isOpenUpcoming, setIsOpenUpcoming] = useState(true);
   const [isOpenCompleted, setIsOpenCompleted] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const filterTournaments = (items) => {
-    if (!searchQuery.trim()) return items;
-    return items.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    let result = items;
+
+    if (searchQuery.trim()) {
+      result = result.filter(t => t.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
+
+    if (dateFrom) {
+      const from = new Date(dateFrom);
+      result = result.filter(t => {
+        const [day, month, year] = t.startDate.split('/');
+        return new Date(`${year}-${month}-${day}`) >= from;
+      })
+    }
+
+    if (dateTo) {
+      const to = new Date(dateTo);
+      result = result.filter(t => {
+        const [day, month, year] = t.endDate.split('/');
+        return new Date(`${year}-${month}-${day}`) <= to;
+      })
+    }
+
+    return result;
   };
 
   const filteredOngoing = filterTournaments(tournamentItemsOnGoing);
@@ -75,22 +99,39 @@ const SportsPage = () => {
   }, [searchQuery]);
 
   useEffect(() => {
+    if (searchQuery.trim() || dateFrom || dateTo) {
+        setIsOpenOngoing(true);
+        setIsOpenUpcoming(true);
+        setIsOpenCompleted(true);
+    }
+}, [searchQuery, dateFrom, dateTo]);
+
+  useEffect(() => {
     const fetchSportInfo = async () => {
       setIsLoading(true);
+      setImageLoaded(false);
       const info = await getSportInformation(id);
       setSportInfo(info);
-      setIsLoading(false);
     };
     fetchSportInfo();
   }, [id]);
 
-  console.log('Sport information:', sportInfo);
+  useEffect(() => {
+    if (imageLoaded) setIsLoading(false);
+  }, [imageLoaded]);
+
+  console.log('Sport Info:', sportInfo)
 
   return (
     <div>
-      <TopLoadingBar isLoading={isLoading}/>
+      <TopLoadingBar isLoading={isLoading} />
       <div className='h-[80px] md:h-full w-full overflow-hidden'>
-        <img src={sportInfo?.data?.banner} alt={id} className='h-full w-full object-cover object-center' />
+        <img
+          src={sportInfo?.data?.banner}
+          alt={id}
+          className='h-full w-full object-cover object-center'
+          onLoad={() => setImageLoaded(true)}
+        />
       </div>
       <div className='flex items-center bg-[#d9d9d9] h-[70px] px-[5%] md:px-[10%] text-[#123836] text-[20px] md:text-[30px] font-semibold w-full'>
         <div className='w-[60%]'>Recent Matches</div>
@@ -110,6 +151,26 @@ const SportsPage = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className='w-full border border-[#d9d9d9] rounded-lg px-3 py-2 text-[14px] outline-none focus:border-[#123836] transition-colors duration-200 mt-5 md:mt-0'
           />
+          <div className='flex items-center gap-3'>
+            <div className='flex flex-col gap-1 w-[50%]'>
+              <span className = 'text-[12px] text-gray-500'>From:</span>
+              <input
+                type='date'
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                className='border border-[#d9d9d9] rounded-lg px-3 py-2 text-[14px] text-gray-500 outline-none focus:border-[#123836]'
+              />
+            </div>
+            <div className='flex flex-col gap-1 w-[50%]'>
+              <span className = 'text-[12px] text-gray-500'>To:</span>
+              <input
+                type='date'
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                className='border border-[#d9d9d9] rounded-lg px-3 py-2 text-[14px] text-gray-500 outline-none focus:border-[#123836]'
+              />
+            </div>
+          </div>
           <div className='flex items-center justify-between cursor-pointer' onClick={() => setIsOpenOngoing(!isOpenOngoing)}>
             <span className='text-[18px] md:text-[25px] font-semibold text-[#123836]'>Ongoing Tournaments</span>
             <FontAwesomeIcon icon={faChevronDown} className={`text-[20px] transition-transform duration-300 ${isOpenOngoing ? 'rotate-180' : ''}`} />

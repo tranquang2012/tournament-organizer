@@ -31,6 +31,7 @@ const UserProfileManagement = () => {
     const [toast, setToast] = useState(null)
     const role = roleMeta[userData?.role] || roleMeta.USER
     const currentProvider = session?.user?.app_metadata?.provider
+    console.log('currentProvider:', currentProvider)
 
     console.log('userData:', userData)
 

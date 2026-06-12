@@ -22,7 +22,7 @@ const AccountManageSetting = () => {
         if (userData?.fullName) {
             setUserName(userData.fullName)
         }
-    }, [userData])
+    }, [userData?.fullName])
 
     const handleConfirmSave = async () => {
         try {
