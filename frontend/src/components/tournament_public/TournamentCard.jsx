@@ -37,9 +37,9 @@ const TournamentCard = ({ tournament }) => {
             rounded-lg shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#123836]'
                 onClick={() => navigate(`/tournaments`)}
             >
-                <img src={banner1} alt='banner1' className='w-[50%] h-full object-cover object-center rounded-tl-lg rounded-bl-lg' />
-                <div className='flex flex-col w-[40%] h-full object-cover'>
-                    <div className='flex flex-col'>
+                <img src={tournament.image || banner1} alt={tournament.name} className='w-[50%] h-full object-cover object-center rounded-tl-lg rounded-bl-lg' />
+                <div className='flex flex-col w-[55%]'>
+                    <div className='flex flex-col mt-[5%] items-start h-[90%]'>
                         <span className='text-[15px] md:text-[21px] text-[#123836] font-semibold'>{tournament.name}</span>
                         <span className='text-[10px] md:text-[14px] text-gray-500'>Start Date: {tournament.startDate}</span>
                         <span className='text-[10px] md:text-[14px] text-gray-500'>End Date: {tournament.endDate}</span>

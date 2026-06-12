@@ -154,6 +154,10 @@ class TournamentService {
     return repo.listAll(organizerId);
   }
 
+  async listPublicTournaments({ sportId } = {}) {
+    return repo.listPublic({ sportId });
+  }
+
 
   async _assertExists(tourId, organizerId) {
     const t = await repo.findById(tourId, organizerId);
