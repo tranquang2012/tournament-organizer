@@ -73,6 +73,9 @@ createRoot(document.getElementById('root')).render(
             }
           />
         </Route>
+
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
   </BrowserRouter>

@@ -42,7 +42,7 @@ const TopNavBar = () => {
           />
         </div>
         <div className='hidden md:flex w-[50%] justify-between items-center'>
-          <Link to="/sports/football" className='text-[18px] text-[#123826] no-underline'>
+          <Link to="/" className='text-[18px] text-[#123826] no-underline'>
             <div><b>Sports</b></div>
             <div className='font-medium text-[12px]'>Opportunities to explore sports world</div>
           </Link>

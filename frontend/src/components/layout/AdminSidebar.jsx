@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, useLocation } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
   faGrip,
@@ -9,8 +9,10 @@ import {
   faChevronLeft,
   faChevronRight,
   faEye,
+  faArrowRightFromBracket,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../../hooks/useAuth'
+import { supabase } from '../../config/supabaseClient'
 
 const navItems = [
   {
@@ -31,16 +33,12 @@ const navItems = [
     icon: faUsersGear,
     path: '/admin/accounts',
   },
-  {
-    label: 'Go to User View',
-    icon: faEye,
-    path: '/',
-  },
 ]
 
 const AdminSidebar = ({ collapsed, setCollapsed }) => {
   const [openMenus, setOpenMenus] = useState({ Tournaments: true })
   const location = useLocation()
+  const navigate = useNavigate()
   const { profile: userData, role, isSuperAdmin } = useAuth()
 
   const visibleNavItems = navItems.filter((item) => {
@@ -56,6 +54,16 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
     ADMIN: 'Admin',
     SUPER_ADMIN: 'Super Admin',
   }[role] || role
+
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut()
+      if (error) throw error
+      window.location.href = `${window.location.origin}/login`
+    } catch (error) {
+      console.error("Logout error:", error.message)
+    }
+  }
 
   const toggleMenu = (label) => {
     setOpenMenus((prev) => ({ ...prev, [label]: !prev[label] }))
@@ -175,6 +183,22 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
       {/* Spacer */}
       <div className="flex-1" />
 
+      {/* Go to User View */}
+      <div className={`flex flex-col gap-0.5 mb-1 ${collapsed ? 'px-2' : 'px-3'}`}>
+        <NavLink
+          to="/"
+          title={collapsed ? 'Go to User View' : undefined}
+          className={() =>
+            `flex items-center rounded-[10px] text-sm font-medium cursor-pointer transition-all duration-300 no-underline whitespace-nowrap ${
+              collapsed ? 'justify-center p-3 gap-0' : 'gap-3.5 px-3.5 py-3'
+            } text-[#fbbf24] hover:bg-[rgba(251,191,36,0.1)] hover:text-[#fcd34d]`
+          }
+        >
+          <FontAwesomeIcon icon={faEye} className="w-[18px] h-[18px] shrink-0 text-base text-center" />
+          {!collapsed && <span className="flex-1 overflow-hidden text-ellipsis">Go to User View</span>}
+        </NavLink>
+      </div>
+
       {/* Collapse toggle */}
       <div className={`flex flex-col gap-0.5 mb-2 ${collapsed ? 'px-2' : 'px-3'}`}>
         <button
@@ -195,31 +219,54 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
       {/* Admin profile */}
       <div
         className={`flex items-center gap-3 border-t border-white/6 whitespace-nowrap mb-2 ${
-          collapsed ? 'justify-center px-2 py-4 mx-1' : 'px-[18px] py-4 mx-3'
+          collapsed ? 'justify-center flex-col px-2 py-4 mx-1 gap-4' : 'px-[18px] py-4 mx-3'
         }`}
       >
-        {userData?.avatarUrl ? (
-          <img
-            src={userData.avatarUrl}
-            alt="Admin avatar"
-            className="w-10 h-10 rounded-full object-cover shrink-0"
-          />
+        <div
+          className="flex items-center gap-3 cursor-pointer overflow-hidden group"
+          onClick={() => navigate('/account-management')}
+          title="Manage Account"
+        >
+          {userData?.avatarUrl ? (
+            <img
+              src={userData.avatarUrl}
+              alt="Admin avatar"
+              className="w-10 h-10 rounded-full object-cover shrink-0 group-hover:ring-2 ring-[#2dd4a8] transition-all"
+            />
+          ) : (
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#6366f1] text-white flex items-center justify-center text-[13px] font-bold shrink-0 tracking-[0.5px] uppercase group-hover:ring-2 ring-[#2dd4a8] transition-all">
+              {(userData?.fullName || 'Admin')
+                .split(' ')
+                .map((w) => w[0])
+                .join('')
+                .slice(0, 2)}
+            </div>
+          )}
+          {!collapsed && (
+            <div className="flex flex-col overflow-hidden">
+              <span className="text-[13px] font-semibold text-[#e0f0f0] overflow-hidden text-ellipsis group-hover:text-[#2dd4a8] transition-colors">
+                {userData?.fullName || 'Admin'}
+              </span>
+              <span className="text-[11px] text-[#94b8b8] mt-px">{roleLabel}</span>
+            </div>
+          )}
+        </div>
+        {(!collapsed) ? (
+          <button
+            onClick={handleLogout}
+            title="Sign Out"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-[#94b8b8] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-all duration-300 ml-auto shrink-0 cursor-pointer"
+          >
+            <FontAwesomeIcon icon={faArrowRightFromBracket} className="text-[15px]" />
+          </button>
         ) : (
-          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#3b82f6] to-[#6366f1] text-white flex items-center justify-center text-[13px] font-bold shrink-0 tracking-[0.5px] uppercase">
-            {(userData?.fullName || 'Admin')
-              .split(' ')
-              .map((w) => w[0])
-              .join('')
-              .slice(0, 2)}
-          </div>
-        )}
-        {!collapsed && (
-          <div className="flex flex-col overflow-hidden">
-            <span className="text-[13px] font-semibold text-[#e0f0f0] overflow-hidden text-ellipsis">
-              {userData?.fullName || 'Admin'}
-            </span>
-            <span className="text-[11px] text-[#94b8b8] mt-px">{roleLabel}</span>
-          </div>
+          <button
+            onClick={handleLogout}
+            title="Sign Out"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-[#94b8b8] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-all duration-300 shrink-0 cursor-pointer"
+          >
+            <FontAwesomeIcon icon={faArrowRightFromBracket} className="text-[15px]" />
+          </button>
         )}
       </div>
     </aside>
