@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react'
 
 //import component
 import MatchScoreCard from '../../components/match_public/MatchScoreCard'
+import MatchLeaderBoardCard from '../../components/match_public/MatchLeaderBoardCard'
 import TournamentCard from '../../components/tournament_public/TournamentCard'
 import TopLoadingBar from '../../components/common/TopLoadingBar'
 
@@ -24,6 +25,55 @@ const matchItems = [
   { tournamentName: 'Tournament Football 2', matchNumber: '5', round: 'Group B', date: '06/02/2027', time: '05:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 0, score2: 2, status: 'completed' },
   { tournamentName: 'Tournament Football 3', matchNumber: '5', round: 'Semi-Final', date: '06/02/2027', time: '06:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 3, score2: 2, status: 'completed', },
   { tournamentName: 'Tournament Football 3', matchNumber: '5', round: 'Semi-Final', date: '06/02/2027', time: '06:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 3, score2: 2, status: 'completed', },
+];
+
+const matchItemsLeaderBoard = [
+  { 
+    tournamentName: 'Tournament Running Summer 2027', matchNumber: '5', round: 'Semi-Final', 
+    date: '06/02/2027', time: '06:00PM', status: 'ongoing',
+    startTime: new Date(Date.now()).toISOString(),
+    participants: [
+      { name: 'FOXY', score: 10 },
+      { name: 'KIMETSU', score: 8 },
+      { name: 'GOKU', score: 6 },
+      { name: 'NARUTO', score: 4 },
+      { name: 'Eztoccoun', score: 3 },
+    ]
+  },
+  { 
+    tournamentName: 'Tournament Running Summer 2027', matchNumber: '7', round: 'Semi-Final', 
+    date: '06/02/2027', time: '06:00PM', status: 'pausing',
+    startTime: '2026-06-11T02:00:34.572Z', pausedTime: new Date().toISOString(),
+    participants: [
+      { name: 'FOXY', score: 10 },
+      { name: 'KIMETSU', score: 8 },
+      { name: 'GOKU', score: 6 },
+      { name: 'NARUTO', score: 4 },
+      { name: 'Eztoccoun', score: 3 },
+    ]
+  },
+  { 
+    tournamentName: 'Tournament Running Spring 2027', matchNumber: '9', round: 'Semi-Final', 
+    date: '06/02/2027', time: '06:00PM', status: 'completed',
+    participants: [
+      { name: 'FOXY', score: 10 },
+      { name: 'KIMETSU', score: 8 },
+      { name: 'GOKU', score: 6 },
+      { name: 'NARUTO', score: 4 },
+      { name: 'Eztoccoun', score: 3 },
+    ]
+  },
+  { 
+    tournamentName: 'Tournament Running Spring 2027', matchNumber: '9', round: 'Semi-Final', 
+    date: '06/02/2027', time: '06:00PM', status: 'completed',
+    participants: [
+      { name: 'FOXY', score: 10 },
+      { name: 'KIMETSU', score: 8 },
+      { name: 'GOKU', score: 6 },
+      { name: 'NARUTO', score: 4 },
+      { name: 'Eztoccoun', score: 3 },
+    ]
+  },
 ];
 
 const tournamentItemsOnGoing = [
@@ -100,11 +150,11 @@ const SportsPage = () => {
 
   useEffect(() => {
     if (searchQuery.trim() || dateFrom || dateTo) {
-        setIsOpenOngoing(true);
-        setIsOpenUpcoming(true);
-        setIsOpenCompleted(true);
+      setIsOpenOngoing(true);
+      setIsOpenUpcoming(true);
+      setIsOpenCompleted(true);
     }
-}, [searchQuery, dateFrom, dateTo]);
+  }, [searchQuery, dateFrom, dateTo]);
 
   useEffect(() => {
     const fetchSportInfo = async () => {
@@ -139,9 +189,15 @@ const SportsPage = () => {
       </div>
       <div className='flex flex-col md:flex-row px-[5%] md:px-[10%] py-5'>
         <div className='flex flex-col gap-10 w-full md:pr-5 md:w-[60%] md:border-r border-[#d9d9d9]'>
-          {matchItems.map((match, index) => (
-            <MatchScoreCard key={index} match={match} />
-          ))}
+          {sportInfo?.data?.format === 'versus' ? (
+            matchItems.map((match, index) => (
+              <MatchScoreCard key={index} match={match} />
+            ))
+          ) : (
+            matchItemsLeaderBoard.map((match, index) => (
+              <MatchLeaderBoardCard key={index} match={match} />
+            ))
+          )}
         </div>
         <div className='flex flex-col w-full md:w-[40%] md:ml-5 gap-3'>
           <input
@@ -153,7 +209,7 @@ const SportsPage = () => {
           />
           <div className='flex items-center gap-3'>
             <div className='flex flex-col gap-1 w-[50%]'>
-              <span className = 'text-[12px] text-gray-500'>From:</span>
+              <span className='text-[12px] text-gray-500'>From:</span>
               <input
                 type='date'
                 value={dateFrom}
@@ -162,7 +218,7 @@ const SportsPage = () => {
               />
             </div>
             <div className='flex flex-col gap-1 w-[50%]'>
-              <span className = 'text-[12px] text-gray-500'>To:</span>
+              <span className='text-[12px] text-gray-500'>To:</span>
               <input
                 type='date'
                 value={dateTo}
