@@ -27,6 +27,55 @@ const matchItems = [
   { tournamentName: 'Tournament Football 3', matchNumber: '5', round: 'Semi-Final', date: '06/02/2027', time: '06:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 3, score2: 2, status: 'completed', },
 ];
 
+const matchItemsLeaderBoard = [
+  { 
+    tournamentName: 'Tournament Running Summer 2027', matchNumber: '5', round: 'Semi-Final', 
+    date: '06/02/2027', time: '06:00PM', status: 'ongoing',
+    startTime: new Date(Date.now()).toISOString(),
+    participants: [
+      { name: 'FOXY', score: 10 },
+      { name: 'KIMETSU', score: 8 },
+      { name: 'GOKU', score: 6 },
+      { name: 'NARUTO', score: 4 },
+      { name: 'Eztoccoun', score: 3 },
+    ]
+  },
+  { 
+    tournamentName: 'Tournament Running Summer 2027', matchNumber: '7', round: 'Semi-Final', 
+    date: '06/02/2027', time: '06:00PM', status: 'pausing',
+    startTime: '2026-06-11T02:00:34.572Z', pausedTime: new Date().toISOString(),
+    participants: [
+      { name: 'FOXY', score: 10 },
+      { name: 'KIMETSU', score: 8 },
+      { name: 'GOKU', score: 6 },
+      { name: 'NARUTO', score: 4 },
+      { name: 'Eztoccoun', score: 3 },
+    ]
+  },
+  { 
+    tournamentName: 'Tournament Running Spring 2027', matchNumber: '9', round: 'Semi-Final', 
+    date: '06/02/2027', time: '06:00PM', status: 'completed',
+    participants: [
+      { name: 'FOXY', score: 10 },
+      { name: 'KIMETSU', score: 8 },
+      { name: 'GOKU', score: 6 },
+      { name: 'NARUTO', score: 4 },
+      { name: 'Eztoccoun', score: 3 },
+    ]
+  },
+  { 
+    tournamentName: 'Tournament Running Spring 2027', matchNumber: '9', round: 'Semi-Final', 
+    date: '06/02/2027', time: '06:00PM', status: 'completed',
+    participants: [
+      { name: 'FOXY', score: 10 },
+      { name: 'KIMETSU', score: 8 },
+      { name: 'GOKU', score: 6 },
+      { name: 'NARUTO', score: 4 },
+      { name: 'Eztoccoun', score: 3 },
+    ]
+  },
+];
+
 const tournamentItemsOnGoing = [
   { name: 'Tournament Football 1', startDate: '27/01/2027', endDate: '10/02/2027', status: 'Ongoing' },
   { name: 'Tournament Football 2', startDate: '28/01/2027', endDate: '11/02/2027', status: 'Ongoing' },
@@ -145,7 +194,7 @@ const SportsPage = () => {
               <MatchScoreCard key={index} match={match} />
             ))
           ) : (
-            matchItems.map((match, index) => (
+            matchItemsLeaderBoard.map((match, index) => (
               <MatchLeaderBoardCard key={index} match={match} />
             ))
           )}
