@@ -4,14 +4,14 @@ class TournamentController {
   //Step 1
   async createGeneralDetails(req, res, next) {
     try {
-      const data = await service.createGeneralDetails(req.body, req.auth.userId);
+      const data = await service.createGeneralDetails(req.body, req.auth.userId, req.auth.accessToken);
       res.status(201).json({ success: true, data });
     } catch (err) { next(err); }
   }
 
   async updateGeneralDetails(req, res, next) {
     try {
-      const data = await service.updateGeneralDetails(req.params.id, req.body, req.auth.userId);
+      const data = await service.updateGeneralDetails(req.params.id, req.body, req.auth.userId, req.auth.accessToken);
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
@@ -43,6 +43,13 @@ class TournamentController {
   async publish(req, res, next) {
     try {
       const data = await service.publishTournament(req.params.id, req.auth.userId);
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
+
+  async listTournaments(req, res, next) {
+    try {
+      const data = await service.listTournaments(req.auth.userId);
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }

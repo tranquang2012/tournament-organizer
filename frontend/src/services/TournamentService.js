@@ -170,3 +170,9 @@ export const publishTournament = async (tournamentId) => {
   const authConfig = await withTournamentAuth();
   return axios.patch(`/api/tournaments/${tournamentId}/publish`, {}, authConfig);
 };
+
+export const getTournaments = async () => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.get('/api/tournaments', authConfig);
+  return response.data || [];
+};
