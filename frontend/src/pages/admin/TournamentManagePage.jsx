@@ -125,20 +125,6 @@ const TournamentManagePage = () => {
           Select a tournament to manage its matches, scores, and participants.
         </p>
 
-<<<<<<< HEAD
-        <div className="flex flex-col max-w-[1200px]">
-          <AdminTournamentSection 
-            title="Ongoing Tournaments" 
-            pillColorClass="bg-[#22c55e]" 
-            tournaments={ongoingTournaments} 
-          />
-          
-          <AdminTournamentSection 
-            title="Upcoming Tournaments" 
-            pillColorClass="bg-[#94a3b8]" 
-            tournaments={upcomingTournaments} 
-          />
-=======
         {loading ? (
           <div className="flex justify-center items-center py-20">
             <div className="w-10 h-10 border-4 border-slate-200 border-t-[#3b82f6] rounded-full animate-spin"></div>
@@ -169,7 +155,6 @@ const TournamentManagePage = () => {
                 tournaments={upcomingTournaments} 
               />
             )}
->>>>>>> a1a15d4682a72b2c5c32e14a58f02b5b02af97ad
 
             {completedTournaments.length > 0 && (
               <AdminTournamentSection 
