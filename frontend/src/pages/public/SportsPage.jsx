@@ -207,8 +207,6 @@ const SportsPage = () => {
     if (imageLoaded) setIsLoading(false);
   }, [imageLoaded]);
 
-  console.log('Sport Info:', sportInfo)
-
   return (
     <div>
       <TopLoadingBar isLoading={isLoading} />

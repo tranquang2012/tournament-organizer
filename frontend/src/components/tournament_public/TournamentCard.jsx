@@ -38,7 +38,7 @@ const TournamentCard = ({ tournament }) => {
                 onClick={() => navigate(`/tournaments`)}
             >
                 <img src={tournament.image || banner1} alt={tournament.name} className='w-[50%] h-full object-cover object-center rounded-tl-lg rounded-bl-lg' />
-                <div className='flex flex-col w-[55%]'>
+                <div className='flex flex-col w-[45%]'>
                     <div className='flex flex-col mt-[5%] items-start h-[90%]'>
                         <span className='text-[15px] md:text-[21px] text-[#123836] font-semibold'>{tournament.name}</span>
                         <span className='text-[10px] md:text-[14px] text-gray-500'>Start Date: {tournament.startDate}</span>
