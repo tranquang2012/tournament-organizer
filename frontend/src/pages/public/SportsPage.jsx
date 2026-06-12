@@ -11,6 +11,7 @@ import TopLoadingBar from '../../components/common/TopLoadingBar'
 
 //import endpoints
 import { getSportInformation } from '../../services/SportService'
+import { getPublicTournaments } from '../../services/TournamentService'
 
 
 const matchItems = [
@@ -76,31 +77,11 @@ const matchItemsLeaderBoard = [
   },
 ];
 
-const tournamentItemsOnGoing = [
-  { name: 'Tournament Football 1', startDate: '27/01/2027', endDate: '10/02/2027', status: 'Ongoing' },
-  { name: 'Tournament Football 2', startDate: '28/01/2027', endDate: '11/02/2027', status: 'Ongoing' },
-  { name: 'Tournament Football 3', startDate: '27/01/2027', endDate: '10/02/2027', status: 'Ongoing' },
-  { name: 'Tournament Football 4', startDate: '28/01/2027', endDate: '11/02/2027', status: 'Ongoing' },
-];
-
-const tournamentItemsCompleted = [
-  { name: 'Tournament Football 3', startDate: '20/01/2027', endDate: '30/01/2027', status: 'Ended' },
-  { name: 'Tournament Football 4', startDate: '22/01/2027', endDate: '01/02/2027', status: 'Ended' },
-  { name: 'Tournament Football 3', startDate: '20/01/2027', endDate: '30/01/2027', status: 'Ended' },
-  { name: 'Tournament Football 4', startDate: '22/01/2027', endDate: '01/02/2027', status: 'Ended' },
-];
-
-const tournamentItemsUpcoming = [
-  { name: 'Tournament Basketball 5', startDate: '01/02/2027', endDate: '15/02/2027', status: 'Upcoming' },
-  { name: 'Tournament Football 6', startDate: '05/02/2027', endDate: '20/02/2027', status: 'Upcoming' },
-  { name: 'Tournament Football 5', startDate: '01/02/2027', endDate: '15/02/2027', status: 'Upcoming' },
-  { name: 'Tournament Football 6', startDate: '05/02/2027', endDate: '20/02/2027', status: 'Upcoming' },
-];
-
 const SportsPage = () => {
   const { id } = useParams()
 
   const [sportInfo, setSportInfo] = useState(null);
+  const [tournaments, setTournaments] = useState([]);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isOpenOngoing, setIsOpenOngoing] = useState(true);
   const [isOpenUpcoming, setIsOpenUpcoming] = useState(true);
@@ -136,9 +117,13 @@ const SportsPage = () => {
     return result;
   };
 
-  const filteredOngoing = filterTournaments(tournamentItemsOnGoing);
-  const filteredUpcoming = filterTournaments(tournamentItemsUpcoming);
-  const filteredCompleted = filterTournaments(tournamentItemsCompleted);
+  const ongoingTournaments = tournaments.filter(t => t.status === 'Ongoing');
+  const upcomingTournaments = tournaments.filter(t => t.status === 'Upcoming');
+  const completedTournaments = tournaments.filter(t => t.status === 'Ended');
+
+  const filteredOngoing = filterTournaments(ongoingTournaments);
+  const filteredUpcoming = filterTournaments(upcomingTournaments);
+  const filteredCompleted = filterTournaments(completedTournaments);
 
   useEffect(() => {
     if (searchQuery.trim()) {
@@ -167,10 +152,60 @@ const SportsPage = () => {
   }, [id]);
 
   useEffect(() => {
+    const fetchTournaments = async () => {
+      try {
+        const res = await getPublicTournaments(id);
+        const mapped = (res.data || res || []).map((t) => {
+          const formatDate = (dateStr) => {
+            if (!dateStr) return 'TBD';
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return 'TBD';
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+          };
+
+          const now = new Date();
+          now.setHours(0, 0, 0, 0);
+          const start = t.tour_startdate ? new Date(t.tour_startdate) : null;
+          if (start) start.setHours(0, 0, 0, 0);
+          const end = t.tour_enddate ? new Date(t.tour_enddate) : null;
+          if (end) end.setHours(23, 59, 59, 999);
+
+          let status = 'Upcoming';
+          if (t.tour_status === 'completed') {
+            status = 'Ended';
+          } else if (start && start > now) {
+            status = 'Upcoming';
+          } else if (end && end < now) {
+            status = 'Ended';
+          } else if (start && (!end || end >= now)) {
+            status = 'Ongoing';
+          }
+
+          return {
+            id: t.tour_id,
+            name: t.tour_name,
+            startDate: formatDate(t.tour_startdate),
+            endDate: formatDate(t.tour_enddate),
+            status,
+            image: t.tour_banner || t.sport_banner,
+          };
+        });
+        setTournaments(mapped);
+      } catch (err) {
+        console.error('Failed to fetch public tournaments:', err);
+      }
+    };
+    if (id) {
+      fetchTournaments();
+    }
+  }, [id]);
+
+  useEffect(() => {
     if (imageLoaded) setIsLoading(false);
   }, [imageLoaded]);
-
-  console.log('Sport Info:', sportInfo)
 
   return (
     <div>

@@ -60,8 +60,8 @@ const MatchScoreCard = ({ match }) => {
                 onClick={() => navigate(`./matches/${match.matchNumber}`)}
             >
                 <div className='flex flex-col w-[50%] mt-1'>
-                    <span className='text-[10px] md:text-[15px] h-[10%]'>Date: {match.date}</span>
-                    <span className='text-[10px] md:text-[15px] h-[10%]'>Time: {match.time}</span>
+                    <span className='text-[10px] md:text-[15px] h-[10%] pl-1'>Date: {match.date}</span>
+                    <span className='text-[10px] md:text-[15px] h-[10%] pl-1'>Time: {match.time}</span>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team1Losing ? 'opacity-40' : ''}`}>
                         <img src={logo1} alt='logoteam1' className='w-10 h-10 md:h-15 md:w-15 object-contain' />
                         <span className='text-[10px] md:text-[15px] font-black uppercase'>{match.team1}</span>

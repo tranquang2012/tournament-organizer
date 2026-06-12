@@ -192,6 +192,25 @@ class TournamentRepository {
     );
     return rows;
   }
+
+  async listPublic({ sportId } = {}) {
+    let query = `
+      SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+             (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count
+      FROM tournament t
+      LEFT JOIN sport s ON t.sp_id = s.sport_id
+      WHERE COALESCE(t.tour_status, 'draft') <> 'draft'
+    `;
+    const params = [];
+    if (sportId) {
+      params.push(sportId);
+      query += ` AND t.sp_id = $${params.length}`;
+    }
+    query += ` ORDER BY t.tour_startdate DESC NULLS LAST, t.tour_name ASC`;
+
+    const { rows } = await pool.query(query, params);
+    return rows;
+  }
 }
 
 module.exports = new TournamentRepository();

@@ -53,6 +53,14 @@ class TournamentController {
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
+
+  async listPublicTournaments(req, res, next) {
+    try {
+      const { sportId } = req.query;
+      const data = await service.listPublicTournaments({ sportId });
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
 }
 
 module.exports = new TournamentController();
