@@ -120,26 +120,27 @@ const TournamentManagePage = () => {
   return (
     <div className="flex flex-col font-['Inter',_'Segoe_UI',_system-ui,_sans-serif] pb-10">
       <div className="px-6 py-6 md:px-10 md:py-8">
-        <h1 className="text-2xl md:text-[28px] font-bold text-slate-800 mb-1">Tournament Management</h1>
-        <p className="text-[14px] font-medium text-slate-500 mb-10">
-          Select a tournament to manage its matches, scores, and participants.
-        </p>
+        <div className="max-w-[1200px] mx-auto w-full">
+          <h1 className="text-2xl md:text-[28px] font-bold text-slate-800 mb-1">Tournament Management</h1>
+          <p className="text-[14px] font-medium text-slate-500 mb-10">
+            Select a tournament to manage its matches, scores, and participants.
+          </p>
 
-        {loading ? (
-          <div className="flex justify-center items-center py-20">
-            <div className="w-10 h-10 border-4 border-slate-200 border-t-[#3b82f6] rounded-full animate-spin"></div>
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg max-w-[1200px]" role="alert">
-            <span className="block sm:inline">{error}</span>
-          </div>
-        ) : tournaments.length === 0 ? (
-          <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-200 w-full max-w-[1200px] mx-auto">
-            <p className="text-slate-500 font-medium mb-2">No tournaments found.</p>
-            <p className="text-slate-400 text-sm">Create a tournament using the setup wizard to get started.</p>
-          </div>
-        ) : (
-          <div className="flex flex-col max-w-[1200px]">
+          {loading ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="w-10 h-10 border-4 border-slate-200 border-t-[#3b82f6] rounded-full animate-spin"></div>
+            </div>
+          ) : error ? (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg w-full" role="alert">
+              <span className="block sm:inline">{error}</span>
+            </div>
+          ) : tournaments.length === 0 ? (
+            <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-200 w-full mx-auto">
+              <p className="text-slate-500 font-medium mb-2">No tournaments found.</p>
+              <p className="text-slate-400 text-sm">Create a tournament using the setup wizard to get started.</p>
+            </div>
+          ) : (
+            <div className="flex flex-col w-full">
             {activeTournaments.length > 0 && (
               <AdminTournamentSection 
                 title="Active Tournaments" 
@@ -171,6 +172,7 @@ const TournamentManagePage = () => {
             )}
           </div>
         )}
+        </div>
       </div>
     </div>
   );
