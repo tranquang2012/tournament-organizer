@@ -75,7 +75,7 @@ const MatchLeaderBoardCard = ({ match }) => {
                 </div>
                 <div className='flex flex-col w-full h-[80%] p-3 gap-2'>
                     {match.participants.map((participant, index) => (
-                        <div key={index} className={`h-[20%] text-[13px] md:text-[17px] flex items-center gap-3 border rounded-md transition-all duration-300 px-3
+                        <div key={index} className={`h-[20%] text-[13px] md:text-[17px] flex items-center gap-3 border rounded-md px-3
                             ${isCompleted && index >= 3
                             ? 'bg-gray-100 border-gray-200 text-gray-400 hover:bg-gray-100'
                             : 'border-gray-300 hover:bg-[#f0f0f0]'}`}

@@ -30,10 +30,10 @@ const UserProfileManagement = () => {
     const [isLoading, setIsLoading] = useState(true)
     const [toast, setToast] = useState(null)
     const role = roleMeta[userData?.role] || roleMeta.USER
-    const currentProvider = session?.user?.app_metadata?.provider
-    console.log('currentProvider:', currentProvider)
-
-    console.log('userData:', userData)
+    const identities = session?.user?.identities
+    const currentProvider = session?.user?.identities?.reduce((latest, identity) => {
+        return new Date(identity.updated_at) > new Date(latest.updated_at) ? identity : latest
+    })?.provider
 
     const initials = userData?.fullName
         .split(' ')
@@ -116,7 +116,7 @@ const UserProfileManagement = () => {
                                     <FontAwesomeIcon icon={faPencil} /> Change your avatar
                                 </label>
                                 <div>
-                                    <FontAwesomeIcon icon={currentProvider === 'google' ? faGoogle : faFacebook} className={currentProvider === 'google' ? 'text-[#ea4335]' : 'text-[#1877f2]'}/>
+                                    <FontAwesomeIcon icon={currentProvider === 'google' ? faGoogle : faFacebook} className={currentProvider === 'google' ? 'text-[#ea4335]' : 'text-[#1877f2]'} />
                                     <span className="ml-1 text-[15px]">{currentProvider === 'google' ? 'Google Account' : 'Facebook Account'}</span>
                                 </div>
                             </div>
