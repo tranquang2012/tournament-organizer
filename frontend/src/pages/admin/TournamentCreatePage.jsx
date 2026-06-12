@@ -103,7 +103,6 @@ const TournamentCreatePage = () => {
       }
     }
   };
-  };
 
   const validateCurrentStep = () => {
     /* Validate required fields for current step */
