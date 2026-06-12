@@ -1,190 +1,121 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import AdminTournamentSection from '../../components/tournament_admin/AdminTournamentSection';
+import { getTournaments } from '../../services/TournamentService';
 
-// Mock images 
+// Mock/Default images 
 import imgFootball from '../../assets/sportImages/football.jpg';
 import imgBasketball from '../../assets/sportImages/basketball.png';
 import imgCS from '../../assets/sportImages/cs.png';
 import imgDota from '../../assets/sportImages/dota.png';
 import imgBowling from '../../assets/sportImages/bowling.png';
 
-const mockTournaments = [
-  // Active Tournaments
-  {
-    id: 1,
-    title: 'Netcompany Football Championship',
-    image: imgFootball,
-    format: 'Single Elimination',
-    startDate: '05/05/2026',
-    endDate: '18/05/2026',
-    completedMatches: 2,
-    totalMatches: 7,
-    matchesLabel: 'matches',
-    teamsCount: 8,
-    participantsLabel: 'teams',
-    liveCount: 1,
-    status: 'Active'
-  },
-  {
-    id: 2,
-    title: 'Netcompany Badminton Championship',
-    image: imgBasketball, 
-    format: 'Round Robin',
-    startDate: '05/05/2026',
-    endDate: '18/05/2026',
-    completedMatches: 3,
-    totalMatches: 6,
-    matchesLabel: 'matches',
-    teamsCount: 4,
-    participantsLabel: 'teams',
-    liveCount: 1,
-    status: 'Active'
-  },
-  {
-    id: 3,
-    title: 'Netcompany CS Cup',
-    image: imgCS,
-    format: 'Round Scoring',
-    startDate: '05/05/2026',
-    endDate: '18/05/2026',
-    completedMatches: 2,
-    totalMatches: 3,
-    matchesLabel: 'rounds',
-    teamsCount: 8,
-    participantsLabel: 'participants',
-    liveCount: 1,
-    status: 'Active'
-  },
-  {
-    id: 4,
-    title: 'Netcompany Bowling Tournament',
-    image: imgBowling,
-    format: 'High Score',
-    startDate: '06/05/2026',
-    endDate: '10/05/2026',
-    completedMatches: 1,
-    totalMatches: 10,
-    matchesLabel: 'matches',
-    teamsCount: 16,
-    participantsLabel: 'participants',
-    liveCount: 0,
-    status: 'Active'
-  },
-
-  // Upcoming Tournaments
-  {
-    id: 5,
-    title: 'Netcompany Football Championship',
-    image: imgFootball,
-    format: 'Single Elimination',
-    startDate: '05/05/2026',
-    endDate: '18/05/2026',
-    completedMatches: 0,
-    totalMatches: 7,
-    matchesLabel: 'matches',
-    teamsCount: 8,
-    participantsLabel: 'teams',
-    liveCount: 1,
-    status: 'Upcoming'
-  },
-  {
-    id: 6,
-    title: 'Netcompany Badminton Championship',
-    image: imgBasketball,
-    format: 'Round Robin',
-    startDate: '05/05/2026',
-    endDate: '18/05/2026',
-    completedMatches: 0,
-    totalMatches: 6,
-    matchesLabel: 'matches',
-    teamsCount: 4,
-    participantsLabel: 'teams',
-    liveCount: 1,
-    status: 'Upcoming'
-  },
-  {
-    id: 7,
-    title: 'Netcompany CS Cup',
-    image: imgCS,
-    format: 'Round Scoring',
-    startDate: '05/05/2026',
-    endDate: '18/05/2026',
-    completedMatches: 0,
-    totalMatches: 2,
-    matchesLabel: 'rounds',
-    teamsCount: 8,
-    participantsLabel: 'participants',
-    liveCount: 1,
-    status: 'Upcoming'
-  },
-
-  // Completed Tournaments
-  {
-    id: 8,
-    title: 'Netcompany Football Championship',
-    image: imgFootball,
-    format: 'Single Elimination',
-    startDate: '05/05/2026',
-    endDate: '18/05/2026',
-    completedMatches: 7,
-    totalMatches: 7,
-    matchesLabel: 'matches',
-    teamsCount: 8,
-    participantsLabel: 'teams',
-    liveCount: 0,
-    status: 'Completed'
-  },
-  {
-    id: 9,
-    title: 'Netcompany Badminton Championship',
-    image: imgBasketball,
-    format: 'Round Robin',
-    startDate: '05/05/2026',
-    endDate: '18/05/2026',
-    completedMatches: 6,
-    totalMatches: 6,
-    matchesLabel: 'matches',
-    teamsCount: 4,
-    participantsLabel: 'teams',
-    liveCount: 0,
-    status: 'Completed'
-  },
-  {
-    id: 10,
-    title: 'Netcompany CS Cup',
-    image: imgCS,
-    format: 'Round Scoring',
-    startDate: '05/05/2026',
-    endDate: '18/05/2026',
-    completedMatches: 2,
-    totalMatches: 2,
-    matchesLabel: 'rounds',
-    teamsCount: 8,
-    participantsLabel: 'participants',
-    liveCount: 0,
-    status: 'Completed'
-  },
-  {
-    id: 11,
-    title: 'Netcompany Dota 2 Invitational',
-    image: imgDota,
-    format: 'Double Elimination',
-    startDate: '01/04/2026',
-    endDate: '15/04/2026',
-    completedMatches: 14,
-    totalMatches: 14,
-    matchesLabel: 'matches',
-    teamsCount: 8,
-    participantsLabel: 'teams',
-    liveCount: 0,
-    status: 'Completed'
-  }
-];
-
 const TournamentManagePage = () => {
-  const activeTournaments = mockTournaments.filter(t => t.status === 'Active');
-  const upcomingTournaments = mockTournaments.filter(t => t.status === 'Upcoming');
-  const completedTournaments = mockTournaments.filter(t => t.status === 'Completed');
+  const [tournaments, setTournaments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchTournaments = async () => {
+      try {
+        setLoading(true);
+        const data = await getTournaments();
+        
+        // Map backend tournaments to components schema
+        const mapped = data.map((t) => {
+          // Prioritize tournament banner, then sport banner, then default images
+          let image = t.tour_banner || t.sport_banner;
+          if (!image) {
+            const nameLower = (t.sport_name || '').toLowerCase();
+            if (nameLower.includes('football') || nameLower.includes('soccer')) {
+              image = imgFootball;
+            } else if (nameLower.includes('basketball')) {
+              image = imgBasketball;
+            } else if (nameLower.includes('cs') || nameLower.includes('counter-strike')) {
+              image = imgCS;
+            } else if (nameLower.includes('dota')) {
+              image = imgDota;
+            } else if (nameLower.includes('bowling')) {
+              image = imgBowling;
+            } else {
+              image = imgFootball;
+            }
+          }
+
+          // Format dates
+          const formatDate = (dateStr) => {
+            if (!dateStr) return 'TBD';
+            const date = new Date(dateStr);
+            if (isNaN(date.getTime())) return 'TBD';
+            const day = String(date.getDate()).padStart(2, '0');
+            const month = String(date.getMonth() + 1).padStart(2, '0');
+            const year = date.getFullYear();
+            return `${day}/${month}/${year}`;
+          };
+
+          // Classify status: Active, Upcoming, Completed
+          let status = 'Upcoming';
+          const tourStatus = (t.tour_status || '').toLowerCase();
+          if (tourStatus === 'ongoing' || tourStatus === 'active') {
+            status = 'Active';
+          } else if (tourStatus === 'completed') {
+            status = 'Completed';
+          } else if (tourStatus === 'draft' || tourStatus === 'ready') {
+            status = 'Upcoming';
+          } else {
+            // Infer status from dates if not explicit
+            const now = new Date();
+            const start = t.tour_startdate ? new Date(t.tour_startdate) : null;
+            const end = t.tour_enddate ? new Date(t.tour_enddate) : null;
+            if (start && start > now) {
+              status = 'Upcoming';
+            } else if (end && end < now) {
+              status = 'Completed';
+            } else if (start && (!end || end >= now)) {
+              status = 'Active';
+            }
+          }
+
+          // Format name label
+          const formatMapping = {
+            'single_elim': 'Single Elimination',
+            'double_elim': 'Double Elimination',
+            'round_robin': 'Round Robin',
+            'hybrid': 'Hybrid',
+          };
+          const formatName = formatMapping[t.tour_format] || t.tour_format || 'TBD';
+
+          return {
+            id: t.tour_id,
+            title: t.tour_name,
+            image,
+            format: formatName,
+            startDate: formatDate(t.tour_startdate),
+            endDate: formatDate(t.tour_enddate),
+            completedMatches: 0,
+            totalMatches: 0,
+            matchesLabel: 'matches',
+            teamsCount: t.competitor_count || 0,
+            participantsLabel: t.participant_type === 'individual' ? 'participants' : 'teams',
+            liveCount: tourStatus === 'ongoing' ? 1 : 0,
+            status
+          };
+        });
+
+        setTournaments(mapped);
+      } catch (err) {
+        console.error('Failed to load tournaments:', err);
+        setError('Could not load tournaments. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTournaments();
+  }, []);
+
+  const activeTournaments = tournaments.filter(t => t.status === 'Active');
+  const upcomingTournaments = tournaments.filter(t => t.status === 'Upcoming');
+  const completedTournaments = tournaments.filter(t => t.status === 'Completed');
 
   return (
     <div className="flex flex-col font-['Inter',_'Segoe_UI',_system-ui,_sans-serif] pb-10">
@@ -194,25 +125,52 @@ const TournamentManagePage = () => {
           Select a tournament to manage its matches, scores, and participants.
         </p>
 
-        <div className="flex flex-col max-w-[1200px]">
-          <AdminTournamentSection 
-            title="Active Tournaments" 
-            pillColorClass="bg-[#22c55e]" 
-            tournaments={activeTournaments} 
-          />
-          
-          <AdminTournamentSection 
-            title="Upcoming Tournaments" 
-            pillColorClass="bg-[#94a3b8]" 
-            tournaments={upcomingTournaments} 
-          />
+        {loading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="w-10 h-10 border-4 border-slate-200 border-t-[#3b82f6] rounded-full animate-spin"></div>
+          </div>
+        ) : error ? (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg max-w-[1200px]" role="alert">
+            <span className="block sm:inline">{error}</span>
+          </div>
+        ) : tournaments.length === 0 ? (
+          <div className="text-center py-20 bg-slate-50 rounded-xl border border-dashed border-slate-200 max-w-[1200px]">
+            <p className="text-slate-500 font-medium mb-2">No tournaments found.</p>
+            <p className="text-slate-400 text-sm">Create a tournament using the setup wizard to get started.</p>
+          </div>
+        ) : (
+          <div className="flex flex-col max-w-[1200px]">
+            {activeTournaments.length > 0 && (
+              <AdminTournamentSection 
+                title="Active Tournaments" 
+                pillColorClass="bg-[#22c55e]" 
+                tournaments={activeTournaments} 
+              />
+            )}
+            
+            {upcomingTournaments.length > 0 && (
+              <AdminTournamentSection 
+                title="Upcoming Tournaments" 
+                pillColorClass="bg-[#94a3b8]" 
+                tournaments={upcomingTournaments} 
+              />
+            )}
 
-          <AdminTournamentSection 
-            title="Completed Tournaments" 
-            pillColorClass="bg-[#3b82f6]" 
-            tournaments={completedTournaments} 
-          />
-        </div>
+            {completedTournaments.length > 0 && (
+              <AdminTournamentSection 
+                title="Completed Tournaments" 
+                pillColorClass="bg-[#3b82f6]" 
+                tournaments={completedTournaments} 
+              />
+            )}
+            
+            {activeTournaments.length === 0 && upcomingTournaments.length === 0 && completedTournaments.length === 0 && (
+              <div className="text-center py-10 text-slate-400">
+                No active, upcoming, or completed tournaments found.
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

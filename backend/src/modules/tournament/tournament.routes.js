@@ -11,6 +11,8 @@ router.get('/sport-rules', (req, res) => {
 
 router.use(auth, requireAdminUser);
 
+router.get('/',                               ctrl.listTournaments.bind(ctrl));
+
 //Step 1
 router.post('/',                              ctrl.createGeneralDetails.bind(ctrl));
 router.patch('/:id/general-details',          ctrl.updateGeneralDetails.bind(ctrl));
