@@ -97,7 +97,7 @@ const MatchLeaderBoardCard = ({ match }) => {
                         </div>
                     ))}
                 </div>
-                <span className='text-gray-500 text-[15px] text-center hover:text-[16px] hover:text-[#123836] cursor-pointer pt-1'>View more participants</span>
+                <span className='text-gray-500 text-[13px] md:text-[15px] text-center hover:text-[16px] hover:text-[#123836] cursor-pointer pt-1'>View more participants</span>
             </div>
         </div>
     )
