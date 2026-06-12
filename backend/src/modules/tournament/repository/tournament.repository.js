@@ -10,7 +10,7 @@ class TournamentRepository {
       `INSERT INTO tournament
          (tour_name, tour_descrip, tour_locat, tour_startdate, tour_enddate,
           tour_banner, tour_status, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,'ongoing',$7)
+       VALUES ($1,$2,$3,$4,$5,$6,'draft',$7)
        RETURNING *`,
       [tour_name, tour_descrip, tour_locat, tour_startdate, tour_enddate, tour_banner, organizerId]
     );
@@ -165,7 +165,7 @@ class TournamentRepository {
     const { rows } = await pool.query(
       `UPDATE tournament
        SET tour_status='ongoing'
-       WHERE tour_id=$1 AND created_by=$2 AND tour_status='ended'
+       WHERE tour_id=$1 AND created_by=$2 AND COALESCE(tour_status, 'draft') <> 'ongoing'
        RETURNING *`,
       [tourId, organizerId]
     );
