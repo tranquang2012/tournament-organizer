@@ -179,6 +179,19 @@ class TournamentRepository {
     );
     return rows[0] || null;
   }
+
+  async listAll(organizerId) {
+    const { rows } = await pool.query(
+      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+              (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count
+       FROM tournament t
+       LEFT JOIN sport s ON t.sp_id = s.sport_id
+       WHERE t.created_by=$1
+       ORDER BY t.tour_startdate DESC NULLS LAST, t.tour_name ASC`,
+      [organizerId]
+    );
+    return rows;
+  }
 }
 
 module.exports = new TournamentRepository();
