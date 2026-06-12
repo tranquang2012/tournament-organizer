@@ -9,7 +9,7 @@ import imgDota from '../../assets/sportImages/dota.png';
 import imgBowling from '../../assets/sportImages/bowling.png';
 
 const mockTournaments = [
-  // Active Tournaments
+  // Ongoing Tournaments
   {
     id: 1,
     title: 'Netcompany Football Championship',
@@ -23,7 +23,7 @@ const mockTournaments = [
     teamsCount: 8,
     participantsLabel: 'teams',
     liveCount: 1,
-    status: 'Active'
+    status: 'Ongoing'
   },
   {
     id: 2,
@@ -38,7 +38,7 @@ const mockTournaments = [
     teamsCount: 4,
     participantsLabel: 'teams',
     liveCount: 1,
-    status: 'Active'
+    status: 'Ongoing'
   },
   {
     id: 3,
@@ -53,7 +53,7 @@ const mockTournaments = [
     teamsCount: 8,
     participantsLabel: 'participants',
     liveCount: 1,
-    status: 'Active'
+    status: 'Ongoing'
   },
   {
     id: 4,
@@ -68,7 +68,7 @@ const mockTournaments = [
     teamsCount: 16,
     participantsLabel: 'participants',
     liveCount: 0,
-    status: 'Active'
+    status: 'Ongoing'
   },
 
   // Upcoming Tournaments
@@ -182,7 +182,7 @@ const mockTournaments = [
 ];
 
 const TournamentManagePage = () => {
-  const activeTournaments = mockTournaments.filter(t => t.status === 'Active');
+  const ongoingTournaments = mockTournaments.filter(t => t.status === 'Ongoing');
   const upcomingTournaments = mockTournaments.filter(t => t.status === 'Upcoming');
   const completedTournaments = mockTournaments.filter(t => t.status === 'Completed');
 
@@ -196,9 +196,9 @@ const TournamentManagePage = () => {
 
         <div className="flex flex-col max-w-[1200px]">
           <AdminTournamentSection 
-            title="Active Tournaments" 
+            title="Ongoing Tournaments" 
             pillColorClass="bg-[#22c55e]" 
-            tournaments={activeTournaments} 
+            tournaments={ongoingTournaments} 
           />
           
           <AdminTournamentSection 
