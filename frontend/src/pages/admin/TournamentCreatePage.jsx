@@ -1,6 +1,8 @@
 import { useState } from 'react';
+import { useBlocker } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faArrowRight } from '@fortawesome/free-solid-svg-icons';
+import ConfirmationModal from '../../components/common/ConfirmationModal';
 import SetupWizardStepper from '../../components/tournament_admin/SetupWizardStepper';
 import GeneralDetailsStep from '../../components/tournament_admin/steps/GeneralDetailsStep';
 import SportParticipantsStep from '../../components/tournament_admin/steps/SportParticipantsStep';
@@ -57,6 +59,12 @@ const TournamentCreatePage = () => {
   const [savingStep, setSavingStep] = useState(false);
   const [toast, setToast] = useState(null);
   const [publishing, setPublishing] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      isDirty && currentLocation.pathname !== nextLocation.pathname
+  );
 
   /* Validation */
   const isStepCompleted = (idx) => {
@@ -203,9 +211,18 @@ const TournamentCreatePage = () => {
   const handleBack = () => goToStep(currentStep - 1);
 
   /* Step data updaters */
-  const updateStep1 = (data) => setFormData((prev) => ({ ...prev, ...data }));
-  const updateStep2 = (data) => setFormData((prev) => ({ ...prev, ...data }));
-  const updateStep3 = (data) => setFormData((prev) => ({ ...prev, ...data }));
+  const updateStep1 = (data) => {
+    setIsDirty(true);
+    setFormData((prev) => ({ ...prev, ...data }));
+  };
+  const updateStep2 = (data) => {
+    setIsDirty(true);
+    setFormData((prev) => ({ ...prev, ...data }));
+  };
+  const updateStep3 = (data) => {
+    setIsDirty(true);
+    setFormData((prev) => ({ ...prev, ...data }));
+  };
 
   const handlePublish = async () => {
     setPublishing(true);
@@ -215,6 +232,7 @@ const TournamentCreatePage = () => {
       }
 
       await publishTournament(tournamentId);
+      setIsDirty(false);
       setToast({ message: 'Tournament published successfully!', type: 'success' });
     } catch (error) {
       setToast({ message: getErrorMessage(error), type: 'error' });
@@ -250,6 +268,18 @@ const TournamentCreatePage = () => {
     <div className="max-w-[900px] mx-auto pb-12">
       {/* Toast */}
       <NotificationToast toast={toast} onDismiss={() => setToast(null)} />
+
+      {/* Navigation blocker modal */}
+      <ConfirmationModal
+        open={blocker.state === 'blocked'}
+        onClose={() => blocker.reset?.()}
+        onConfirm={() => blocker.proceed?.()}
+        title="Leave Tournament Setup?"
+        description="You are in the middle of setting up a tournament. Are you sure you want to leave? Your progress won't be published until you finish."
+        intent="warning"
+        confirmLabel="Leave Page"
+        cancelLabel="Continue Editing"
+      />
 
       {/* Page header */}
       <div className="mb-8">
