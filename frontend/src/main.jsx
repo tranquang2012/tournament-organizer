@@ -15,7 +15,7 @@ import AdminRoute from './routes/AdminRoute.jsx'
 // Public layout & pages
 import PublicLayout from './components/layout/PublicLayout.jsx'
 import SportsPage from './pages/public/SportsPage.jsx'
-import TournamentListPage from './pages/public/TournamentListPage.jsx'
+import TournamentPage from './pages/public/TournamentPage.jsx'
 import MatchesPage from './pages/public/MatchesPage.jsx'
 
 // Admin
@@ -38,7 +38,7 @@ const router = createBrowserRouter(
       <Route element={<PublicLayout />}>
         <Route path="/" element={<LandingPage />} />
         <Route path="/sports/:id" element={<SportsPage />} />
-        <Route path="/tournaments" element={<TournamentListPage />} />
+        <Route path="/tournaments/:id" element={<TournamentPage />} />
         <Route path="/matches" element={<MatchesPage />} />
         <Route
           path="account-management"

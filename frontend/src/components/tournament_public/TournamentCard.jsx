@@ -16,6 +16,7 @@ const TournamentCard = ({ tournament }) => {
     const { isLogin } = useAuth()
     const [favorite, setFavorite] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false)
+    const tournamentId = tournament.id
 
     const handleRedirectToLogin = () => {
         navigate('/login')
@@ -35,7 +36,7 @@ const TournamentCard = ({ tournament }) => {
             />
             <div className='relative flex w-full min:h-[130px] md:min:h-[150px] border border-[#d9d9d9] cursor-pointer mt-1
             rounded-lg shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#123836]'
-                onClick={() => navigate(`/tournaments`)}
+                onClick={() => navigate(`/tournaments/${tournamentId}`, { state: { tournament } })}
             >
                 <img src={tournament.image || banner1} alt={tournament.name} className='w-[50%] h-[130px] md:h-[150px] object-cover object-center rounded-tl-lg rounded-bl-lg pr-2' />
                 <div className='flex flex-col w-[45%]'>
