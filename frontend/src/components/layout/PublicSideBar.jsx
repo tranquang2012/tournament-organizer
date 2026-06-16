@@ -56,7 +56,7 @@ const PublicSidebar = ({ isOpen, onClose }) => {
                         onClick={() => navigate('/')}
                     />
                 </div>
-                <div className="w-full flex flex-col">
+                <div className="w-full flex flex-col overflow-y-auto">
                     <div className={section} onClick={() => { navigate('/'); onClose() }}>
                         Home Page
                     </div>
