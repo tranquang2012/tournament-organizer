@@ -1,5 +1,5 @@
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { createBrowserRouter, createRoutesFromElements, RouterProvider, Route, Navigate, Outlet } from 'react-router-dom'
 import './index.css'
 
 // User
@@ -15,7 +15,7 @@ import AdminRoute from './routes/AdminRoute.jsx'
 // Public layout & pages
 import PublicLayout from './components/layout/PublicLayout.jsx'
 import SportsPage from './pages/public/SportsPage.jsx'
-import TournamentListPage from './pages/public/TournamentListPage.jsx'
+import TournamentPage from './pages/public/TournamentPage.jsx'
 import MatchesPage from './pages/public/MatchesPage.jsx'
 
 // Admin
@@ -25,59 +25,63 @@ import TournamentCreatePage from './pages/admin/TournamentCreatePage.jsx'
 import TournamentManagePage from './pages/admin/TournamentManagePage.jsx'
 import UserManagementPage from './pages/admin/UserManagementPage.jsx'
 
-createRoot(document.getElementById('root')).render(
-  // <StrictMode>
-  <BrowserRouter>
-    <AuthProvider>
-      <Routes>
-        {/* Public routes with shared navbar */}
-        <Route element={<PublicLayout />}>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/sports/:id" element={<SportsPage />} />
-          <Route path="/tournaments" element={<TournamentListPage />} />
-          <Route path="/matches" element={<MatchesPage />} />
-          <Route
-            path="account-management"
-            element={
-              <PrivateRoute>
-                <UserProfileManagement />
-              </PrivateRoute>
-            }
-          />
-        </Route>
+const AuthProviderWrapper = () => (
+  <AuthProvider>
+    <Outlet />
+  </AuthProvider>
+)
 
-        {/* Auth Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
-
-
-        {/* Admin routes */}
+const router = createBrowserRouter(
+  createRoutesFromElements(
+    <Route element={<AuthProviderWrapper />}>
+      {/* Public routes with shared navbar */}
+      <Route element={<PublicLayout />}>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/sports/:id" element={<SportsPage />} />
+        <Route path="/tournaments/:id" element={<TournamentPage />} />
+        <Route path="/matches" element={<MatchesPage />} />
         <Route
-          path="/admin"
+          path="account-management"
           element={
-            <AdminRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
-              <AdminLayout />
+            <PrivateRoute>
+              <UserProfileManagement />
+            </PrivateRoute>
+          }
+        />
+      </Route>
+
+      {/* Auth Routes */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+
+      {/* Admin routes */}
+      <Route
+        path="/admin"
+        element={
+          <AdminRoute allowedRoles={['ADMIN', 'SUPER_ADMIN']}>
+            <AdminLayout />
+          </AdminRoute>
+        }
+      >
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<AdminDashboardPage />} />
+        <Route path="tournaments/create" element={<TournamentCreatePage />} />
+        <Route path="tournaments/list" element={<TournamentManagePage />} />
+        <Route
+          path="accounts"
+          element={
+            <AdminRoute allowedRoles={['SUPER_ADMIN']} redirectTo="/admin/dashboard">
+              <UserManagementPage />
             </AdminRoute>
           }
-        >
-          <Route index element={<Navigate to="dashboard" replace />} />
-          <Route path="dashboard" element={<AdminDashboardPage />} />
-          <Route path="tournaments/create" element={<TournamentCreatePage />} />
-          <Route path="tournaments/list" element={<TournamentManagePage />} />
-          <Route
-            path="accounts"
-            element={
-              <AdminRoute allowedRoles={['SUPER_ADMIN']} redirectTo="/admin/dashboard">
-                <UserManagementPage />
-              </AdminRoute>
-            }
-          />
-        </Route>
+        />
+      </Route>
 
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Route>
+  )
+)
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </AuthProvider>
-  </BrowserRouter>
-  // </StrictMode>,
+createRoot(document.getElementById('root')).render(
+  <RouterProvider router={router} />
 )

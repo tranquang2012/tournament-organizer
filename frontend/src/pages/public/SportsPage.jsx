@@ -29,8 +29,8 @@ const matchItems = [
 ];
 
 const matchItemsLeaderBoard = [
-  { 
-    tournamentName: 'Tournament Running Summer 2027', matchNumber: '5', round: 'Semi-Final', 
+  {
+    tournamentName: 'Tournament Running Summer 2027', matchNumber: '5', round: 'Semi-Final',
     date: '06/02/2027', time: '06:00PM', status: 'ongoing',
     startTime: new Date(Date.now()).toISOString(),
     participants: [
@@ -41,8 +41,8 @@ const matchItemsLeaderBoard = [
       { name: 'Eztoccoun', score: 3 },
     ]
   },
-  { 
-    tournamentName: 'Tournament Running Summer 2027', matchNumber: '7', round: 'Semi-Final', 
+  {
+    tournamentName: 'Tournament Running Summer 2027', matchNumber: '7', round: 'Semi-Final',
     date: '06/02/2027', time: '06:00PM', status: 'pausing',
     startTime: '2026-06-11T02:00:34.572Z', pausedTime: new Date().toISOString(),
     participants: [
@@ -53,8 +53,8 @@ const matchItemsLeaderBoard = [
       { name: 'Eztoccoun', score: 3 },
     ]
   },
-  { 
-    tournamentName: 'Tournament Running Spring 2027', matchNumber: '9', round: 'Semi-Final', 
+  {
+    tournamentName: 'Tournament Running Spring 2027', matchNumber: '9', round: 'Semi-Final',
     date: '06/02/2027', time: '06:00PM', status: 'completed',
     participants: [
       { name: 'FOXY', score: 10 },
@@ -64,8 +64,8 @@ const matchItemsLeaderBoard = [
       { name: 'Eztoccoun', score: 3 },
     ]
   },
-  { 
-    tournamentName: 'Tournament Running Spring 2027', matchNumber: '9', round: 'Semi-Final', 
+  {
+    tournamentName: 'Tournament Running Spring 2027', matchNumber: '9', round: 'Semi-Final',
     date: '06/02/2027', time: '06:00PM', status: 'completed',
     participants: [
       { name: 'FOXY', score: 10 },
@@ -207,8 +207,6 @@ const SportsPage = () => {
     if (imageLoaded) setIsLoading(false);
   }, [imageLoaded]);
 
-  console.log('Sport Info:', sportInfo)
-
   return (
     <div>
       <TopLoadingBar isLoading={isLoading} />
@@ -220,7 +218,7 @@ const SportsPage = () => {
           onLoad={() => setImageLoaded(true)}
         />
       </div>
-      <div className='flex items-center bg-[#d9d9d9] h-[70px] px-[5%] md:px-[10%] text-[#123836] text-[20px] md:text-[30px] font-semibold w-full'>
+      <div className='flex items-center bg-[#d9d9d9]/50 h-[70px] px-[5%] md:px-[10%] text-[#123836] text-[20px] md:text-[30px] font-semibold w-full'>
         <div className='w-[60%]'>Recent Matches</div>
         <div className='w-[40%] ml-5'>Tournament List</div>
       </div>
