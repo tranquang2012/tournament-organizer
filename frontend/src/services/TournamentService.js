@@ -210,3 +210,8 @@ export const deleteTournament = async (tournamentId) => {
   const authConfig = await withTournamentAuth();
   return axios.delete(`/api/tournaments/${tournamentId}`, authConfig);
 };
+
+export const discardTournamentDraft = async (tournamentId) => {
+  const authConfig = await withTournamentAuth();
+  return axios.delete(`/api/tournaments/${tournamentId}/discard`, authConfig);
+};

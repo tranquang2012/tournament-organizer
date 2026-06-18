@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useBlocker } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faArrowRight } from '@fortawesome/free-solid-svg-icons';
@@ -15,7 +15,9 @@ import {
   saveSportAndParticipants,
   saveFormatConfig,
   publishTournament,
+  discardTournamentDraft,
 } from '../../services/TournamentService';
+import { getAccessToken } from '../../services/AuthService';
 
 const STEPS = [
   { label: 'General Details' },
@@ -60,11 +62,74 @@ const TournamentCreatePage = () => {
   const [toast, setToast] = useState(null);
   const [publishing, setPublishing] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
+  const [discarding, setDiscarding] = useState(false);
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
       isDirty && currentLocation.pathname !== nextLocation.pathname
   );
+
+  const handleDiscardAndLeave = async () => {
+    if (tournamentId) {
+      setDiscarding(true);
+      try {
+        await discardTournamentDraft(tournamentId);
+      } catch (error) {
+        console.error('Failed to discard draft:', error);
+      } finally {
+        setDiscarding(false);
+      }
+    }
+    setIsDirty(false);
+    blocker.proceed?.();
+  };
+
+  const tokenRef = useRef(null);
+
+  useEffect(() => {
+    const updateToken = async () => {
+      try {
+        const token = await getAccessToken();
+        tokenRef.current = token;
+      } catch (err) {
+        console.error('Failed to pre-fetch access token for unload/refresh:', err);
+      }
+    };
+    updateToken();
+  }, []);
+
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      if (isDirty) {
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    };
+
+    const handleUnload = () => {
+      if (isDirty && tournamentId && tokenRef.current) {
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+        const url = `${baseUrl}/api/tournaments/${tournamentId}/discard`;
+        fetch(url, {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${tokenRef.current}`,
+          },
+          keepalive: true,
+        }).catch((err) => {
+          console.error('Error discarding draft on unload:', err);
+        });
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('unload', handleUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('unload', handleUnload);
+    };
+  }, [isDirty, tournamentId]);
 
   /* Validation */
   const isStepCompleted = (idx) => {
@@ -273,12 +338,13 @@ const TournamentCreatePage = () => {
       <ConfirmationModal
         open={blocker.state === 'blocked'}
         onClose={() => blocker.reset?.()}
-        onConfirm={() => blocker.proceed?.()}
+        onConfirm={handleDiscardAndLeave}
         title="Leave Tournament Setup?"
         description="You are in the middle of setting up a tournament. Are you sure you want to leave? Your progress won't be published until you finish."
         intent="warning"
-        confirmLabel="Leave Page"
+        confirmLabel={discarding ? "Discarding..." : "Discard & Leave"}
         cancelLabel="Continue Editing"
+        loading={discarding}
       />
 
       {/* Page header */}
