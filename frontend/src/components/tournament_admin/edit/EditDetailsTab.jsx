@@ -14,16 +14,13 @@ import UploadField from '../../common/UploadField';
 import Button from '../../common/Button';
 import { updateTournamentDetails } from '../../../services/TournamentService';
 
-import banner1 from '../../../assets/bannerImages/banner1.jpg';
-import banner2 from '../../../assets/bannerImages/banner2.jpg';
-import banner3 from '../../../assets/bannerImages/banner3.jpg';
-import banner4 from '../../../assets/bannerImages/banner4.jpg';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 
 const DEFAULT_BANNERS = [
-  { id: 'banner1', src: banner1, label: 'Banner 1' },
-  { id: 'banner2', src: banner2, label: 'Banner 2' },
-  { id: 'banner3', src: banner3, label: 'Banner 3' },
-  { id: 'banner4', src: banner4, label: 'Banner 4' },
+  { id: 'banner1', src: `${supabaseUrl}/storage/v1/object/public/tournament-banners/default/banner1.jpg`, label: 'Banner 1' },
+  { id: 'banner2', src: `${supabaseUrl}/storage/v1/object/public/tournament-banners/default/banner2.jpg`, label: 'Banner 2' },
+  { id: 'banner3', src: `${supabaseUrl}/storage/v1/object/public/tournament-banners/default/banner3.jpg`, label: 'Banner 3' },
+  { id: 'banner4', src: `${supabaseUrl}/storage/v1/object/public/tournament-banners/default/banner4.jpg`, label: 'Banner 4' },
 ];
 
 const FORMAT_LABELS = {
