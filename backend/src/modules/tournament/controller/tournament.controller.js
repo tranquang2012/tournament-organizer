@@ -46,6 +46,15 @@ class TournamentController {
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
+
+  async discardDraft(req, res, next) {
+  try {
+    const result = await service.discardDraft(req.params.id, req.user.id);
+    res.status(200).json({ success: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+}
 }
 
 module.exports = new TournamentController();
