@@ -195,11 +195,8 @@ export const getParticipants = async (tournamentId) => {
   return response?.data || [];
 };
 
-// Mock 
 export const updateTournamentDetails = async (tournamentId, data) => {
-  console.log('[MOCK] updateTournamentDetails', { tournamentId, data });
-  await new Promise((res) => setTimeout(res, 800));
-  return { success: true };
+  return updateGeneralDetails(tournamentId, data);
 };
 
 // Mock 
@@ -209,9 +206,7 @@ export const updateParticipantName = async (memberId, newName, experience) => {
   return { success: true };
 };
 
-// Mock
 export const deleteTournament = async (tournamentId) => {
-  console.log('[MOCK] deleteTournament', { tournamentId });
-  await new Promise((res) => setTimeout(res, 600));
-  return { success: true };
+  const authConfig = await withTournamentAuth();
+  return axios.delete(`/api/tournaments/${tournamentId}`, authConfig);
 };

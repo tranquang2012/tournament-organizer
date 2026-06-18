@@ -172,19 +172,29 @@ class TournamentService {
   }
 
   async discardDraft(tourId, organizerId) {
-  const result = await repo.deleteDraft(tourId, organizerId);
+    const result = await repo.deleteDraft(tourId, organizerId);
 
-  if (!result.deleted) {
-    if (result.reason === 'not_found') {
-      throw new AppError('Tournament not found or access denied.', 404);
+    if (!result.deleted) {
+      if (result.reason === 'not_found') {
+        throw new AppError('Tournament not found or access denied.', 404);
+      }
+      if (result.reason === 'already_published') {
+        throw new AppError('Published tournaments cannot be deleted this way.', 400);
+      }
     }
-    if (result.reason === 'already_published') {
-      throw new AppError('Published tournaments cannot be deleted this way.', 400);
-    }
+
+    return { message: 'Tournament draft discarded successfully.' };
   }
 
-  return { message: 'Tournament draft discarded successfully.' };
-}
+  async deleteTournament(tourId, organizerId) {
+    const result = await repo.deleteTournament(tourId, organizerId);
+    if (!result.deleted) {
+      if (result.reason === 'not_found') {
+        throw new AppError('Tournament not found or access denied.', 404);
+      }
+    }
+    return { message: 'Tournament deleted successfully.' };
+  }
 }
 
 module.exports = new TournamentService();

@@ -314,6 +314,59 @@ class TournamentRepository {
       }
     });
   }
+
+  async deleteTournament(tourId, organizerId) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      //1.Verify ownership
+      const { rows: tourRows } = await client.query(
+        `SELECT tour_id FROM tournament
+         WHERE tour_id = $1 AND created_by = $2`,
+        [tourId, organizerId]
+      );
+
+      if (!tourRows[0]) {
+        await client.query('ROLLBACK');
+        return { deleted: false, reason: 'not_found' };
+      }
+
+      //2.Delete team members first 
+      const { rows: compRows } = await client.query(
+        `SELECT comp_id FROM competitors WHERE tour_id = $1`,
+        [tourId]
+      );
+
+      if (compRows.length > 0) {
+        const compIds = compRows.map(r => r.comp_id);
+        await client.query(
+          `DELETE FROM teammember WHERE comp_id = ANY($1::uuid[])`,
+          [compIds]
+        );
+      }
+
+      //3.Delete competitors
+      await client.query(
+        `DELETE FROM competitors WHERE tour_id = $1`,
+        [tourId]
+      );
+
+      //4.Delete the tournament
+      await client.query(
+        `DELETE FROM tournament WHERE tour_id = $1 AND created_by = $2`,
+        [tourId, organizerId]
+      );
+
+      await client.query('COMMIT');
+      return { deleted: true };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
 }
 
 module.exports = new TournamentRepository();

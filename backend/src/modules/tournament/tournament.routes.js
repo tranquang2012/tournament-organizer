@@ -33,4 +33,7 @@ router.patch('/:id/publish',                   ctrl.publish.bind(ctrl));
 //Discard Draft When Leave Page
 router.delete('/:id/discard', ctrl.discardDraft.bind(ctrl));
 
+//Delete Tournament Cascade
+router.delete('/:id', ctrl.deleteTournament.bind(ctrl));
+
 module.exports = router;

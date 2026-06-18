@@ -187,7 +187,6 @@ const TournamentManagePage = () => {
         onClose={() => setSelectedTournament(null)}
         onDeleted={(id) => {
           setTournaments(prev => prev.filter(t => t.id !== id));
-          setFilteredTournaments(prev => prev.filter(t => t.id !== id));
         }}
       />
     </>

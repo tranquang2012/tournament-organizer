@@ -77,6 +77,15 @@ class TournamentController {
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
+
+  async deleteTournament(req, res, next) {
+    try {
+      const result = await service.deleteTournament(req.params.id, req.auth.userId);
+      res.status(200).json({ success: true, ...result });
+    } catch (err) {
+      next(err);
+    }
+  }
 }
 
 module.exports = new TournamentController();
