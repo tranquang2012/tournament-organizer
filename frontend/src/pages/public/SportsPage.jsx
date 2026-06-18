@@ -191,6 +191,8 @@ const SportsPage = () => {
             endDate: formatDate(t.tour_enddate),
             status,
             image: t.tour_banner || t.sport_banner,
+            location: t.tour_locat,
+            description: t.tour_descrip
           };
         });
         setTournaments(mapped);

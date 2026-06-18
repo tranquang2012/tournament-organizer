@@ -112,6 +112,7 @@ const TournamentPage = () => {
       </div>
       <div className='flex flex-col bg-[#d9d9d9]/50 px-[5%] md:px-[10%] py-[1%] w-full gap-4 md:gap-7 '>
         <div className='text-[#123836] text-[25px] md:text-[36px] font-semibold'>{tournament?.name}</div>
+        <span className='text-[13px] md:text-[18px]'>{tournament?.description}</span>
         <div className='flex gap-3 md:gap-20'>
           <div className='flex gap-1 items-center'>
             <FontAwesomeIcon icon={faCalendarDay} className='text-[11px] md:text-[18px] text-[#123836]' />
@@ -131,7 +132,7 @@ const TournamentPage = () => {
           </div>
           <div className='flex gap-1 items-center'>
             <FontAwesomeIcon icon={faLocationPin} className='text-[13px] md:text-[18px] text-[#123836]' />
-            <span className='text-[13px] md:text-[18px]'>Location: Binh Thanh Stadium</span>
+            <span className='text-[13px] md:text-[18px]'>Location: {tournament?.location}</span>
           </div>
         </div>
       </div>
