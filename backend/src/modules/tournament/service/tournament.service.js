@@ -134,6 +134,7 @@ class TournamentService {
   async getReviewData(tourId, organizerId) {
     const tournament = await repo.getFullTournament(tourId, organizerId);
     if (!tournament) throw new AppError('Tournament not found.', 404);
+    delete tournament.competitors;
     return tournament;
   }
 
@@ -156,6 +157,11 @@ class TournamentService {
 
   async listPublicTournaments({ sportId } = {}) {
     return repo.listPublic({ sportId });
+  }
+
+  async getParticipants(tourId) {
+    const data = await repo.getParticipants(tourId);
+    return data;
   }
 
 

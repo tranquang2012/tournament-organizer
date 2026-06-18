@@ -272,6 +272,48 @@ class TournamentRepository {
     client.release();
   }
 }
+
+  async getParticipants(tourId) {
+    const { rows: competitors } = await pool.query(
+      `SELECT comp_id, comp_name, comp_size FROM competitors WHERE tour_id = $1`,
+      [tourId]
+    );
+
+    if (competitors.length === 0) {
+      return [];
+    }
+
+    const compIds = competitors.map(c => c.comp_id);
+    const { rows: teamMembers } = await pool.query(
+      `SELECT mem_id, comp_id, mem_name, mem_expe FROM teammember WHERE comp_id = ANY($1::uuid[])`,
+      [compIds]
+    );
+
+    return competitors.map(comp => {
+      const members = teamMembers.filter(m => m.comp_id === comp.comp_id);
+      
+      if (comp.comp_size === 1) {
+        const primaryMember = members[0] || {};
+        return {
+          type: "individual",
+          id: comp.comp_id,
+          name: primaryMember.mem_name || comp.comp_name || "Unknown",
+          experience: primaryMember.mem_expe || "Beginner"
+        };
+      } else {
+        return {
+          type: "team",
+          id: comp.comp_id,
+          name: comp.comp_name || "Unnamed Team",
+          members: members.map(m => ({
+            id: m.mem_id,
+            name: m.mem_name,
+            experience: m.mem_expe || "Beginner"
+          }))
+        };
+      }
+    });
+  }
 }
 
 module.exports = new TournamentRepository();

@@ -70,6 +70,13 @@ class TournamentController {
       next(err);
     }
   }
+
+  async getParticipants(req, res, next) {
+    try {
+      const data = await service.getParticipants(req.params.id);
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
 }
 
 module.exports = new TournamentController();

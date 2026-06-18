@@ -10,6 +10,7 @@ router.get('/sport-rules', (req, res) => {
 });
 
 router.get('/public', ctrl.listPublicTournaments.bind(ctrl));
+router.get('/:id/participants', ctrl.getParticipants.bind(ctrl));
 
 router.use(auth, requireAdminUser);
 

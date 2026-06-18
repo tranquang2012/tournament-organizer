@@ -190,6 +190,11 @@ export const getTournamentById = async (tournamentId) => {
   return response?.data || null;
 };
 
+export const getParticipants = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/participants`);
+  return response?.data || [];
+};
+
 // Mock 
 export const updateTournamentDetails = async (tournamentId, data) => {
   console.log('[MOCK] updateTournamentDetails', { tournamentId, data });

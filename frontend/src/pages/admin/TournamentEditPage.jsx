@@ -6,7 +6,7 @@ import {
   faSliders,
   faUsers,
 } from '@fortawesome/free-solid-svg-icons';
-import { getTournamentById } from '../../services/TournamentService';
+import { getTournamentById, getParticipants } from '../../services/TournamentService';
 import EditDetailsTab from '../../components/tournament_admin/edit/EditDetailsTab';
 import EditParticipantsTab from '../../components/tournament_admin/edit/EditParticipantsTab';
 
@@ -14,6 +14,36 @@ const TABS = [
   { key: 'details',      label: 'Tournament Details', icon: faSliders },
   { key: 'participants', label: 'Participants',        icon: faUsers   },
 ];
+
+const mapParticipantsToCompetitors = (participants, teamSize) => {
+  return (participants || []).map(p => {
+    if (Number(teamSize) === 1) {
+      return {
+        comp_id: p.id,
+        comp_name: p.name,
+        comp_size: 1,
+        members: [
+          {
+            mem_id: p.id,
+            mem_name: p.name,
+            mem_expe: p.experience
+          }
+        ]
+      };
+    } else {
+      return {
+        comp_id: p.id,
+        comp_name: p.name,
+        comp_size: teamSize,
+        members: (p.members || []).map(m => ({
+          mem_id: m.id,
+          mem_name: m.name,
+          mem_expe: m.experience
+        }))
+      };
+    }
+  });
+};
 
 const TournamentEditPage = () => {
   const { id } = useParams();
@@ -28,9 +58,14 @@ const TournamentEditPage = () => {
     const fetch = async () => {
       try {
         setLoading(true);
-        const data = await getTournamentById(id);
-        if (!data) throw new Error('Tournament not found');
-        setTournament(data);
+        const [tourData, participantData] = await Promise.all([
+          getTournamentById(id),
+          getParticipants(id)
+        ]);
+        if (!tourData) throw new Error('Tournament not found');
+        
+        tourData.competitors = mapParticipantsToCompetitors(participantData, tourData.team_size);
+        setTournament(tourData);
       } catch (err) {
         console.error(err);
         setError(err.message || 'Failed to load tournament');
