@@ -214,6 +214,64 @@ class TournamentRepository {
     const { rows } = await pool.query(query, params);
     return rows;
   }
+
+  async deleteDraft(tourId, organizerId) {
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    //1.Verify ownership and draft status before touching anything
+    const { rows: tourRows } = await client.query(
+      `SELECT tour_id, tour_status FROM tournament
+       WHERE tour_id = $1 AND created_by = $2`,
+      [tourId, organizerId]
+    );
+
+    if (!tourRows[0]) {
+      await client.query('ROLLBACK');
+      return { deleted: false, reason: 'not_found' };
+    }
+
+    if (tourRows[0].tour_status === 'published') {
+      await client.query('ROLLBACK');
+      return { deleted: false, reason: 'already_published' };
+    }
+
+    //2.Delete team members first (FK constraint: teammember → competitors)
+    const { rows: compRows } = await client.query(
+      `SELECT comp_id FROM competitors WHERE tour_id = $1`,
+      [tourId]
+    );
+
+    if (compRows.length > 0) {
+      const compIds = compRows.map(r => r.comp_id);
+      await client.query(
+        `DELETE FROM teammember WHERE comp_id = ANY($1::uuid[])`,
+        [compIds]
+      );
+    }
+
+    //3.Delete competitors
+    await client.query(
+      `DELETE FROM competitors WHERE tour_id = $1`,
+      [tourId]
+    );
+
+    //4.Delete the tournament itself
+    await client.query(
+      `DELETE FROM tournament WHERE tour_id = $1 AND created_by = $2`,
+      [tourId, organizerId]
+    );
+
+    await client.query('COMMIT');
+    return { deleted: true };
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+}
 }
 
 module.exports = new TournamentRepository();

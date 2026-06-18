@@ -29,4 +29,7 @@ router.patch('/:id/format-config',            ctrl.saveFormatConfig.bind(ctrl));
 router.get('/:id/review',                     ctrl.getReview.bind(ctrl));
 router.patch('/:id/publish',                   ctrl.publish.bind(ctrl));
 
+//Discard Draft When Leave Page
+router.delete('/:id/discard', ctrl.discardDraft.bind(ctrl));
+
 module.exports = router;
