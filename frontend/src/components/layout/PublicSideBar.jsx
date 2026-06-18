@@ -85,6 +85,9 @@ const PublicSidebar = ({ isOpen, onClose }) => {
                     <div className={section} onClick={() => { navigate('/matches'); onClose() }}>
                         Matches
                     </div>
+                    <div className={section} onClick={() => { navigate('/matches'); onClose() }}>
+                        Calendar
+                    </div>
                     {isLogin && (
                         <div>
                             <div className={section} onClick={() => { navigate('/account-management'); onClose() }}>

@@ -40,10 +40,10 @@ class TournamentRepository {
 
       const { rows: tourRows } = await client.query(
         `UPDATE tournament
-         SET sp_id=$1, tour_format=$2
-         WHERE tour_id=$3 AND created_by=$4
+         SET sp_id=$1
+         WHERE tour_id=$2 AND created_by=$3
          RETURNING *`,
-        [sp_id, participant_type, tourId, organizerId]
+        [sp_id, tourId, organizerId]
       );
       if (!tourRows[0]) throw new Error('Tournament not found or access denied.');
 
@@ -127,7 +127,8 @@ class TournamentRepository {
   async getFullTournament(tourId, organizerId) {
     //Tournament + sport info
     const { rows: tourRows } = await pool.query(
-      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner
+      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+              (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
        FROM tournament t
        LEFT JOIN sport s ON t.sp_id = s.sport_id
        WHERE t.tour_id=$1 AND t.created_by=$2`,
@@ -183,7 +184,8 @@ class TournamentRepository {
   async listAll(organizerId) {
     const { rows } = await pool.query(
       `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
-              (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count
+              (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
+              (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
        FROM tournament t
        LEFT JOIN sport s ON t.sp_id = s.sport_id
        WHERE t.created_by=$1
@@ -196,7 +198,8 @@ class TournamentRepository {
   async listPublic({ sportId } = {}) {
     let query = `
       SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
-             (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count
+             (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
+             (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
       FROM tournament t
       LEFT JOIN sport s ON t.sp_id = s.sport_id
       WHERE COALESCE(t.tour_status, 'draft') <> 'draft'

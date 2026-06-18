@@ -1,6 +1,6 @@
 import React from 'react';
 
-const AdminTournamentCard = ({ tournament }) => {
+const AdminTournamentCard = ({ tournament, onClick }) => {
   const {
     image,
     title,
@@ -18,30 +18,36 @@ const AdminTournamentCard = ({ tournament }) => {
 
   const percentage = totalMatches > 0 ? Math.round((completedMatches / totalMatches) * 100) : 0;
 
-  let progressBarColor = 'bg-[#ef4444]'; // red
+  let progressBarColor = 'bg-[#ef4444]'; 
   if (percentage >= 80) {
-    progressBarColor = 'bg-[#3b82f6]'; // blue
+    progressBarColor = 'bg-[#3b82f6]'; 
   } else if (percentage >= 60) {
-    progressBarColor = 'bg-[#22c55e]'; // green
+    progressBarColor = 'bg-[#22c55e]'; 
   } else if (percentage >= 40) {
-    progressBarColor = 'bg-[#eab308]'; // yellow
+    progressBarColor = 'bg-[#eab308]'; 
   } else if (percentage >= 20) {
-    progressBarColor = 'bg-[#f97316]'; // orange
+    progressBarColor = 'bg-[#f97316]'; 
   }
 
 
-  let badgeColor = 'bg-[#dcfce7] text-[#166534]'; // active
+  let badgeColor = 'bg-[#dcfce7] text-[#166534]'; 
   let badgeDotColor = 'bg-[#22c55e]';
   if (status === 'Upcoming') {
-    badgeColor = 'bg-[#f1f5f9] text-[#475569]'; // upcoming
+    badgeColor = 'bg-[#f1f5f9] text-[#475569]';
     badgeDotColor = 'bg-[#94a3b8]';
   } else if (status === 'Completed') {
-    badgeColor = 'bg-[#dbeafe] text-[#1e3a8a]'; // completed
+    badgeColor = 'bg-[#dbeafe] text-[#1e3a8a]'; 
     badgeDotColor = 'bg-[#3b82f6]';
   }
 
   return (
-    <div className="flex flex-col bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.06)] border border-slate-100 overflow-hidden hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)] transition-all duration-300 cursor-pointer">
+    <div
+      className="flex flex-col bg-white rounded-xl shadow-[0_2px_10px_rgba(0,0,0,0.06)] border border-slate-100 overflow-hidden hover:shadow-[0_4px_20px_rgba(0,0,0,0.1)] transition-all duration-300 cursor-pointer"
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onClick?.()}
+    >
       <div className="w-full aspect-[192/31] overflow-hidden relative">
         <img src={image} alt={title} className="w-full h-full object-cover" />
       </div>
