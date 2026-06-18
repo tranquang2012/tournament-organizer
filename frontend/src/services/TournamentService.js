@@ -182,3 +182,31 @@ export const getPublicTournaments = async (sportId) => {
   const response = await axios.get(url);
   return response.data || [];
 };
+
+
+export const getTournamentById = async (tournamentId) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.get(`/api/tournaments/${tournamentId}/review`, authConfig);
+  return response?.data || null;
+};
+
+// Mock 
+export const updateTournamentDetails = async (tournamentId, data) => {
+  console.log('[MOCK] updateTournamentDetails', { tournamentId, data });
+  await new Promise((res) => setTimeout(res, 800));
+  return { success: true };
+};
+
+// Mock 
+export const updateParticipantName = async (memberId, newName, experience) => {
+  console.log('[MOCK] updateParticipantName', { memberId, newName, experience });
+  await new Promise((res) => setTimeout(res, 400));
+  return { success: true };
+};
+
+// Mock
+export const deleteTournament = async (tournamentId) => {
+  console.log('[MOCK] deleteTournament', { tournamentId });
+  await new Promise((res) => setTimeout(res, 600));
+  return { success: true };
+};

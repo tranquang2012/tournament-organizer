@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChevronDown } from '@fortawesome/free-solid-svg-icons';
 import AdminTournamentCard from './AdminTournamentCard';
 
-const AdminTournamentSection = ({ title, pillColorClass, tournaments }) => {
+const AdminTournamentSection = ({ title, pillColorClass, tournaments, onCardClick }) => {
   const [expanded, setExpanded] = useState(false);
 
   const displayCount = 3;
@@ -21,7 +21,11 @@ const AdminTournamentSection = ({ title, pillColorClass, tournaments }) => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {visibleTournaments.map((tournament) => (
-          <AdminTournamentCard key={tournament.id} tournament={tournament} />
+          <AdminTournamentCard
+            key={tournament.id}
+            tournament={tournament}
+            onClick={() => onCardClick?.(tournament)}
+          />
         ))}
       </div>
 
