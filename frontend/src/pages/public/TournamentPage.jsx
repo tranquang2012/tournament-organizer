@@ -7,13 +7,14 @@ import { useAuth } from '../../hooks/useAuth'
 //import component
 import LeaderboardTable from '../../components/tournament_public/LeaderboardTable';
 import TeamCard from '../../components/tournament_public/TeamCard';
+import MatchCard from '../../components/tournament_public/MatchCard';
 
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
+import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
 
 const mockRounds = [
   { id: 1, name: 'Round 1' },
   { id: 2, name: 'Round 2' },
-  { id: 3, name: 'Round 3' },
 ]
 
 const mockGroups = [
@@ -96,6 +97,19 @@ const mockParticipants = [
   },
 ]
 
+
+
+const mockMatches = [
+  { id: 1, matchNumber: 10, team1: { name: 'GEN', logo: logo1, score: 2 }, team2: { name: 'NS', logo: logo2, score: 0 }, status: 'Completed' },
+  { id: 2, matchNumber: 9, team1: { name: 'KT', logo: logo1, score: 1 }, team2: { name: 'DK', logo: logo2, score: 2 }, status: 'Completed' },
+  { id: 3, matchNumber: 8, team1: { name: 'BFX', logo: logo1, score: 2 }, team2: { name: 'DRX', logo: logo2, score: 0 }, status: 'Completed' },
+  { id: 4, matchNumber: 7, team1: { name: 'GEN', logo: logo1, score: 1 }, team2: { name: 'T1', logo: logo2, score: 1 }, status: 'Ongoing' },
+  { id: 5, matchNumber: 6, team1: { name: 'DNS', logo: logo1, score: 0 }, team2: { name: 'T1', logo: logo2, score: 2 }, status: 'Completed' },
+  { id: 6, matchNumber: 5, team1: { name: 'GEN', logo: logo1, score: 2 }, team2: { name: 'NS', logo: logo2, score: 0 }, status: 'Completed' },
+  { id: 7, matchNumber: 4, team1: { name: 'GEN', logo: logo1, score: 2 }, team2: { name: 'NS', logo: logo2, score: 1 }, status: 'Completed' },
+  { id: 8, matchNumber: 3, team1: { name: 'GEN', logo: logo1, score: 0 }, team2: { name: 'NS', logo: logo2, score: 2 }, status: 'Completed' },
+]
+
 const TournamentPage = () => {
   const { state } = useLocation()
   const tournament = state?.tournament
@@ -168,8 +182,13 @@ const TournamentPage = () => {
             ))}
           </div>
         </div>
-        <div className='w-[50%] pr-[1%]'>
-          <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Tournament Recent Matches</span>
+        <div className='flex flex-col w-[50%] pr-[1%] gap-5'>
+          <span className='text-[#123836] font-semibold text-[18px] md:text-[32px] py-[1%]'>Tournament Recent Matches</span>
+          <div className='grid grid-cols-2 md:grid-cols-2 gap-10 items-start'>
+            {mockMatches.map((match) => (
+              <MatchCard key={match.id} match={match} />
+            ))}
+          </div>
         </div>
       </div>
     </div>
