@@ -48,8 +48,8 @@ const EditDetailsTab = ({ tournamentId, initialData }) => {
     startDate: toDateInput(initialData?.tour_startdate),
     endDate: toDateInput(initialData?.tour_enddate),
     banner: null,           
-    defaultBanner: null,    
-    defaultBannerSrc: null, 
+    defaultBanner: DEFAULT_BANNERS.find(b => b.src === initialData?.tour_banner)?.id || null,    
+    defaultBannerSrc: initialData?.tour_banner || null, 
   });
 
   const [bannerMode, setBannerMode] = useState('default');
