@@ -86,6 +86,13 @@ class TournamentController {
       next(err);
     }
   }
+
+  async updateMember(req, res, next) {
+    try {
+      const data = await service.updateMember(req.params.memId, req.body, req.auth.userId);
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
 }
 
 module.exports = new TournamentController();
