@@ -199,11 +199,9 @@ export const updateTournamentDetails = async (tournamentId, data) => {
   return updateGeneralDetails(tournamentId, data);
 };
 
-// Mock 
-export const updateParticipantName = async (memberId, newName, experience) => {
-  console.log('[MOCK] updateParticipantName', { memberId, newName, experience });
-  await new Promise((res) => setTimeout(res, 400));
-  return { success: true };
+export const updateMember = async (memberId, data) => {
+  const authConfig = await withTournamentAuth();
+  return axios.patch(`/api/tournaments/participants/members/${memberId}`, data, authConfig);
 };
 
 export const deleteTournament = async (tournamentId) => {
