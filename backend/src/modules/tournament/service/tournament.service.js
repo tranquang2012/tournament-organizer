@@ -197,11 +197,11 @@ class TournamentService {
   }
 
   async updateMember(memId, body, organizerId) {
-    const ownership = await repo.getMemberOwnership(memId);
+    const ownership = await repo.getMemberOwnership(memId, organizerId);
     if (!ownership) {
       throw new AppError('Member not found.', 404);
     }
-    if (ownership.created_by !== organizerId) {
+    if (ownership.created_by !== organizerId && !ownership.is_super_admin) {
       throw new AppError('Access denied.', 403);
     }
     const data = await repo.updateMember(memId, body);
