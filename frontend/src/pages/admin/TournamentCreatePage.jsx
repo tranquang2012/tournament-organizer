@@ -18,6 +18,7 @@ import {
   discardTournamentDraft,
 } from '../../services/TournamentService';
 import { getAccessToken } from '../../services/AuthService';
+import { getAllSports } from '../../services/SportService';
 
 const STEPS = [
   { label: 'General Details' },
@@ -48,6 +49,9 @@ const INITIAL_DATA = {
   format: '',
   numberOfMatches: '',
   matchesPerDay: '',
+  hybridEliminationType: 'single_elimination',
+  hybridStages: 2,
+  hybridMatchesPerStage: 1,
 };
 
 const getErrorMessage = (error) => (
@@ -63,6 +67,11 @@ const TournamentCreatePage = () => {
   const [publishing, setPublishing] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [discarding, setDiscarding] = useState(false);
+  const [sportsConfig, setSportsConfig] = useState([]);
+
+  const currentSportConfig = sportsConfig.find(
+    (s) => s.name.toLowerCase() === formData.sport?.toLowerCase()
+  );
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
@@ -96,6 +105,16 @@ const TournamentCreatePage = () => {
       }
     };
     updateToken();
+
+    const fetchSports = async () => {
+      try {
+        const res = await getAllSports();
+        setSportsConfig(res.data || res || []);
+      } catch (err) {
+        console.error('Failed to fetch sports config:', err);
+      }
+    };
+    fetchSports();
   }, []);
 
   useEffect(() => {
@@ -131,6 +150,49 @@ const TournamentCreatePage = () => {
     };
   }, [isDirty, tournamentId]);
 
+  useEffect(() => {
+    if (currentSportConfig) {
+      let updates = {};
+      let hasUpdates = false;
+
+      const checkSupported = (supportedList, key) => {
+        if (!supportedList || !key) return true;
+        if (Array.isArray(supportedList)) return supportedList.some(s => s.toLowerCase() === key.toLowerCase());
+        if (typeof supportedList === 'string') return supportedList.toLowerCase().includes(key.toLowerCase());
+        return true;
+      };
+
+      const checkSupportedFormat = (supportedList, val) => {
+        const FORMAT_CATEGORIES = {
+          'single_elimination': 'versus',
+          'double_elimination': 'versus',
+          'round_robin': 'versus',
+          'round_scoring': 'scoring',
+          'hybrid': 'versus',
+        };
+        const category = FORMAT_CATEGORIES[val];
+        if (!supportedList || !category) return true;
+        if (Array.isArray(supportedList)) return supportedList.some(s => s.toLowerCase() === category.toLowerCase());
+        if (typeof supportedList === 'string') return supportedList.toLowerCase().includes(category.toLowerCase());
+        return true;
+      };
+
+      if (formData.participantType && currentSportConfig.types && !checkSupported(currentSportConfig.types, formData.participantType)) {
+        updates.participantType = '';
+        hasUpdates = true;
+      }
+      if (formData.format && currentSportConfig.format && !checkSupportedFormat(currentSportConfig.format, formData.format)) {
+        updates.format = '';
+        hasUpdates = true;
+      }
+
+      if (hasUpdates) {
+        setFormData((prev) => ({ ...prev, ...updates }));
+        setIsDirty(true);
+      }
+    }
+  }, [formData.sport, currentSportConfig, formData.participantType, formData.format]);
+
   /* Validation */
   const isStepCompleted = (idx) => {
     if (idx === 0) {
@@ -152,6 +214,9 @@ const TournamentCreatePage = () => {
       return false;
     }
     if (idx === 2) {
+      if (formData.format === 'hybrid') {
+        return !!formData.format && formData.hybridStages > 0 && formData.hybridMatchesPerStage > 0;
+      }
       return !!formData.format;
     }
     return false; // Step 3 (Review) is not marked as complete
@@ -312,9 +377,9 @@ const TournamentCreatePage = () => {
       case 0:
         return <GeneralDetailsStep data={formData} onChange={updateStep1} />;
       case 1:
-        return <SportParticipantsStep data={formData} onChange={updateStep2} />;
+        return <SportParticipantsStep data={formData} onChange={updateStep2} currentSportConfig={currentSportConfig} />;
       case 2:
-        return <FormatConfigStep data={formData} onChange={updateStep3} />;
+        return <FormatConfigStep data={formData} onChange={updateStep3} currentSportConfig={currentSportConfig} />;
       case 3:
         return (
           <ReviewPublishStep

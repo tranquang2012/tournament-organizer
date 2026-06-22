@@ -24,7 +24,7 @@ const LeaderboardTable = ({ group }) => {
                     >
                         <span className='w-[10%]'>{team.rank}</span>
                         <div className='w-[60%] flex gap-2 text-start items-center pl-[1%]'>
-                            <img src={team.logo} className='h-4 w-4 md:h-7 md:w-7 object-contain' />
+                            <img src={team.logo} className={`h-4 w-4 md:h-7 md:w-7 object-contain ${team.eliminated && 'opacity-40'}` } />
                             <span>{team.name}</span>
                         </div>
                         <span className='w-[15%]'>{team.win} - {team.lose}</span>
