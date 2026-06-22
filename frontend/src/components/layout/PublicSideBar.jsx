@@ -45,9 +45,9 @@ const PublicSidebar = ({ isOpen, onClose }) => {
                     onClick={onClose}
                 />
             )}
-            <aside className={`fixed top-0 left-0 h-full bg-white z-50 shadow-xl transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'w-[400px]' : 'w-0'}`}
+            <aside className={`fixed top-0 left-0 h-full overflow-y-auto bg-white z-50 shadow-xl transition-all duration-300 ease-in-out overflow-hidden ${isOpen ? 'w-[400px]' : 'w-0'}`}
             >
-                <div className='h-[80px] w-full px-5 overflow-hidden flex items-center'>
+                <div className='h-[80px] w-full px-5 flex items-center'>
                     <FontAwesomeIcon icon={faBars} className='text-[30px] mr-[7%] cursor-pointer' onClick={onClose} />
                     <img
                         src={logo}
@@ -56,7 +56,7 @@ const PublicSidebar = ({ isOpen, onClose }) => {
                         onClick={() => navigate('/')}
                     />
                 </div>
-                <div className="w-full flex flex-col">
+                <div className="w-full flex flex-col overflow-y-auto">
                     <div className={section} onClick={() => { navigate('/'); onClose() }}>
                         Home Page
                     </div>
@@ -84,6 +84,9 @@ const PublicSidebar = ({ isOpen, onClose }) => {
                     </div>
                     <div className={section} onClick={() => { navigate('/matches'); onClose() }}>
                         Matches
+                    </div>
+                    <div className={section} onClick={() => { navigate('/matches'); onClose() }}>
+                        Calendar
                     </div>
                     {isLogin && (
                         <div>

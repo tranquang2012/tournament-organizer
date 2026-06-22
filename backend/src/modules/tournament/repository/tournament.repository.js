@@ -10,7 +10,7 @@ class TournamentRepository {
       `INSERT INTO tournament
          (tour_name, tour_descrip, tour_locat, tour_startdate, tour_enddate,
           tour_banner, tour_status, created_by)
-       VALUES ($1,$2,$3,$4,$5,$6,'ongoing',$7)
+       VALUES ($1,$2,$3,$4,$5,$6,'draft',$7)
        RETURNING *`,
       [tour_name, tour_descrip, tour_locat, tour_startdate, tour_enddate, tour_banner, organizerId]
     );
@@ -40,10 +40,10 @@ class TournamentRepository {
 
       const { rows: tourRows } = await client.query(
         `UPDATE tournament
-         SET sp_id=$1, tour_format=$2
-         WHERE tour_id=$3 AND created_by=$4
+         SET sp_id=$1
+         WHERE tour_id=$2 AND created_by=$3
          RETURNING *`,
-        [sp_id, participant_type, tourId, organizerId]
+        [sp_id, tourId, organizerId]
       );
       if (!tourRows[0]) throw new Error('Tournament not found or access denied.');
 
@@ -127,7 +127,8 @@ class TournamentRepository {
   async getFullTournament(tourId, organizerId) {
     //Tournament + sport info
     const { rows: tourRows } = await pool.query(
-      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner
+      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+              (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
        FROM tournament t
        LEFT JOIN sport s ON t.sp_id = s.sport_id
        WHERE t.tour_id=$1 AND t.created_by=$2`,
@@ -165,7 +166,7 @@ class TournamentRepository {
     const { rows } = await pool.query(
       `UPDATE tournament
        SET tour_status='ongoing'
-       WHERE tour_id=$1 AND created_by=$2 AND tour_status='ended'
+       WHERE tour_id=$1 AND created_by=$2 AND COALESCE(tour_status, 'draft') <> 'ongoing'
        RETURNING *`,
       [tourId, organizerId]
     );
@@ -178,6 +179,40 @@ class TournamentRepository {
       [tourId, organizerId]
     );
     return rows[0] || null;
+  }
+
+  async listAll(organizerId) {
+    const { rows } = await pool.query(
+      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+              (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
+              (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
+       FROM tournament t
+       LEFT JOIN sport s ON t.sp_id = s.sport_id
+       WHERE t.created_by=$1
+       ORDER BY t.tour_startdate DESC NULLS LAST, t.tour_name ASC`,
+      [organizerId]
+    );
+    return rows;
+  }
+
+  async listPublic({ sportId } = {}) {
+    let query = `
+      SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+             (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
+             (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
+      FROM tournament t
+      LEFT JOIN sport s ON t.sp_id = s.sport_id
+      WHERE COALESCE(t.tour_status, 'draft') <> 'draft'
+    `;
+    const params = [];
+    if (sportId) {
+      params.push(sportId);
+      query += ` AND t.sp_id = $${params.length}`;
+    }
+    query += ` ORDER BY t.tour_startdate DESC NULLS LAST, t.tour_name ASC`;
+
+    const { rows } = await pool.query(query, params);
+    return rows;
   }
 
   async deleteDraft(tourId, organizerId) {
@@ -237,6 +272,155 @@ class TournamentRepository {
     client.release();
   }
 }
+
+  async getParticipants(tourId) {
+    const { rows: competitors } = await pool.query(
+      `SELECT comp_id, comp_name, comp_size FROM competitors WHERE tour_id = $1`,
+      [tourId]
+    );
+
+    if (competitors.length === 0) {
+      return [];
+    }
+
+    const compIds = competitors.map(c => c.comp_id);
+    const { rows: teamMembers } = await pool.query(
+      `SELECT mem_id, comp_id, mem_name, mem_expe FROM teammember WHERE comp_id = ANY($1::uuid[])`,
+      [compIds]
+    );
+
+    return competitors.map(comp => {
+      const members = teamMembers.filter(m => m.comp_id === comp.comp_id);
+      
+      if (comp.comp_size === 1) {
+        const primaryMember = members[0] || {};
+        return {
+          type: "individual",
+          id: comp.comp_id,
+          name: primaryMember.mem_name || comp.comp_name || "Unknown",
+          experience: primaryMember.mem_expe || "Beginner"
+        };
+      } else {
+        return {
+          type: "team",
+          id: comp.comp_id,
+          name: comp.comp_name || "Unnamed Team",
+          members: members.map(m => ({
+            id: m.mem_id,
+            name: m.mem_name,
+            experience: m.mem_expe || "Beginner"
+          }))
+        };
+      }
+    });
+  }
+
+  async deleteTournament(tourId, organizerId) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      //1.Verify ownership
+      const { rows: tourRows } = await client.query(
+        `SELECT tour_id FROM tournament
+         WHERE tour_id = $1 AND created_by = $2`,
+        [tourId, organizerId]
+      );
+
+      if (!tourRows[0]) {
+        await client.query('ROLLBACK');
+        return { deleted: false, reason: 'not_found' };
+      }
+
+      //2.Delete team members first 
+      const { rows: compRows } = await client.query(
+        `SELECT comp_id FROM competitors WHERE tour_id = $1`,
+        [tourId]
+      );
+
+      if (compRows.length > 0) {
+        const compIds = compRows.map(r => r.comp_id);
+        await client.query(
+          `DELETE FROM teammember WHERE comp_id = ANY($1::uuid[])`,
+          [compIds]
+        );
+      }
+
+      //3.Delete competitors
+      await client.query(
+        `DELETE FROM competitors WHERE tour_id = $1`,
+        [tourId]
+      );
+
+      //4.Delete the tournament
+      await client.query(
+        `DELETE FROM tournament WHERE tour_id = $1 AND created_by = $2`,
+        [tourId, organizerId]
+      );
+
+      await client.query('COMMIT');
+      return { deleted: true };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async getMemberOwnership(memId) {
+    const { rows } = await pool.query(
+      `SELECT c.tour_id, c.comp_id, c.comp_size, t.created_by 
+       FROM teammember m
+       JOIN competitors c ON m.comp_id = c.comp_id
+       JOIN tournament t ON c.tour_id = t.tour_id
+       WHERE m.mem_id = $1`,
+      [memId]
+    );
+    return rows[0] || null;
+  }
+
+  async updateMember(memId, { mem_name, mem_expe, comp_id }) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const { rows } = await client.query(
+        `UPDATE teammember 
+         SET mem_name = COALESCE($1, mem_name), 
+             mem_expe = COALESCE($2, mem_expe),
+             comp_id = COALESCE($3, comp_id)
+         WHERE mem_id = $4
+         RETURNING *`,
+        [mem_name, mem_expe, comp_id, memId]
+      );
+      const updatedMember = rows[0];
+
+      if (updatedMember) {
+        const { rows: compRows } = await client.query(
+          `SELECT comp_size FROM competitors WHERE comp_id = $1`,
+          [updatedMember.comp_id]
+        );
+        const comp = compRows[0];
+        if (comp && comp.comp_size === 1 && mem_name) {
+          await client.query(
+            `UPDATE competitors
+             SET comp_name = $1
+             WHERE comp_id = $2`,
+            [mem_name, updatedMember.comp_id]
+          );
+        }
+      }
+
+      await client.query('COMMIT');
+      return updatedMember;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
 }
 
 module.exports = new TournamentRepository();

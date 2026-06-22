@@ -16,6 +16,7 @@ const TournamentCard = ({ tournament }) => {
     const { isLogin } = useAuth()
     const [favorite, setFavorite] = useState(false);
     const [showConfirm, setShowConfirm] = useState(false)
+    const tournamentId = tournament.id
 
     const handleRedirectToLogin = () => {
         navigate('/login')
@@ -31,20 +32,20 @@ const TournamentCard = ({ tournament }) => {
                 description="You need to login to add this tournament to your favorite list. Do you want to login now?"
                 intent="info"
                 confirmLabel="Sign In"
-                cancelLabel="Cancel"
+                cancelLabel="Continue With Guest"
             />
-            <div className='relative flex w-full h-[130px] md:h-[150px] border border-[#d9d9d9] cursor-pointer gap-3 mt-1
+            <div className='relative flex w-full min:h-[130px] md:min:h-[150px] border border-[#d9d9d9] cursor-pointer mt-1
             rounded-lg shadow-md transition-all duration-300 hover:shadow-xl hover:-translate-y-1 hover:border-[#123836]'
-                onClick={() => navigate(`/tournaments`)}
+                onClick={() => navigate(`/tournaments/${tournamentId}`, { state: { tournament } })}
             >
-                <img src={banner1} alt='banner1' className='w-[50%] h-full object-cover object-center rounded-tl-lg rounded-bl-lg' />
-                <div className='flex flex-col w-[55%]'>
-                    <div className='flex flex-col mt-[5%] items-start h-[90%]'>
-                        <span className='text-[15px] md:text-[21px] text-[#123836] font-semibold'>{tournament.name}</span>
-                        <span className='text-[10px] md:text-[14px] text-gray-500'>Start Date: {tournament.startDate}</span>
-                        <span className='text-[10px] md:text-[14px] text-gray-500'>End Date: {tournament.endDate}</span>
+                <img src={tournament.image || banner1} alt={tournament.name} className='w-[50%] h-[130px] md:h-[150px] object-cover object-center rounded-tl-lg rounded-bl-lg pr-2' />
+                <div className='flex flex-col w-[45%]'>
+                    <div className='flex flex-col'>
+                        <span className='text-[15px] md:text-[20px] text-[#123836] font-semibold'>{tournament.name}</span>
+                        <span className='text-[10px] md:text-[13px] text-gray-500'>Start Date: {tournament.startDate}</span>
+                        <span className='text-[10px] md:text-[13px] text-gray-500'>End Date: {tournament.endDate}</span>
                     </div>
-                    <div>
+                    <div className='mt-auto'>
                         <span className='text-[10px] md:text-[14px]'>Status: </span>
                         <span className={`text-[10px] md:text-[14px] ${tournament.status === 'Ongoing' ? 'text-red-500' :
                             tournament.status === 'Ended' ? 'text-green-500' : 'text-yellow-500'}`}
@@ -55,7 +56,7 @@ const TournamentCard = ({ tournament }) => {
                 </div>
                 <div className='flex items-center w-[5%]'>
                     {favorite ? (
-                        <FontAwesomeIcon icon={faStar} className='text-yellow-500 text-[18px] mr-1 hover:text-yellow-500/50 transition-colors duration-300'
+                        <FontAwesomeIcon icon={faStar} className='text-yellow-500 text-[18px] hover:text-yellow-500/50 transition-colors duration-300'
                             onClick={(e) => {
                                 e.stopPropagation();
                                 setFavorite(!favorite);

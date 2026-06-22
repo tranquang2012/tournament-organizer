@@ -47,7 +47,7 @@ const EXP_COLORS = {
 /**
  * Step 2 
  */
-const SportParticipantsStep = ({ data, onChange }) => {
+const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
   const [newParticipant, setNewParticipant] = useState({ name: '', experience: 'Beginner' });
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamLogoMode, setNewTeamLogoMode] = useState('default');
@@ -252,28 +252,47 @@ const SportParticipantsStep = ({ data, onChange }) => {
         </div>
 
         {/* Participant type toggle */}
-        <div className="inline-flex rounded-xl border border-slate-200 p-1 bg-slate-50 mb-6">
-          {[
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 mb-6">
+          <div className="inline-flex rounded-xl border border-slate-200 p-1 bg-slate-50 self-start">
+            {[
             { key: 'individual', label: 'Individual', icon: faUser },
             { key: 'team', label: 'Team', icon: faUsers },
-          ].map(({ key, label, icon }) => (
+          ].map(({ key, label, icon }) => {
+            const checkSupported = (supportedList, val) => {
+              if (!supportedList || !val) return true;
+              if (Array.isArray(supportedList)) return supportedList.some(s => s.toLowerCase() === val.toLowerCase());
+              if (typeof supportedList === 'string') return supportedList.toLowerCase().includes(val.toLowerCase());
+              return true;
+            };
+            const isSupported = currentSportConfig ? checkSupported(currentSportConfig.types, key) : true;
+            return (
             <button
               key={key}
               type="button"
-              onClick={() => update('participantType', key)}
+              onClick={() => isSupported && update('participantType', key)}
+              disabled={!isSupported}
               className={`
                 flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold
-                border-none cursor-pointer transition-all duration-200
-                ${data.participantType === key
+                border-none transition-all duration-200
+                ${data.participantType === key && isSupported
                   ? 'bg-[#123836] text-white shadow-sm'
-                  : 'bg-transparent text-slate-500 hover:text-slate-700'
+                  : isSupported
+                    ? 'bg-transparent text-slate-500 hover:text-slate-700 cursor-pointer'
+                    : 'bg-transparent text-slate-300 cursor-not-allowed opacity-50'
                 }
               `}
             >
               <FontAwesomeIcon icon={icon} className="text-xs" />
               {label}
             </button>
-          ))}
+            )
+          })}
+          </div>
+          <p className="text-xs text-slate-400 italic m-0">
+            {currentSportConfig && currentSportConfig.types 
+              ? `* ${currentSportConfig.name} supports ${(Array.isArray(currentSportConfig.types) ? currentSportConfig.types : [currentSportConfig.types]).map(t => t.toLowerCase()).join(' and ')} play.`
+              : '* Options are restricted based on your chosen sport.'}
+          </p>
         </div>
 
         {/*  INDIVIDUAL MODE  */}
@@ -429,6 +448,18 @@ const SportParticipantsStep = ({ data, onChange }) => {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="mb-6">
+              <InputField
+                label="Number of members in a team"
+                type="number"
+                placeholder="e.g. 5"
+                value={data.membersPerTeam || ''}
+                onChange={(e) => update('membersPerTeam', e.target.value)}
+                required
+                className="max-w-[250px]"
+              />
             </div>
 
             {/*  Pre-define Teams  */}
@@ -682,18 +713,6 @@ const SportParticipantsStep = ({ data, onChange }) => {
             {/* ── Auto-randomize mode ── */}
             {data.teamMode === 'randomize' && (
               <div>
-                <div className="mb-5">
-                  <InputField
-                    label="Number of Teams"
-                    type="number"
-                    placeholder="e.g. 4"
-                    value={data.numberOfTeams || ''}
-                    onChange={(e) => update('numberOfTeams', e.target.value)}
-                    required
-                    className="max-w-[200px]"
-                  />
-                </div>
-
                 <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3 m-0">
                   Player Pool (will be randomized into teams)
                 </p>
@@ -807,8 +826,8 @@ const SportParticipantsStep = ({ data, onChange }) => {
 
                 <p className="text-xs text-slate-400 mt-3 m-0">
                   {(data.participants || []).length} player{(data.participants || []).length !== 1 ? 's' : ''} added
-                  {data.numberOfTeams > 0 && (
-                    <> · will be split into {data.numberOfTeams} team{data.numberOfTeams != 1 ? 's' : ''}</>
+                  {data.membersPerTeam > 0 && (
+                    <> · will be split into teams of {data.membersPerTeam}</>
                   )}
                 </p>
               </div>
