@@ -13,7 +13,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import Button from '../../common/Button';
 import EditMemberInlineModal from './EditMemberInlineModal';
-import { updateMember } from '../../../services/TournamentService';
+import { updateMember, saveSportAndParticipants } from '../../../services/TournamentService';
 
 const EXP_COLORS = {
   Beginner:     { text: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
@@ -222,14 +222,23 @@ const EditParticipantsTab = ({ tournamentData }) => {
 
   /* Member rename (both types)  */
   const handleSaveMemberName = async (memberId, newName, experience) => {
-    await updateMember(memberId, { mem_name: newName, mem_expe: experience });
     if (participantType === 'individual') {
-      setIndivList((prev) =>
-        prev.map((m) =>
-          (m.mem_id || m.id) === memberId ? { ...m, mem_name: newName, mem_expe: experience } : m
-        )
+      const updatedList = indivList.map((m) =>
+        (m.mem_id || m.id) === memberId ? { ...m, mem_name: newName, mem_expe: experience } : m
       );
+      
+      await saveSportAndParticipants(tournamentData.tour_id, {
+        sport: tournamentData.sport_name,
+        participantType: 'individual',
+        participants: updatedList.map(m => ({
+          name: m.mem_name || m.name,
+          experience: m.mem_expe || m.experience || 'Beginner'
+        }))
+      });
+      
+      setIndivList(updatedList);
     } else {
+      await updateMember(memberId, { mem_name: newName, mem_expe: experience });
       setTeams((prev) =>
         prev.map((t) => ({
           ...t,

@@ -15,16 +15,19 @@ const TABS = [
   { key: 'participants', label: 'Participants',        icon: faUsers   },
 ];
 
-const mapParticipantsToCompetitors = (participants, teamSize) => {
+const mapParticipantsToCompetitors = (participants, teamSize, existingCompetitors = []) => {
   return (participants || []).map(p => {
+    const existingComp = existingCompetitors.find(c => c.comp_id === p.id);
+    
     if (Number(teamSize) === 1) {
+      const existingMem = existingComp?.members?.[0];
       return {
         comp_id: p.id,
         comp_name: p.name,
         comp_size: 1,
         members: [
           {
-            mem_id: p.id,
+            mem_id: existingMem?.mem_id || p.id,
             mem_name: p.name,
             mem_expe: p.experience
           }
@@ -35,11 +38,14 @@ const mapParticipantsToCompetitors = (participants, teamSize) => {
         comp_id: p.id,
         comp_name: p.name,
         comp_size: teamSize,
-        members: (p.members || []).map(m => ({
-          mem_id: m.id,
-          mem_name: m.name,
-          mem_expe: m.experience
-        }))
+        members: (p.members || []).map(m => {
+          const existingTeamMem = existingComp?.members?.find(em => em.mem_id === m.id);
+          return {
+            mem_id: existingTeamMem?.mem_id || m.id,
+            mem_name: m.name,
+            mem_expe: m.experience
+          };
+        })
       };
     }
   });
@@ -64,7 +70,7 @@ const TournamentEditPage = () => {
         ]);
         if (!tourData) throw new Error('Tournament not found');
         
-        tourData.competitors = mapParticipantsToCompetitors(participantData, tourData.team_size);
+        tourData.competitors = mapParticipantsToCompetitors(participantData, tourData.team_size, tourData.competitors);
         setTournament(tourData);
       } catch (err) {
         console.error(err);
