@@ -4,6 +4,7 @@ import {
   faRepeat,
   faArrowsSpin,
   faChartColumn,
+  faSitemap,
 } from '@fortawesome/free-solid-svg-icons';
 import InputField from '../../common/InputField';
 
@@ -36,12 +37,19 @@ const FORMAT_OPTIONS = [
     description: 'Points-based rounds. Great for leagues.',
     color: '#8b5cf6',
   },
+  {
+    key: 'hybrid',
+    label: 'Hybrid (Groups + Knockout)',
+    icon: faSitemap,
+    description: 'Round robin group stage into an elimination bracket.',
+    color: '#ef4444',
+  },
 ];
 
 /**
  * Step 3 
  */
-const FormatConfigStep = ({ data, onChange }) => {
+const FormatConfigStep = ({ data, onChange, currentSportConfig }) => {
   const update = (field) => (e) => {
     onChange({ ...data, [field]: e?.target ? e.target.value : e });
   };
@@ -59,18 +67,36 @@ const FormatConfigStep = ({ data, onChange }) => {
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
         {FORMAT_OPTIONS.map((fmt) => {
           const isSelected = data.format === fmt.key;
+          const FORMAT_CATEGORIES = {
+            'single_elimination': 'versus',
+            'double_elimination': 'versus',
+            'round_robin': 'versus',
+            'round_scoring': 'scoring',
+            'hybrid': 'versus',
+          };
+          const checkSupported = (supportedList, val) => {
+            const category = FORMAT_CATEGORIES[val];
+            if (!supportedList || !category) return true;
+            if (Array.isArray(supportedList)) return supportedList.some(s => s.toLowerCase() === category.toLowerCase());
+            if (typeof supportedList === 'string') return supportedList.toLowerCase().includes(category.toLowerCase());
+            return true;
+          };
+          const isSupported = currentSportConfig ? checkSupported(currentSportConfig.format, fmt.key) : true;
 
           return (
             <button
               key={fmt.key}
               type="button"
-              onClick={() => onChange({ ...data, format: fmt.key })}
+              disabled={!isSupported}
+              onClick={() => isSupported && onChange({ ...data, format: fmt.key })}
               className={`
                 flex items-start gap-4 p-5 rounded-2xl border-2
-                bg-white cursor-pointer transition-all duration-200 text-left group
-                ${isSelected
-                  ? 'border-[#123836] shadow-[0_0_0_3px_rgba(18,56,54,0.08)]'
-                  : 'border-slate-100 hover:border-slate-200 hover:shadow-sm'
+                bg-white transition-all duration-200 text-left group
+                ${isSelected && isSupported
+                  ? 'border-[#123836] shadow-[0_0_0_3px_rgba(18,56,54,0.08)] cursor-pointer'
+                  : isSupported
+                    ? 'border-slate-100 hover:border-slate-200 hover:shadow-sm cursor-pointer'
+                    : 'border-slate-100 opacity-50 cursor-not-allowed'
                 }
               `}
             >
@@ -122,6 +148,41 @@ const FormatConfigStep = ({ data, onChange }) => {
         })}
       </div>
 
+      {/* Hybrid Sub-configuration */}
+      {data.format === 'hybrid' && (
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 animate-[fadeIn_0.3s_ease-out]">
+          <h3 className="text-lg font-bold text-slate-800 m-0 mb-4">Hybrid Settings</h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">Elimination Type</label>
+              <select
+                value={data.hybridEliminationType || 'single_elimination'}
+                onChange={update('hybridEliminationType')}
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#123836]/20 focus:border-[#123836] transition-all cursor-pointer"
+              >
+                <option value="single_elimination">Single Elimination</option>
+                <option value="double_elimination">Double Elimination</option>
+              </select>
+            </div>
+            <InputField
+              label="Number of Stages (Groups)"
+              type="number"
+              placeholder="e.g. 2"
+              value={data.hybridStages || ''}
+              onChange={update('hybridStages')}
+              min="1"
+            />
+            <InputField
+              label="Matches per Stage"
+              type="number"
+              placeholder="e.g. 1"
+              value={data.hybridMatchesPerStage || ''}
+              onChange={update('hybridMatchesPerStage')}
+              min="1"
+            />
+          </div>
+        </div>
+      )}
 
     </div>
   );
