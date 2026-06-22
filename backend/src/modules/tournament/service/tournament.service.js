@@ -195,6 +195,18 @@ class TournamentService {
     }
     return { message: 'Tournament deleted successfully.' };
   }
+
+  async updateMember(memId, body, organizerId) {
+    const ownership = await repo.getMemberOwnership(memId);
+    if (!ownership) {
+      throw new AppError('Member not found.', 404);
+    }
+    if (ownership.created_by !== organizerId) {
+      throw new AppError('Access denied.', 403);
+    }
+    const data = await repo.updateMember(memId, body);
+    return data;
+  }
 }
 
 module.exports = new TournamentService();

@@ -367,6 +367,60 @@ class TournamentRepository {
       client.release();
     }
   }
+
+  async getMemberOwnership(memId) {
+    const { rows } = await pool.query(
+      `SELECT c.tour_id, c.comp_id, c.comp_size, t.created_by 
+       FROM teammember m
+       JOIN competitors c ON m.comp_id = c.comp_id
+       JOIN tournament t ON c.tour_id = t.tour_id
+       WHERE m.mem_id = $1`,
+      [memId]
+    );
+    return rows[0] || null;
+  }
+
+  async updateMember(memId, { mem_name, mem_expe, comp_id }) {
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+
+      const { rows } = await client.query(
+        `UPDATE teammember 
+         SET mem_name = COALESCE($1, mem_name), 
+             mem_expe = COALESCE($2, mem_expe),
+             comp_id = COALESCE($3, comp_id)
+         WHERE mem_id = $4
+         RETURNING *`,
+        [mem_name, mem_expe, comp_id, memId]
+      );
+      const updatedMember = rows[0];
+
+      if (updatedMember) {
+        const { rows: compRows } = await client.query(
+          `SELECT comp_size FROM competitors WHERE comp_id = $1`,
+          [updatedMember.comp_id]
+        );
+        const comp = compRows[0];
+        if (comp && comp.comp_size === 1 && mem_name) {
+          await client.query(
+            `UPDATE competitors
+             SET comp_name = $1
+             WHERE comp_id = $2`,
+            [mem_name, updatedMember.comp_id]
+          );
+        }
+      }
+
+      await client.query('COMMIT');
+      return updatedMember;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
 }
 
 module.exports = new TournamentRepository();

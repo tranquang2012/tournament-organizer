@@ -13,7 +13,7 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import Button from '../../common/Button';
 import EditMemberInlineModal from './EditMemberInlineModal';
-import { updateParticipantName } from '../../../services/TournamentService';
+import { updateMember, saveSportAndParticipants } from '../../../services/TournamentService';
 
 const EXP_COLORS = {
   Beginner:     { text: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
@@ -222,14 +222,23 @@ const EditParticipantsTab = ({ tournamentData }) => {
 
   /* Member rename (both types)  */
   const handleSaveMemberName = async (memberId, newName, experience) => {
-    await updateParticipantName(memberId, newName, experience);
     if (participantType === 'individual') {
-      setIndivList((prev) =>
-        prev.map((m) =>
-          (m.mem_id || m.id) === memberId ? { ...m, mem_name: newName, mem_expe: experience } : m
-        )
+      const updatedList = indivList.map((m) =>
+        (m.mem_id || m.id) === memberId ? { ...m, mem_name: newName, mem_expe: experience } : m
       );
+      
+      await saveSportAndParticipants(tournamentData.tour_id, {
+        sport: tournamentData.sport_name,
+        participantType: 'individual',
+        participants: updatedList.map(m => ({
+          name: m.mem_name || m.name,
+          experience: m.mem_expe || m.experience || 'Beginner'
+        }))
+      });
+      
+      setIndivList(updatedList);
     } else {
+      await updateMember(memberId, { mem_name: newName, mem_expe: experience });
       setTeams((prev) =>
         prev.map((t) => ({
           ...t,
@@ -289,8 +298,8 @@ const EditParticipantsTab = ({ tournamentData }) => {
       // Track pending swap for confirmation
       setSwapPending((prev) => [
         ...prev,
-        { memberId: member.mem_id || member.id, newName: member.mem_name || member.name },
-        { memberId: swapTarget.mem_id || swapTarget.id, newName: swapTarget.mem_name || swapTarget.name }
+        { memberId: member.mem_id || member.id, data: { comp_id: toTeamId } },
+        { memberId: swapTarget.mem_id || swapTarget.id, data: { comp_id: fromTeam } }
       ]);
       dragRef.current = { member: null, fromTeam: null };
     },
@@ -304,9 +313,8 @@ const EditParticipantsTab = ({ tournamentData }) => {
     if (swapPending.length === 0) { setSwapMode(false); return; }
     setConfirmingSwap(true);
     try {
-      // one API (Mock) for each member
       for (const sw of swapPending) {
-        await updateParticipantName(sw.memberId, sw.newName);
+        await updateMember(sw.memberId, sw.data);
       }
       setSwapPending([]);
       setSwapMode(false);

@@ -36,4 +36,7 @@ router.delete('/:id/discard', ctrl.discardDraft.bind(ctrl));
 //Delete Tournament Cascade
 router.delete('/:id', ctrl.deleteTournament.bind(ctrl));
 
+//Update Participant Member Details (Name, Experience, Team/Competitor)
+router.patch('/participants/members/:memId', ctrl.updateMember.bind(ctrl));
+
 module.exports = router;
