@@ -24,7 +24,7 @@ class TournamentRepository {
       `UPDATE tournament
        SET tour_name=$1, tour_descrip=$2, tour_locat=$3,
            tour_startdate=$4, tour_enddate=$5, tour_banner=$6
-       WHERE tour_id=$7 AND created_by=$8
+       WHERE tour_id=$7 AND (created_by=$8 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $8 AND role IN ('superadmin', 'super_admin')))
        RETURNING *`,
       [tour_name, tour_descrip, tour_locat, tour_startdate, tour_enddate, tour_banner, tourId, organizerId]
     );
@@ -41,7 +41,7 @@ class TournamentRepository {
       const { rows: tourRows } = await client.query(
         `UPDATE tournament
          SET sp_id=$1
-         WHERE tour_id=$2 AND created_by=$3
+         WHERE tour_id=$2 AND (created_by=$3 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $3 AND role IN ('superadmin', 'super_admin')))
          RETURNING *`,
         [sp_id, tourId, organizerId]
       );
@@ -115,7 +115,7 @@ class TournamentRepository {
     const { rows } = await pool.query(
       `UPDATE tournament
        SET tour_format=$1
-       WHERE tour_id=$2 AND created_by=$3
+       WHERE tour_id=$2 AND (created_by=$3 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $3 AND role IN ('superadmin', 'super_admin')))
        RETURNING *`,
       [tour_format, tourId, organizerId]
     );
@@ -131,7 +131,7 @@ class TournamentRepository {
               (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
        FROM tournament t
        LEFT JOIN sport s ON t.sp_id = s.sport_id
-       WHERE t.tour_id=$1 AND t.created_by=$2`,
+       WHERE t.tour_id=$1 AND (t.created_by=$2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')))`,
       [tourId, organizerId]
     );
     if (!tourRows[0]) return null;
@@ -166,7 +166,7 @@ class TournamentRepository {
     const { rows } = await pool.query(
       `UPDATE tournament
        SET tour_status='ongoing'
-       WHERE tour_id=$1 AND created_by=$2 AND COALESCE(tour_status, 'draft') <> 'ongoing'
+       WHERE tour_id=$1 AND (created_by=$2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin'))) AND COALESCE(tour_status, 'draft') <> 'ongoing'
        RETURNING *`,
       [tourId, organizerId]
     );
@@ -175,7 +175,7 @@ class TournamentRepository {
 
   async findById(tourId, organizerId) {
     const { rows } = await pool.query(
-      `SELECT * FROM tournament WHERE tour_id=$1 AND created_by=$2`,
+      `SELECT * FROM tournament WHERE tour_id=$1 AND (created_by=$2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')))`,
       [tourId, organizerId]
     );
     return rows[0] || null;
@@ -188,7 +188,7 @@ class TournamentRepository {
               (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
        FROM tournament t
        LEFT JOIN sport s ON t.sp_id = s.sport_id
-       WHERE t.created_by=$1
+       WHERE t.created_by=$1 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $1 AND role IN ('superadmin', 'super_admin'))
        ORDER BY t.tour_startdate DESC NULLS LAST, t.tour_name ASC`,
       [organizerId]
     );
@@ -223,7 +223,7 @@ class TournamentRepository {
     //1.Verify ownership and draft status before touching anything
     const { rows: tourRows } = await client.query(
       `SELECT tour_id, tour_status FROM tournament
-       WHERE tour_id = $1 AND created_by = $2`,
+       WHERE tour_id = $1 AND (created_by = $2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')))`,
       [tourId, organizerId]
     );
 
@@ -259,7 +259,7 @@ class TournamentRepository {
 
     //4.Delete the tournament itself
     await client.query(
-      `DELETE FROM tournament WHERE tour_id = $1 AND created_by = $2`,
+      `DELETE FROM tournament WHERE tour_id = $1 AND (created_by = $2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')))`,
       [tourId, organizerId]
     );
 
@@ -323,7 +323,7 @@ class TournamentRepository {
       //1.Verify ownership
       const { rows: tourRows } = await client.query(
         `SELECT tour_id FROM tournament
-         WHERE tour_id = $1 AND created_by = $2`,
+         WHERE tour_id = $1 AND (created_by = $2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')))`,
         [tourId, organizerId]
       );
 
@@ -354,7 +354,7 @@ class TournamentRepository {
 
       //4.Delete the tournament
       await client.query(
-        `DELETE FROM tournament WHERE tour_id = $1 AND created_by = $2`,
+        `DELETE FROM tournament WHERE tour_id = $1 AND (created_by = $2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')))`,
         [tourId, organizerId]
       );
 
@@ -368,14 +368,15 @@ class TournamentRepository {
     }
   }
 
-  async getMemberOwnership(memId) {
+  async getMemberOwnership(memId, organizerId) {
     const { rows } = await pool.query(
-      `SELECT c.tour_id, c.comp_id, c.comp_size, t.created_by 
+      `SELECT c.tour_id, c.comp_id, c.comp_size, t.created_by,
+              EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')) as is_super_admin
        FROM teammember m
        JOIN competitors c ON m.comp_id = c.comp_id
        JOIN tournament t ON c.tour_id = t.tour_id
        WHERE m.mem_id = $1`,
-      [memId]
+      [memId, organizerId]
     );
     return rows[0] || null;
   }
