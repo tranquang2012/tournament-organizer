@@ -80,9 +80,24 @@ const IndividualList = ({ participants, onEdit }) => (
   </div>
 );
 
+const EXP_VALUES = {
+  Beginner: 1,
+  Intermediate: 2,
+  Advanced: 3,
+  Professional: 4,
+  Pro: 4,
+};
+
+const getAverageExperience = (members = []) => {
+  if (members.length === 0) return null;
+  const sum = members.reduce((acc, m) => acc + (EXP_VALUES[m.mem_expe || m.experience] || 1), 0);
+  return (sum / members.length).toFixed(1);
+};
+
 /*  Team card  */
 const TeamCard = ({ team, expanded, onToggle, onEdit, swapMode, dragHandlers, draggingMemberId }) => {
   const memberCount = team.members?.length ?? 0;
+  const avgExp = getAverageExperience(team.members);
 
   return (
     <div
@@ -103,7 +118,10 @@ const TeamCard = ({ team, expanded, onToggle, onEdit, swapMode, dragHandlers, dr
 
         <div className="flex-1 min-w-0">
           <p className="text-sm font-bold text-slate-800 leading-tight truncate">{team.comp_name}</p>
-          <p className="text-xs text-slate-400 mt-0.5">{memberCount} member{memberCount !== 1 ? 's' : ''}</p>
+          <p className="text-xs text-slate-400 mt-0.5">
+            {memberCount} member{memberCount !== 1 ? 's' : ''}
+            {avgExp !== null && ` · Avg Exp: ${avgExp}`}
+          </p>
         </div>
 
         <FontAwesomeIcon

@@ -71,6 +71,14 @@ const buildPredefinedTeamParticipants = (teams = []) =>
     })),
   }));
 
+const EXP_VALUES = {
+  Beginner: 1,
+  Intermediate: 2,
+  Advanced: 3,
+  Professional: 4,
+  Pro: 4,
+};
+
 const buildRandomizedTeamParticipants = (players = [], numberOfTeams) => {
   const teamCount = Number(numberOfTeams) || 0;
   if (teamCount < 1) return [];
@@ -80,14 +88,100 @@ const buildRandomizedTeamParticipants = (players = [], numberOfTeams) => {
     members: [],
   }));
 
-  [...players]
-    .sort(() => Math.random() - 0.5)
-    .forEach((player, index) => {
-      teams[index % teamCount].members.push({
-        mem_name: player.name,
-        mem_expe: normalizeExperience(player.experience),
-      });
+  const getPlayerExpValue = (player) => {
+    const exp = normalizeExperience(player.experience);
+    return EXP_VALUES[exp] || 1;
+  };
+
+  const sortedPlayers = [...players].sort((a, b) => getPlayerExpValue(b) - getPlayerExpValue(a));
+  const teamSizeLimit = Math.ceil(players.length / teamCount);
+
+  // Balanced draft distribution
+  for (const player of sortedPlayers) {
+    const candidates = teams.filter((t) => t.members.length < teamSizeLimit);
+    if (candidates.length === 0) break;
+
+    let bestTeam = candidates[0];
+    let minSum = Infinity;
+
+    for (const team of candidates) {
+      const sum = team.members.reduce((acc, m) => acc + (EXP_VALUES[m.mem_expe] || 1), 0);
+      if (sum < minSum) {
+        minSum = sum;
+        bestTeam = team;
+      } else if (sum === minSum) {
+        if (team.members.length < bestTeam.members.length) {
+          bestTeam = team;
+        }
+      }
+    }
+
+    bestTeam.members.push({
+      mem_name: player.name,
+      mem_expe: normalizeExperience(player.experience),
     });
+  }
+
+  // Local optimization (iterative swapping) to minimize gap between average experience
+  const calculateTeamAvg = (team) => {
+    if (team.members.length === 0) return 0;
+    const total = team.members.reduce((sum, m) => sum + (EXP_VALUES[m.mem_expe] || 1), 0);
+    return total / team.members.length;
+  };
+
+  const getGap = (currentTeams) => {
+    let minAvg = Infinity;
+    let maxAvg = -Infinity;
+    for (const t of currentTeams) {
+      const avg = calculateTeamAvg(t);
+      if (avg < minAvg) minAvg = avg;
+      if (avg > maxAvg) maxAvg = avg;
+    }
+    return maxAvg - minAvg;
+  };
+
+  let bestGap = getGap(teams);
+  let improved = true;
+  let iterations = 0;
+  const maxIterations = 100;
+
+  while (improved && iterations < maxIterations) {
+    improved = false;
+    iterations++;
+
+    for (let i = 0; i < teams.length; i++) {
+      for (let j = i + 1; j < teams.length; j++) {
+        const teamA = teams[i];
+        const teamB = teams[j];
+
+        for (let idxA = 0; idxA < teamA.members.length; idxA++) {
+          for (let idxB = 0; idxB < teamB.members.length; idxB++) {
+            const memA = teamA.members[idxA];
+            const memB = teamB.members[idxB];
+
+            if (memA.mem_expe === memB.mem_expe) continue;
+
+            teamA.members[idxA] = memB;
+            teamB.members[idxB] = memA;
+
+            const newGap = getGap(teams);
+            if (newGap < bestGap) {
+              bestGap = newGap;
+              improved = true;
+            } else {
+              teamA.members[idxA] = memA;
+              teamB.members[idxB] = memB;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const finalGap = getGap(teams);
+  if (finalGap > 1.0) {
+    console.warn(`[TournamentOrganizer] Balanced teams generated with a skill gap of ${finalGap.toFixed(2)} average experience points.`);
+  }
 
   return teams.map((team) => ({
     ...team,

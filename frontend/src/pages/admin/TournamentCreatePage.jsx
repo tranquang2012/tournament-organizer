@@ -283,16 +283,29 @@ const TournamentCreatePage = () => {
       }
 
       if (formData.participantType === 'team' && formData.teamMode === 'randomize') {
-        const teamCount = Number(formData.numberOfTeams) || 0;
-        if (teamCount < 1) {
-          setToast({ message: 'Number of teams is required', type: 'error' });
+        const playerPoolCount = formData.participants?.length || 0;
+        const membersPerTeam = Number(formData.membersPerTeam) || 0;
+
+        if (membersPerTeam <= 0) {
+          setToast({ message: 'Number of members in a team must be greater than 0', type: 'error' });
           return false;
         }
 
-        if (formData.participants.length < teamCount) {
-          setToast({ message: 'Player count must be at least the number of teams', type: 'error' });
+        if (playerPoolCount === 0) {
+          setToast({ message: 'Player pool cannot be empty', type: 'error' });
           return false;
         }
+
+        if (playerPoolCount % membersPerTeam !== 0) {
+          setToast({
+            message: `Player pool (${playerPoolCount} players) cannot be divided equally into teams of ${membersPerTeam}.`,
+            type: 'error',
+          });
+          return false;
+        }
+
+        // Set calculated numberOfTeams on the form data
+        formData.numberOfTeams = playerPoolCount / membersPerTeam;
       }
     }
 
