@@ -79,7 +79,7 @@ const EXP_VALUES = {
   Pro: 4,
 };
 
-const buildRandomizedTeamParticipants = (players = [], numberOfTeams) => {
+export const buildRandomizedTeamParticipants = (players = [], numberOfTeams) => {
   const teamCount = Number(numberOfTeams) || 0;
   if (teamCount < 1) return [];
 
@@ -179,14 +179,13 @@ const buildRandomizedTeamParticipants = (players = [], numberOfTeams) => {
   }
 
   const finalGap = getGap(teams);
-  if (finalGap > 1.0) {
-    console.warn(`[TournamentOrganizer] Balanced teams generated with a skill gap of ${finalGap.toFixed(2)} average experience points.`);
-  }
 
-  return teams.map((team) => ({
+  const result = teams.map((team) => ({
     ...team,
     comp_size: Math.max(team.members.length, 1),
   }));
+  result.finalGap = finalGap;
+  return result;
 };
 
 const buildIndividualParticipants = (participants = []) =>
