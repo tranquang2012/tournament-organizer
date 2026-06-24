@@ -49,9 +49,9 @@ const INITIAL_DATA = {
   format: '',
   numberOfMatches: '',
   matchesPerDay: '',
-  hybridEliminationType: 'single_elimination',
-  hybridStages: 2,
-  hybridMatchesPerStage: 1,
+  hybridGroups: '',
+  hybridAdvancing: '',
+  hybridSecondRound: '',
 };
 
 const getErrorMessage = (error) => (
@@ -215,7 +215,7 @@ const TournamentCreatePage = () => {
     }
     if (idx === 2) {
       if (formData.format === 'hybrid') {
-        return !!formData.format && formData.hybridStages > 0 && formData.hybridMatchesPerStage > 0;
+        return !!formData.hybridSecondRound && !!formData.hybridGroups && !!formData.hybridAdvancing;
       }
       return !!formData.format;
     }
@@ -296,9 +296,21 @@ const TournamentCreatePage = () => {
       }
     }
 
-    if (currentStep === 2 && !formData.format) {
-      setToast({ message: 'Tournament format is required', type: 'error' });
-      return false;
+    if (currentStep === 2) {
+      if (!formData.format) {
+        setToast({ message: 'Tournament format is required', type: 'error' });
+        return false;
+      }
+      if (formData.format === 'hybrid') {
+        if (!formData.hybridGroups || !formData.hybridAdvancing) {
+          setToast({ message: 'Please configure the first round groups', type: 'error' });
+          return false;
+        }
+        if (!formData.hybridSecondRound) {
+          setToast({ message: 'Please select a format for the second round', type: 'error' });
+          return false;
+        }
+      }
     }
 
     return true;
