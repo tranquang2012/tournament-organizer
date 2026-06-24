@@ -8,6 +8,7 @@ import { useAuth } from '../../hooks/useAuth'
 import LeaderboardTable from '../../components/tournament_public/LeaderboardTable';
 import TeamCard from '../../components/tournament_public/TeamCard';
 import MatchCard from '../../components/tournament_public/MatchCard';
+import TournamentBracket from '../../components/tournament_public/TournamentBracket';
 
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
 import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
@@ -165,14 +166,23 @@ const TournamentPage = () => {
           </button>
         ))}
       </div>
-      <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
-        <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Group Stage</span>
-        <div className='grid grid-cols-1 md:grid-cols-2 gap-10'>
-          {mockGroups.map((group) => (
-            <LeaderboardTable key={group.id} group={group} />
-          ))}
+      {selectedRound === 1 ? (
+        <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
+          <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Group Stage</span>
+          <div className='grid grid-cols-1 md:grid-cols-2 gap-10'>
+            {mockGroups.map((group) => (
+              <LeaderboardTable key={group.id} group={group} />
+            ))}
+          </div>
         </div>
-      </div>
+      ) :
+        (
+          <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
+            <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Play Offs</span>
+            <TournamentBracket />
+          </div>
+        )
+      }
       <div className='flex mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10'>
         <div className='flex flex-col w-[50%] pr-[1%] gap-5 border-r border-gray-300'>
           <span className='text-[#123836] font-semibold text-[18px] md:text-[32px] py-[1%]'>Tournament Participants</span>
