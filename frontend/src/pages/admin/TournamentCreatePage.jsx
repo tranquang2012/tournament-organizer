@@ -16,6 +16,7 @@ import {
   saveFormatConfig,
   publishTournament,
   discardTournamentDraft,
+  buildRandomizedTeamParticipants,
 } from '../../services/TournamentService';
 import { getAccessToken } from '../../services/AuthService';
 import { getAllSports } from '../../services/SportService';
@@ -68,6 +69,7 @@ const TournamentCreatePage = () => {
   const [isDirty, setIsDirty] = useState(false);
   const [discarding, setDiscarding] = useState(false);
   const [sportsConfig, setSportsConfig] = useState([]);
+  const [showBalanceWarning, setShowBalanceWarning] = useState(false);
 
   const currentSportConfig = sportsConfig.find(
     (s) => s.name.toLowerCase() === formData.sport?.toLowerCase()
@@ -283,16 +285,29 @@ const TournamentCreatePage = () => {
       }
 
       if (formData.participantType === 'team' && formData.teamMode === 'randomize') {
-        const teamCount = Number(formData.numberOfTeams) || 0;
-        if (teamCount < 1) {
-          setToast({ message: 'Number of teams is required', type: 'error' });
+        const playerPoolCount = formData.participants?.length || 0;
+        const membersPerTeam = Number(formData.membersPerTeam) || 0;
+
+        if (membersPerTeam <= 0) {
+          setToast({ message: 'Number of members in a team must be greater than 0', type: 'error' });
           return false;
         }
 
-        if (formData.participants.length < teamCount) {
-          setToast({ message: 'Player count must be at least the number of teams', type: 'error' });
+        if (playerPoolCount === 0) {
+          setToast({ message: 'Player pool cannot be empty', type: 'error' });
           return false;
         }
+
+        if (playerPoolCount % membersPerTeam !== 0) {
+          setToast({
+            message: `Player pool (${playerPoolCount} players) cannot be divided equally into teams of ${membersPerTeam}.`,
+            type: 'error',
+          });
+          return false;
+        }
+
+        // Set calculated numberOfTeams on the form data
+        formData.numberOfTeams = playerPoolCount / membersPerTeam;
       }
     }
 
@@ -324,9 +339,20 @@ const TournamentCreatePage = () => {
     }
   };
 
-  const handleNext = async () => {
+  const handleNext = async (bypassWarning = false) => {
     if (!validateCurrentStep()) return;
 
+    const shouldBypass = bypassWarning === true;
+
+    if (currentStep === 1 && formData.participantType === 'team' && formData.teamMode === 'randomize' && !shouldBypass) {
+      const teams = buildRandomizedTeamParticipants(formData.participants, formData.numberOfTeams);
+      if (teams.finalGap > 1.0) {
+        setShowBalanceWarning(true);
+        return;
+      }
+    }
+
+    setShowBalanceWarning(false);
     setSavingStep(true);
     try {
       await persistCurrentStep();
@@ -412,6 +438,17 @@ const TournamentCreatePage = () => {
         loading={discarding}
       />
 
+      {/* Balance warning modal */}
+      <ConfirmationModal
+        open={showBalanceWarning}
+        onClose={() => setShowBalanceWarning(false)}
+        onConfirm={() => handleNext(true)}
+        title="Unbalanced Teams Warning"
+        description="The experience distribution of the player pool makes it difficult to balance the teams perfectly. Do you want to proceed anyway?"
+        intent="warning"
+        confirmLabel="Proceed Anyway"
+        cancelLabel="Adjust Players"
+      />
       {/* Page header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-800 m-0 leading-tight">
