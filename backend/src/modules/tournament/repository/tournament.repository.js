@@ -422,6 +422,51 @@ class TournamentRepository {
       client.release();
     }
   }
+
+  async updateCompetitor(compId, tourId, organizerId, data) {
+  //verify the tournament belongs to this organizer
+    const { rows: tourRows } = await pool.query(
+      `SELECT tour_id FROM tournament
+       WHERE tour_id = $1 AND created_by = $2`,
+      [tourId, organizerId]
+    );
+
+    if (!tourRows[0]) return { updated: false, reason: 'tournament_not_found' };
+
+  //Verify the competitor belongs to this tournament
+   const { rows: compRows } = await pool.query(
+      `SELECT comp_id FROM competitors
+      WHERE comp_id = $1 AND tour_id = $2`,
+     [compId, tourId]
+    );
+
+   if (!compRows[0]) return { updated: false, reason: 'competitor_not_found' };
+
+   const fields = [];
+   const values = [];
+   let idx = 1;
+
+   if (data.comp_name !== undefined) {
+      fields.push(`comp_name = $${idx++}`);
+      values.push(data.comp_name);
+   }
+   if (data.comp_logo !== undefined) {
+     fields.push(`comp_logo = $${idx++}`);
+     values.push(data.comp_logo);
+   }
+
+   values.push(compId);
+
+   const { rows } = await pool.query(
+     `UPDATE competitors
+      SET ${fields.join(', ')}
+      WHERE comp_id = $${idx}
+      RETURNING *`,
+     values
+   );
+
+   return { updated: true, competitor: rows[0] };
+  }
 }
 
 module.exports = new TournamentRepository();
