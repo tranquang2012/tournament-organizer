@@ -106,7 +106,7 @@ const DOUBLE_ELIM_DATA = {
             ],
         },
         {
-            id: 'W6', name: 'WB Semi 2', nextMatchId: 'W7', nextLooserMatchId: 'L3',
+            id: 'W6', name: 'WB Semi 2', nextMatchId: 'W7', nextLooserMatchId: 'L4',
             tournamentRoundText: 'WB Semi-Final', startTime: '2024-01-02', state: 'DONE',
             participants: [
                 { id: 'hle', name: 'HLE', isWinner: true, resultText: '2', status: 'PLAYED' },
@@ -132,7 +132,7 @@ const DOUBLE_ELIM_DATA = {
     ],
     lower: [
         {
-            id: 'L1', name: 'LB Round 1', nextMatchId: 'L3', nextLooserMatchId: null,
+            id: 'L1', name: 'LB Match 1', nextMatchId: 'L3', nextLooserMatchId: null,
             tournamentRoundText: 'LB Round 1', startTime: '2024-01-02', state: 'DONE',
             participants: [
                 { id: 't1', name: 'T1', isWinner: true, resultText: '2', status: 'PLAYED' },
@@ -140,7 +140,7 @@ const DOUBLE_ELIM_DATA = {
             ],
         },
         {
-            id: 'L2', name: 'LB Round 1B', nextMatchId: 'L3', nextLooserMatchId: null,
+            id: 'L2', name: 'LB Match 2', nextMatchId: 'L3', nextLooserMatchId: null,
             tournamentRoundText: 'LB Round 1', startTime: '2024-01-02', state: 'DONE',
             participants: [
                 { id: 'kt', name: 'KT', isWinner: true, resultText: '2', status: 'PLAYED' },
@@ -148,7 +148,7 @@ const DOUBLE_ELIM_DATA = {
             ],
         },
         {
-            id: 'L3', name: 'LB Round 2', nextMatchId: 'L4', nextLooserMatchId: null,
+            id: 'L3', name: 'LB Match 3', nextMatchId: 'L5', nextLooserMatchId: null,
             tournamentRoundText: 'LB Round 2', startTime: '2024-01-03', state: 'DONE',
             participants: [
                 { id: 'dk', name: 'DK', isWinner: true, resultText: '2', status: 'PLAYED' },
@@ -156,7 +156,23 @@ const DOUBLE_ELIM_DATA = {
             ],
         },
         {
-            id: 'L4', name: 'LB Final', nextMatchId: 'GF', nextLooserMatchId: null,
+            id: 'L4', name: 'LB Match 4', nextMatchId: 'L5', nextLooserMatchId: null,
+            tournamentRoundText: 'LB Round 2', startTime: '2024-01-03', state: 'DONE',
+            participants: [
+                { id: 'kt', name: 'KT', isWinner: true, resultText: '2', status: 'PLAYED' },
+                { id: 'bro', name: 'BRO', isWinner: false, resultText: '0', status: 'PLAYED' },
+            ],
+        },
+        {
+            id: 'L5', name: 'LB Match 5', nextMatchId: 'L6', nextLooserMatchId: null,
+            tournamentRoundText: 'LB Final', startTime: '2024-01-03', state: 'DONE',
+            participants: [
+                { id: 'kt', name: 'KT', isWinner: false, resultText: '1', status: 'PLAYED' },
+                { id: 'dk', name: 'DK', isWinner: true, resultText: '2', status: 'PLAYED' },
+            ],
+        },
+        {
+            id: 'L6', name: 'LB Final', nextMatchId: 'GF', nextLooserMatchId: null,
             tournamentRoundText: 'LB Final', startTime: '2024-01-03', state: 'DONE',
             participants: [
                 { id: 'hle', name: 'HLE', isWinner: false, resultText: '1', status: 'PLAYED' },
@@ -237,7 +253,7 @@ const TournamentBracket = ({
 }) => {
     const [mode, setMode] = useState(initialMode)
     const { width } = useWindowSize()
-    const matchHeight = 60
+    const matchHeight = 120
 
     const singleMatchCount = matches.length
     const doubleMatchCount = Math.max(
