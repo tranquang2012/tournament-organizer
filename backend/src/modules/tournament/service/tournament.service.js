@@ -3,6 +3,7 @@ const AppError = require('../../../shared/errors/AppError');
 const { validateCreateTournamentDto }    = require('../dto/createTournament.dto');
 const { validateSportParticipantsDto }   = require('../dto/sportParticipants.dto');
 const { validateFormatConfigDto }        = require('../dto/formatConfig.dto');
+const { validateUpdateCompetitorDto } = require('../dto/updateComp.dto');
 
 const SUPPORTED_BANNER_TYPES = new Map([
   ["image/jpeg", "jpg"],
@@ -206,6 +207,25 @@ class TournamentService {
     }
     const data = await repo.updateMember(memId, body);
     return data;
+  }
+
+  async updateCompetitor(tourId, compId, body, organizerId) {
+  //Validate input
+    const { data, errors } = validateUpdateCompetitorDto(body);
+    if (errors) throw new AppError(errors.join(' | '), 400);
+
+    const result = await repo.updateCompetitor(compId, tourId, organizerId, data);
+
+   if (!result.updated) {
+      if (result.reason === 'tournament_not_found') {
+       throw new AppError('Tournament not found or access denied.', 404);
+     }
+     if (result.reason === 'competitor_not_found') {
+        throw new AppError('Competitor not found in this tournament.', 404);
+      }
+    }
+
+   return result.competitor;
   }
 }
 

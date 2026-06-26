@@ -181,7 +181,7 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
     const hasResult = match.state === 'DONE'
 
     return (
-        <div className="w-full h-full flex flex-col">
+        <div className="w-full h-full flex flex-col relative">
             <div className="flex flex-col border border-gray-300 rounded-[5px] shadow-md">
                 <div className={`flex items-center cursor-pointer hover:bg-gray-50 transition-opacity h-[50%] border-b border-gray-300
                     ${hasResult && !topWon ? 'opacity-40' : 'opacity-100'}`}
@@ -220,8 +220,8 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
                     )}
                 </div>
             </div>
-            <div className="flex items-center justify-between px-1 pt-1">
-                <span className="text-[13px] text-[#123836] font-medium truncate"> {match.name}</span>
+            <div className="absolute -bottom-0 left-0 right-0 flex items-center justify-between px-1">
+                <span className="text-[13px] text-[#123836] font-medium truncate">{match.name}</span>
                 <span className="text-[13px] text-gray-400">{match.startTime}</span>
             </div>
         </div>

@@ -13,7 +13,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import Button from '../../common/Button';
 import EditMemberInlineModal from './EditMemberInlineModal';
-import { updateMember, saveSportAndParticipants } from '../../../services/TournamentService';
+import EditTeamInlineModal from './EditTeamInlineModal';
+import { updateMember, updateCompetitor, saveSportAndParticipants } from '../../../services/TournamentService';
 
 const EXP_COLORS = {
   Beginner:     { text: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
@@ -95,7 +96,7 @@ const getAverageExperience = (members = []) => {
 };
 
 /*  Team card  */
-const TeamCard = ({ team, expanded, onToggle, onEdit, swapMode, dragHandlers, draggingMemberId }) => {
+const TeamCard = ({ team, expanded, onToggle, onEdit, onEditTeam, swapMode, dragHandlers, draggingMemberId }) => {
   const memberCount = team.members?.length ?? 0;
   const avgExp = getAverageExperience(team.members);
 
@@ -106,29 +107,56 @@ const TeamCard = ({ team, expanded, onToggle, onEdit, swapMode, dragHandlers, dr
       }`}
     >
       {/* Card header */}
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50/50 transition-colors cursor-pointer bg-transparent border-none text-left"
-      >
-        {/* Team icon */}
-        <div className="w-8 h-8 rounded-lg bg-[#f0fdf4] flex items-center justify-center shrink-0">
-          <FontAwesomeIcon icon={faUsers} className="text-[#123836] text-xs" />
-        </div>
+      <div className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50/50 transition-colors bg-transparent border-none text-left">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex-1 flex items-center gap-3 cursor-pointer bg-transparent border-none text-left p-0 min-w-0"
+        >
+          {/* Team icon or logo */}
+          {team.comp_logo ? (
+            <img
+              src={team.comp_logo}
+              alt={team.comp_name}
+              className="w-8 h-8 rounded-lg object-cover shrink-0"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-[#f0fdf4] flex items-center justify-center shrink-0">
+              <FontAwesomeIcon icon={faUsers} className="text-[#123836] text-xs" />
+            </div>
+          )}
 
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-slate-800 leading-tight truncate">{team.comp_name}</p>
-          <p className="text-xs text-slate-400 mt-0.5">
-            {memberCount} member{memberCount !== 1 ? 's' : ''}
-            {avgExp !== null && ` · Avg Exp: ${avgExp}`}
-          </p>
-        </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-slate-800 leading-tight truncate">{team.comp_name}</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {memberCount} member{memberCount !== 1 ? 's' : ''}
+              {avgExp !== null && ` · Avg Exp: ${avgExp}`}
+            </p>
+          </div>
+        </button>
 
-        <FontAwesomeIcon
-          icon={expanded ? faChevronUp : faChevronDown}
-          className="text-slate-400 text-xs shrink-0"
-        />
-      </button>
+        {!swapMode && (
+          <button
+            type="button"
+            onClick={() => onEditTeam(team)}
+            className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-[#123836] hover:text-[#123836] hover:bg-[rgba(18,56,54,0.04)] transition-all duration-200 cursor-pointer shrink-0"
+            title="Edit Team"
+          >
+            <FontAwesomeIcon icon={faPenToSquare} className="text-xs" />
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={onToggle}
+          className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer shrink-0"
+        >
+          <FontAwesomeIcon
+            icon={expanded ? faChevronUp : faChevronDown}
+            className="text-xs"
+          />
+        </button>
+      </div>
 
       {/* Expanded member list */}
       {expanded && (
@@ -220,6 +248,7 @@ const EditParticipantsTab = ({ tournamentData }) => {
 
   /* Edit modal */
   const [editingMember, setEditingMember] = useState(null);
+  const [editingTeam, setEditingTeam] = useState(null);
 
   /* Swap mode */
   const [swapMode, setSwapMode] = useState(false);
@@ -266,6 +295,19 @@ const EditParticipantsTab = ({ tournamentData }) => {
         }))
       );
     }
+  };
+
+  /* Save team details (rename and logo URL) */
+  const handleSaveTeamDetails = async (competitorId, newName, newLogo) => {
+    await updateCompetitor(tournamentData.tour_id, competitorId, {
+      comp_name: newName,
+      comp_logo: newLogo,
+    });
+    setTeams((prev) =>
+      prev.map((t) =>
+        t.comp_id === competitorId ? { ...t, comp_name: newName, comp_logo: newLogo } : t
+      )
+    );
   };
 
   /* Swap mode drag handlers */
@@ -442,6 +484,7 @@ const EditParticipantsTab = ({ tournamentData }) => {
                 expanded={!!expandedTeams[team.comp_id]}
                 onToggle={() => toggleTeam(team.comp_id)}
                 onEdit={(m) => setEditingMember({ id: m.mem_id || m.id, name: m.mem_name || m.name, experience: m.mem_expe })}
+                onEditTeam={(t) => setEditingTeam({ id: t.comp_id, name: t.comp_name, logo: t.comp_logo })}
                 swapMode={swapMode}
                 dragHandlers={dragHandlers}
                 draggingMemberId={draggingMemberId}
@@ -489,6 +532,14 @@ const EditParticipantsTab = ({ tournamentData }) => {
         member={editingMember}
         onClose={() => setEditingMember(null)}
         onSave={handleSaveMemberName}
+      />
+
+      {/* Edit team modal */}
+      <EditTeamInlineModal
+        open={!!editingTeam}
+        team={editingTeam}
+        onClose={() => setEditingTeam(null)}
+        onSave={handleSaveTeamDetails}
       />
     </div>
   );

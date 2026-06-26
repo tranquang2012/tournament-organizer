@@ -275,7 +275,7 @@ class TournamentRepository {
 
   async getParticipants(tourId) {
     const { rows: competitors } = await pool.query(
-      `SELECT comp_id, comp_name, comp_size FROM competitors WHERE tour_id = $1`,
+      `SELECT comp_id, comp_name, comp_size, comp_logo FROM competitors WHERE tour_id = $1`,
       [tourId]
     );
 
@@ -298,13 +298,15 @@ class TournamentRepository {
           type: "individual",
           id: comp.comp_id,
           name: primaryMember.mem_name || comp.comp_name || "Unknown",
-          experience: primaryMember.mem_expe || "Beginner"
+          experience: primaryMember.mem_expe || "Beginner",
+          logo: comp.comp_logo
         };
       } else {
         return {
           type: "team",
           id: comp.comp_id,
           name: comp.comp_name || "Unnamed Team",
+          logo: comp.comp_logo,
           members: members.map(m => ({
             id: m.mem_id,
             name: m.mem_name,
@@ -421,6 +423,51 @@ class TournamentRepository {
     } finally {
       client.release();
     }
+  }
+
+  async updateCompetitor(compId, tourId, organizerId, data) {
+  //verify the tournament belongs to this organizer
+    const { rows: tourRows } = await pool.query(
+      `SELECT tour_id FROM tournament
+       WHERE tour_id = $1 AND (created_by = $2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')))`,
+      [tourId, organizerId]
+    );
+
+    if (!tourRows[0]) return { updated: false, reason: 'tournament_not_found' };
+
+  //Verify the competitor belongs to this tournament
+   const { rows: compRows } = await pool.query(
+      `SELECT comp_id FROM competitors
+      WHERE comp_id = $1 AND tour_id = $2`,
+     [compId, tourId]
+    );
+
+   if (!compRows[0]) return { updated: false, reason: 'competitor_not_found' };
+
+   const fields = [];
+   const values = [];
+   let idx = 1;
+
+   if (data.comp_name !== undefined) {
+      fields.push(`comp_name = $${idx++}`);
+      values.push(data.comp_name);
+   }
+   if (data.comp_logo !== undefined) {
+     fields.push(`comp_logo = $${idx++}`);
+     values.push(data.comp_logo);
+   }
+
+   values.push(compId);
+
+   const { rows } = await pool.query(
+     `UPDATE competitors
+      SET ${fields.join(', ')}
+      WHERE comp_id = $${idx}
+      RETURNING *`,
+     values
+   );
+
+   return { updated: true, competitor: rows[0] };
   }
 }
 

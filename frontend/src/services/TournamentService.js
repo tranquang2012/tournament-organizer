@@ -297,6 +297,11 @@ export const updateMember = async (memberId, data) => {
   return axios.patch(`/api/tournaments/participants/members/${memberId}`, data, authConfig);
 };
 
+export const updateCompetitor = async (tournamentId, competitorId, data) => {
+  const authConfig = await withTournamentAuth();
+  return axios.patch(`/api/tournaments/${tournamentId}/competitors/${competitorId}`, data, authConfig);
+};
+
 export const deleteTournament = async (tournamentId) => {
   const authConfig = await withTournamentAuth();
   return axios.delete(`/api/tournaments/${tournamentId}`, authConfig);

@@ -39,4 +39,7 @@ router.delete('/:id', ctrl.deleteTournament.bind(ctrl));
 //Update Participant Member Details (Name, Experience, Team/Competitor)
 router.patch('/participants/members/:memId', ctrl.updateMember.bind(ctrl));
 
+// Edit a competitor's name and/or logo
+router.patch('/:id/competitors/:compId', ctrl.updateCompetitor.bind(ctrl));
+
 module.exports = router;
