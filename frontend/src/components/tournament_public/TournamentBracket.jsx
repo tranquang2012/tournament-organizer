@@ -254,6 +254,10 @@ const TournamentBracket = ({
             height={svgHeight}
             background="#ffffff"
             SVGBackground="#ffffff"
+            detectWheel={false}
+            detectPinchGesture={false}
+            disableDoubleClickZoomWithToolAuto={true}
+            miniatureProps={{ position: 'none' }}
             {...props}
         >
             {children}
