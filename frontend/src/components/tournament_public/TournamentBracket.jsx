@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react'
-import {
-    SingleEliminationBracket,
-    DoubleEliminationBracket,
-    SVGViewer,
-    createTheme,    
-} from 'react-tournament-brackets'
+import {SingleEliminationBracket, DoubleEliminationBracket, SVGViewer, createTheme} from 'react-tournament-brackets'
+
+import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
+import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
 
 const useWindowSize = () => {
     const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight })
@@ -178,45 +176,49 @@ export const DOUBLE_ELIM_DATA = {
     ],
 }
 
-const CustomMatch = ({match, topParty, bottomParty, topWon, bottomWon, onPartyClick, onMouseEnter, onMouseLeave}) => {
-  const hasResult = match.state === 'DONE'
+const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyClick, onMouseEnter, onMouseLeave }) => {
+    const hasResult = match.state === 'DONE'
 
-  return (
-    <div className="w-full h-full flex flex-col border border-gray-300 rounded-lg overflow-hidden bg-white">
-      <div className={`flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition-opacity h-[50%] border-b border-gray-300
-        ${hasResult && !topWon ? 'opacity-40' : 'opacity-100'}`}
-        onClick={() => onPartyClick?.(topParty, topWon)}
-        onMouseEnter={() => onMouseEnter?.(topParty?.id)}
-        onMouseLeave={onMouseLeave}
-      >
-        <span className={`flex-1 text-[16px] px-2 py-[6px]  truncate ${topWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
-          {topParty?.name || 'TBD'}
-        </span>
-        {topParty?.resultText != null && (
-          <span className={`text-[16px] font-bold px-[5px] py-[1px] rounded 
-            ${topWon ? 'bg-[#123836] text-white' : 'bg-gray-100 text-gray-400'}`}>
-            {topParty.resultText}
-          </span>
-        )}
-      </div>
-      <div className={`flex items-center gap-2 px-2 py-[6px] cursor-pointer hover:bg-gray-50 transition-opacity h-[50%]
-        ${hasResult && !bottomWon ? 'opacity-40' : 'opacity-100'}`}
-        onClick={() => onPartyClick?.(bottomParty, bottomWon)}
-        onMouseEnter={() => onMouseEnter?.(bottomParty?.id)}
-        onMouseLeave={onMouseLeave}
-      >
-        <span className={`flex-1 text-[16px] truncate ${bottomWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
-          {bottomParty?.name || 'TBD'}
-        </span>
-        {bottomParty?.resultText != null && (
-          <span className={`text-[16px] font-bold px-[5px] py-[1px] rounded
-            ${bottomWon ? 'bg-[#123836] text-white' : 'opacity-40'}`}>
-            {bottomParty.resultText}
-          </span>
-        )}
-      </div>
-    </div>
-  )
+    return (
+        <div className="w-full h-full flex flex-col border border-gray-300 rounded-[5px] overflow-hidden bg-white">
+            <div className={`flex items-center cursor-pointer hover:bg-gray-50 transition-opacity h-[50%] border-b border-gray-300
+                ${hasResult && !topWon ? 'opacity-40' : 'opacity-100'}`}
+                onClick={() => onPartyClick?.(topParty, topWon)}
+                onMouseEnter={() => onMouseEnter?.(topParty?.id)}
+                onMouseLeave={onMouseLeave}
+            >
+                <div className='flex px-2 h-full items-center gap-2'>
+                    <img src={logo1} className='h-[80%] w-[80%] object-contain' />
+                    <span className={`text-[16px] ${topWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
+                        {topParty?.name || 'TBD'}
+                    </span>
+                </div>
+                {topParty?.resultText != null && (
+                    <div className='text-[16px] font-bold px-3 self-stretch flex items-center bg-[#123836] text-white ml-auto'>
+                        {topParty.resultText}
+                    </div>
+                )}
+            </div>
+            <div className={`flex items-center cursor-pointer hover:bg-gray-50 transition-opacity h-[50%]
+                ${hasResult && !bottomWon ? 'opacity-40' : 'opacity-100'}`}
+                onClick={() => onPartyClick?.(bottomParty, bottomWon)}
+                onMouseEnter={() => onMouseEnter?.(bottomParty?.id)}
+                onMouseLeave={onMouseLeave}
+            >
+                <div className='flex px-2 h-full items-center gap-2'>
+                    <img src={logo2} className='h-[80%] w-[80%] object-contain' />
+                    <span className={`text-[16px] ${bottomWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
+                    {bottomParty?.name || 'TBD'}
+                </span>
+                </div>
+                {bottomParty?.resultText != null && (
+                    <div className='text-[16px] font-bold px-3 self-stretch flex items-center bg-[#123836] text-white ml-auto'>
+                        {bottomParty.resultText}
+                    </div>
+                )}
+            </div>
+        </div>
+    )
 }
 
 const TournamentBracket = ({
@@ -224,7 +226,7 @@ const TournamentBracket = ({
     matches = SINGLE_ELIM_DATA,
     doubleMatches = DOUBLE_ELIM_DATA,
     onMatchClick,
-    showTabs = true,
+    showTabs = true
 }) => {
     const [mode, setMode] = useState(initialMode)
     const { width } = useWindowSize()
@@ -263,17 +265,16 @@ const TournamentBracket = ({
                         <button
                             key={key}
                             onClick={() => setMode(key)}
-                            className={`px-4 py-1.5 rounded-full text-[13px] font-medium border transition-all
+                            className={`px-4 py-1.5 rounded-[15px] text-[18px] font-medium border transition-all
                                     ${mode === key
                                     ? 'bg-[#123836] text-white border-[#123836]'
-                                    : 'bg-white text-[#123836] border-gray-300 hover:bg-[#123836]/10'}`}
+                                    : 'bg-white text-[#123836] border-gray-300 hover:bg-[#123836]/10 cursor-pointer'}`}
                         >
                             {label}
                         </button>
                     ))}
                 </div>
             )}
-
             {mode === 'single' && (
                 <SingleEliminationBracket
                     matches={matches}
@@ -283,7 +284,6 @@ const TournamentBracket = ({
                     onMatchClick={({ match }) => onMatchClick?.(match)}
                 />
             )}
-
             {mode === 'double' && (
                 <DoubleEliminationBracket
                     matches={doubleMatches}
@@ -297,4 +297,4 @@ const TournamentBracket = ({
     )
 }
 
-export default TournamentBracket
+export default TournamentBracket;
