@@ -93,6 +93,21 @@ class TournamentController {
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
+
+  async updateCompetitor(req, res, next) {
+   try {
+    const { id: tourId, compId } = req.params;
+     const competitor = await service.updateCompetitor(
+       tourId,
+       compId,
+       req.body,
+       req.user.id
+      );
+      res.status(200).json({ success: true, data: competitor });
+    } catch (err) {
+     next(err);
+   }
+  }
 }
 
 module.exports = new TournamentController();
