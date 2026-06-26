@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react'
 import {
     SingleEliminationBracket,
     DoubleEliminationBracket,
-    Match,
     SVGViewer,
-    createTheme,
+    createTheme,    
 } from 'react-tournament-brackets'
 
 const useWindowSize = () => {
@@ -16,20 +15,6 @@ const useWindowSize = () => {
     }, [])
     return size
 }
-
-const GreenTheme = createTheme({
-    textColor: { main: '#123836', highlighted: '#ffffff', dark: '#123836' },
-    matchBackground: { wonColor: '#e8f5e9', lostColor: '#ffffff' },
-    score: {
-        background: { wonColor: '#123836', lostColor: '#e0e0e0' },
-        text: { highlightedWonColor: '#ffffff', highlightedLostColor: '#888' },
-    },
-    border: { color: '#e0e0e0', highlightedColor: '#123836' },
-    roundHeader: { backgroundColor: '#123836', fontColor: '#ffffff' },
-    connectorColor: '#d1d5db',
-    connectorColorHighlight: '#123836',
-    svgBackground: '#ffffff',
-})
 
 export const SINGLE_ELIM_DATA = [
     {
@@ -193,6 +178,47 @@ export const DOUBLE_ELIM_DATA = {
     ],
 }
 
+const CustomMatch = ({match, topParty, bottomParty, topWon, bottomWon, onPartyClick, onMouseEnter, onMouseLeave}) => {
+  const hasResult = match.state === 'DONE'
+
+  return (
+    <div className="w-full h-full flex flex-col border border-gray-300 rounded-lg overflow-hidden bg-white">
+      <div className={`flex items-center gap-2 cursor-pointer hover:bg-gray-50 transition-opacity h-[50%] border-b border-gray-300
+        ${hasResult && !topWon ? 'opacity-40' : 'opacity-100'}`}
+        onClick={() => onPartyClick?.(topParty, topWon)}
+        onMouseEnter={() => onMouseEnter?.(topParty?.id)}
+        onMouseLeave={onMouseLeave}
+      >
+        <span className={`flex-1 text-[16px] px-2 py-[6px]  truncate ${topWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
+          {topParty?.name || 'TBD'}
+        </span>
+        {topParty?.resultText != null && (
+          <span className={`text-[16px] font-bold px-[5px] py-[1px] rounded 
+            ${topWon ? 'bg-[#123836] text-white' : 'bg-gray-100 text-gray-400'}`}>
+            {topParty.resultText}
+          </span>
+        )}
+      </div>
+      <div className={`flex items-center gap-2 px-2 py-[6px] cursor-pointer hover:bg-gray-50 transition-opacity h-[50%]
+        ${hasResult && !bottomWon ? 'opacity-40' : 'opacity-100'}`}
+        onClick={() => onPartyClick?.(bottomParty, bottomWon)}
+        onMouseEnter={() => onMouseEnter?.(bottomParty?.id)}
+        onMouseLeave={onMouseLeave}
+      >
+        <span className={`flex-1 text-[16px] truncate ${bottomWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
+          {bottomParty?.name || 'TBD'}
+        </span>
+        {bottomParty?.resultText != null && (
+          <span className={`text-[16px] font-bold px-[5px] py-[1px] rounded
+            ${bottomWon ? 'bg-[#123836] text-white' : 'opacity-40'}`}>
+            {bottomParty.resultText}
+          </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
 const TournamentBracket = ({
     mode: initialMode = 'single',
     matches = SINGLE_ELIM_DATA,
@@ -251,8 +277,7 @@ const TournamentBracket = ({
             {mode === 'single' && (
                 <SingleEliminationBracket
                     matches={matches}
-                    matchComponent={Match}
-                    theme={GreenTheme}
+                    matchComponent={CustomMatch}
                     options={bracketOptions}
                     svgWrapper={svgWrapper}
                     onMatchClick={({ match }) => onMatchClick?.(match)}
@@ -262,8 +287,7 @@ const TournamentBracket = ({
             {mode === 'double' && (
                 <DoubleEliminationBracket
                     matches={doubleMatches}
-                    matchComponent={Match}
-                    theme={GreenTheme}
+                    matchComponent={CustomMatch}
                     options={bracketOptions}
                     svgWrapper={svgWrapper}
                     onMatchClick={({ match }) => onMatchClick?.(match)}
