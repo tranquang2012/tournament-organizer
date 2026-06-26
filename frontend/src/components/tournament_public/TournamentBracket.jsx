@@ -114,7 +114,7 @@ const DOUBLE_ELIM_DATA = {
             ],
         },
         {
-            id: 'W7', name: 'WB Final', nextMatchId: 'GF', nextLooserMatchId: 'L4',
+            id: 'W7', name: 'WB Final', nextMatchId: 'GF', nextLooserMatchId: 'L6',
             tournamentRoundText: 'WB Final', startTime: '2024-01-03', state: 'DONE',
             participants: [
                 { id: 'gen', name: 'GEN', isWinner: true, resultText: '2', status: 'PLAYED' },
@@ -140,7 +140,7 @@ const DOUBLE_ELIM_DATA = {
             ],
         },
         {
-            id: 'L2', name: 'LB Match 2', nextMatchId: 'L3', nextLooserMatchId: null,
+            id: 'L2', name: 'LB Match 2', nextMatchId: 'L4', nextLooserMatchId: null,
             tournamentRoundText: 'LB Round 1', startTime: '2024-01-02', state: 'DONE',
             participants: [
                 { id: 'kt', name: 'KT', isWinner: true, resultText: '2', status: 'PLAYED' },

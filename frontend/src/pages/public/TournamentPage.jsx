@@ -178,7 +178,7 @@ const TournamentPage = () => {
       ) :
         (
           <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
-            <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Play Offs</span>
+            <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Knockout Stage</span>
             <TournamentBracket
               onMatchClick={(match) => console.log('Clicked:', match)}
             />
