@@ -14,6 +14,7 @@ const FORMAT_LABELS = {
   double_elimination: 'Double Elimination',
   round_robin: 'Round Robin',
   round_scoring: 'Round Scoring',
+  hybrid: 'Multi Round (Hybrid)',
 };
 const ReviewPublishStep = ({ data, onGoToStep, onPublish, publishing }) => {
   const participantCount =
@@ -108,6 +109,13 @@ const ReviewPublishStep = ({ data, onGoToStep, onPublish, publishing }) => {
         {/*  Format Configuration */}
         <Section icon={faGear} title="Format Configuration" onEdit={() => onGoToStep(2)}>
           <Row label="Format" value={FORMAT_LABELS[data.format] || '—'} />
+          {data.format === 'hybrid' && (
+            <>
+              <Row label="Round 1 Groups" value={data.hybridGroups || '—'} />
+              <Row label="Advance per Group" value={data.hybridAdvancing || '—'} />
+              <Row label="Round 2 Format" value={FORMAT_LABELS[data.hybridSecondRound] || '—'} />
+            </>
+          )}
         </Section>
       </div>
 

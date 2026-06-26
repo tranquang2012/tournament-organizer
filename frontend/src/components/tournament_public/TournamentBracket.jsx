@@ -1,37 +1,10 @@
 import { useState, useEffect } from 'react'
-import {
-    SingleEliminationBracket,
-    DoubleEliminationBracket,
-    Match,
-    SVGViewer,
-    createTheme,
-} from 'react-tournament-brackets'
+import { SingleEliminationBracket, DoubleEliminationBracket, SVGViewer, createTheme } from 'react-tournament-brackets'
 
-const useWindowSize = () => {
-    const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight })
-    useEffect(() => {
-        const handler = () => setSize({ width: window.innerWidth, height: window.innerHeight })
-        window.addEventListener('resize', handler)
-        return () => window.removeEventListener('resize', handler)
-    }, [])
-    return size
-}
+import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
+import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
 
-const GreenTheme = createTheme({
-    textColor: { main: '#123836', highlighted: '', dark: '#123836' },
-    matchBackground: { wonColor: '#ffffff', lostColor: '#ffffff' },
-    score: {
-        background: { wonColor: '#123836', lostColor: '#e0e0e0' },
-        text: { highlightedWonColor: '#ffffff', highlightedLostColor: '#888' },
-    },
-    border: { color: '#e0e0e0', highlightedColor: '#123836' },
-    roundHeader: { backgroundColor: '#123836', fontColor: '#ffffff' },
-    connectorColor: '#d1d5db',
-    connectorColorHighlight: '#123836',
-    svgBackground: '#ffffff',
-})
-
-export const SINGLE_ELIM_DATA = [
+const SINGLE_ELIM_DATA = [
     {
         id: 260004, name: 'Match 10', nextMatchId: 260006,
         tournamentRoundText: 'Quarter-Final', startTime: '2024-01-01', state: 'DONE',
@@ -90,7 +63,7 @@ export const SINGLE_ELIM_DATA = [
     },
 ]
 
-export const DOUBLE_ELIM_DATA = {
+const DOUBLE_ELIM_DATA = {
     upper: [
         {
             id: 'W1', name: 'WB Match 1', nextMatchId: 'W5', nextLooserMatchId: 'L1',
@@ -133,7 +106,7 @@ export const DOUBLE_ELIM_DATA = {
             ],
         },
         {
-            id: 'W6', name: 'WB Semi 2', nextMatchId: 'W7', nextLooserMatchId: 'L3',
+            id: 'W6', name: 'WB Semi 2', nextMatchId: 'W7', nextLooserMatchId: 'L4',
             tournamentRoundText: 'WB Semi-Final', startTime: '2024-01-02', state: 'DONE',
             participants: [
                 { id: 'hle', name: 'HLE', isWinner: true, resultText: '2', status: 'PLAYED' },
@@ -159,7 +132,7 @@ export const DOUBLE_ELIM_DATA = {
     ],
     lower: [
         {
-            id: 'L1', name: 'LB Round 1', nextMatchId: 'L3', nextLooserMatchId: null,
+            id: 'L1', name: 'LB Match 1', nextMatchId: 'L3', nextLooserMatchId: null,
             tournamentRoundText: 'LB Round 1', startTime: '2024-01-02', state: 'DONE',
             participants: [
                 { id: 't1', name: 'T1', isWinner: true, resultText: '2', status: 'PLAYED' },
@@ -167,7 +140,7 @@ export const DOUBLE_ELIM_DATA = {
             ],
         },
         {
-            id: 'L2', name: 'LB Round 1B', nextMatchId: 'L3', nextLooserMatchId: null,
+            id: 'L2', name: 'LB Match 2', nextMatchId: 'L3', nextLooserMatchId: null,
             tournamentRoundText: 'LB Round 1', startTime: '2024-01-02', state: 'DONE',
             participants: [
                 { id: 'kt', name: 'KT', isWinner: true, resultText: '2', status: 'PLAYED' },
@@ -175,7 +148,7 @@ export const DOUBLE_ELIM_DATA = {
             ],
         },
         {
-            id: 'L3', name: 'LB Round 2', nextMatchId: 'L4', nextLooserMatchId: null,
+            id: 'L3', name: 'LB Match 3', nextMatchId: 'L5', nextLooserMatchId: null,
             tournamentRoundText: 'LB Round 2', startTime: '2024-01-03', state: 'DONE',
             participants: [
                 { id: 'dk', name: 'DK', isWinner: true, resultText: '2', status: 'PLAYED' },
@@ -183,7 +156,23 @@ export const DOUBLE_ELIM_DATA = {
             ],
         },
         {
-            id: 'L4', name: 'LB Final', nextMatchId: 'GF', nextLooserMatchId: null,
+            id: 'L4', name: 'LB Match 4', nextMatchId: 'L5', nextLooserMatchId: null,
+            tournamentRoundText: 'LB Round 2', startTime: '2024-01-03', state: 'DONE',
+            participants: [
+                { id: 'kt', name: 'KT', isWinner: true, resultText: '2', status: 'PLAYED' },
+                { id: 'bro', name: 'BRO', isWinner: false, resultText: '0', status: 'PLAYED' },
+            ],
+        },
+        {
+            id: 'L5', name: 'LB Match 5', nextMatchId: 'L6', nextLooserMatchId: null,
+            tournamentRoundText: 'LB Final', startTime: '2024-01-03', state: 'DONE',
+            participants: [
+                { id: 'kt', name: 'KT', isWinner: false, resultText: '1', status: 'PLAYED' },
+                { id: 'dk', name: 'DK', isWinner: true, resultText: '2', status: 'PLAYED' },
+            ],
+        },
+        {
+            id: 'L6', name: 'LB Final', nextMatchId: 'GF', nextLooserMatchId: null,
             tournamentRoundText: 'LB Final', startTime: '2024-01-03', state: 'DONE',
             participants: [
                 { id: 'hle', name: 'HLE', isWinner: false, resultText: '1', status: 'PLAYED' },
@@ -193,18 +182,87 @@ export const DOUBLE_ELIM_DATA = {
     ],
 }
 
+//get window size
+const useWindowSize = () => {
+    const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight })
+    useEffect(() => {
+        const handler = () => setSize({ width: window.innerWidth, height: window.innerHeight })
+        window.addEventListener('resize', handler)
+        return () => window.removeEventListener('resize', handler)
+    }, [])
+    return size
+}
+
+const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyClick, onMouseEnter, onMouseLeave }) => {
+    const hasResult = match.state === 'DONE'
+
+    return (
+        <div className="w-full h-full flex flex-col justify-center relative">
+            <div className="absolute -top-1.5 left-0 right-0 flex items-center justify-between px-1">
+                <span className="text-[13px] text-[#123836] font-medium ">{match.name}</span>
+                <span className="text-[13px] text-gray-400">{match.startTime} | 13:00 PM</span>
+            </div>
+            <div className="flex flex-col border border-gray-300 rounded-[5px] shadow-md">
+                <div className={`flex items-center cursor-pointer hover:bg-gray-50 transition-opacity h-[50%] border-b border-gray-300
+                    ${hasResult && !topWon ? 'opacity-40' : 'opacity-100'}`}
+                    onClick={() => onPartyClick?.(topParty, topWon)}
+                    onMouseEnter={() => onMouseEnter?.(topParty?.id)}
+                    onMouseLeave={onMouseLeave}
+                >
+                    <div className='flex px-2 py-1.5 h-full items-center gap-2'>
+                        <img src={logo1} className='h-7 w-7 flex-shrink-0' />
+                        <span className={`text-[16px] ${topWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
+                            {topParty?.name || 'TBD'}
+                        </span>
+                    </div>
+                    {topParty?.resultText != null && (
+                        <div className='text-[16px] font-bold px-3 self-stretch flex items-center bg-[#123836] text-white ml-auto rounded-tr-[5px]'>
+                            {topParty.resultText}
+                        </div>
+                    )}
+                </div>
+                <div className={`flex items-center cursor-pointer hover:bg-gray-50 transition-opacity h-[50%]
+                    ${hasResult && !bottomWon ? 'opacity-40' : 'opacity-100'}`}
+                    onClick={() => onPartyClick?.(bottomParty, bottomWon)}
+                    onMouseEnter={() => onMouseEnter?.(bottomParty?.id)}
+                    onMouseLeave={onMouseLeave}
+                >
+                    <div className='flex px-2 h-full items-center gap-2'>
+                        <img src={logo2} className='h-7 w-7 flex-shrink-0' />
+                        <span className={`text-[16px] ${bottomWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
+                            {bottomParty?.name || 'TBD'}
+                        </span>
+                    </div>
+                    {bottomParty?.resultText != null && (
+                        <div className='text-[16px] font-bold px-3 self-stretch flex items-center bg-[#123836] text-white ml-auto rounded-br-[5px]'>
+                            {bottomParty.resultText}
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
 const TournamentBracket = ({
     mode: initialMode = 'single',
     matches = SINGLE_ELIM_DATA,
     doubleMatches = DOUBLE_ELIM_DATA,
     onMatchClick,
-    showTabs = true,
+    showTabs = true
 }) => {
     const [mode, setMode] = useState(initialMode)
     const { width } = useWindowSize()
+    const matchHeight = 120
+
+    const singleMatchCount = matches.length
+    const doubleMatchCount = Math.max(
+        doubleMatches.upper.length,
+        doubleMatches.lower.length
+    )
 
     const svgWidth = Math.max(width * 0.8 - 80, 600)
-    const svgHeight = Math.max(svgWidth * 0.55, 400)
+    const svgHeight = mode === 'double' ? Math.max(doubleMatchCount * matchHeight * 2.5, 600) : Math.max(singleMatchCount * matchHeight * 2.5, 400)
 
     const svgWrapper = ({ children, ...props }) => (
         <SVGViewer
@@ -212,6 +270,10 @@ const TournamentBracket = ({
             height={svgHeight}
             background="#ffffff"
             SVGBackground="#ffffff"
+            detectWheel={false}
+            detectPinchGesture={false}
+            disableDoubleClickZoomWithToolAuto={true}
+            miniatureProps={{ position: 'none' }}
             {...props}
         >
             {children}
@@ -237,10 +299,10 @@ const TournamentBracket = ({
                         <button
                             key={key}
                             onClick={() => setMode(key)}
-                            className={`px-4 py-1.5 rounded-full text-[13px] font-medium border transition-all
-                            ${mode === key
+                            className={`px-4 py-1.5 rounded-[15px] text-[18px] font-medium border transition-all
+                                    ${mode === key
                                     ? 'bg-[#123836] text-white border-[#123836]'
-                                    : 'bg-white text-[#123836] border-gray-300 hover:bg-[#123836]/10'}`}
+                                    : 'bg-white text-[#123836] border-gray-300 hover:bg-[#123836]/10 cursor-pointer'}`}
                         >
                             {label}
                         </button>
@@ -250,8 +312,7 @@ const TournamentBracket = ({
             {mode === 'single' && (
                 <SingleEliminationBracket
                     matches={matches}
-                    matchComponent={Match}
-                    theme={GreenTheme}
+                    matchComponent={CustomMatch}
                     options={bracketOptions}
                     svgWrapper={svgWrapper}
                     onMatchClick={({ match }) => onMatchClick?.(match)}
@@ -260,8 +321,7 @@ const TournamentBracket = ({
             {mode === 'double' && (
                 <DoubleEliminationBracket
                     matches={doubleMatches}
-                    matchComponent={Match}
-                    theme={GreenTheme}
+                    matchComponent={CustomMatch}
                     options={bracketOptions}
                     svgWrapper={svgWrapper}
                     onMatchClick={({ match }) => onMatchClick?.(match)}
@@ -271,4 +331,4 @@ const TournamentBracket = ({
     )
 }
 
-export default TournamentBracket
+export default TournamentBracket;
