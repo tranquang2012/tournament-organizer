@@ -3,7 +3,7 @@ const AppError = require('../../../shared/errors/AppError');
 const { validateCreateTournamentDto }    = require('../dto/createTournament.dto');
 const { validateSportParticipantsDto }   = require('../dto/sportParticipants.dto');
 const { validateFormatConfigDto }        = require('../dto/formatConfig.dto');
-const { validateUpdateCompetitorDto } = require('../dto/updateComp.dto ');
+const { validateUpdateCompetitorDto } = require('../dto/updateComp.dto');
 
 const SUPPORTED_BANNER_TYPES = new Map([
   ["image/jpeg", "jpg"],
