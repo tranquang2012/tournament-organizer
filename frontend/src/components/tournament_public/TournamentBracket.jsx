@@ -181,7 +181,11 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
     const hasResult = match.state === 'DONE'
 
     return (
-        <div className="w-full h-full flex flex-col relative">
+        <div className="w-full h-full flex flex-col justify-center relative">
+            <div className="absolute -top-1.5 left-0 right-0 flex items-center justify-between px-1">
+                <span className="text-[13px] text-[#123836] font-medium ">{match.name}</span>
+                <span className="text-[13px] text-gray-400">{match.startTime} | 13:00 PM</span>
+            </div>
             <div className="flex flex-col border border-gray-300 rounded-[5px] shadow-md">
                 <div className={`flex items-center cursor-pointer hover:bg-gray-50 transition-opacity h-[50%] border-b border-gray-300
                     ${hasResult && !topWon ? 'opacity-40' : 'opacity-100'}`}
@@ -189,7 +193,7 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
                     onMouseEnter={() => onMouseEnter?.(topParty?.id)}
                     onMouseLeave={onMouseLeave}
                 >
-                    <div className='flex px-2 py-2 h-full items-center gap-2'>
+                    <div className='flex px-2 py-1.5 h-full items-center gap-2'>
                         <img src={logo1} className='h-7 w-7 flex-shrink-0' />
                         <span className={`text-[16px] ${topWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
                             {topParty?.name || 'TBD'}
@@ -220,10 +224,6 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
                     )}
                 </div>
             </div>
-            <div className="absolute -bottom-0 left-0 right-0 flex items-center justify-between px-1">
-                <span className="text-[13px] text-[#123836] font-medium truncate">{match.name}</span>
-                <span className="text-[13px] text-gray-400">{match.startTime}</span>
-            </div>
         </div>
     )
 }
@@ -237,7 +237,7 @@ const TournamentBracket = ({
 }) => {
     const [mode, setMode] = useState(initialMode)
     const { width } = useWindowSize()
-    const matchHeight = 100
+    const matchHeight = 60
 
     const singleMatchCount = matches.length
     const doubleMatchCount = Math.max(
