@@ -326,13 +326,6 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
                 >
                   Browse File
                 </Button>
-                <input
-                  ref={csvInputRef}
-                  type="file"
-                  accept=".csv"
-                  onChange={handleCSVUpload}
-                  className="hidden"
-                />
               </div>
 
               {/* Manual Entry */}
@@ -835,6 +828,13 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
           </div>
         )}
       </div>
+      <input
+        ref={csvInputRef}
+        type="file"
+        accept=".csv"
+        onChange={handleCSVUpload}
+        className="hidden"
+      />
     </div>
   );
 };

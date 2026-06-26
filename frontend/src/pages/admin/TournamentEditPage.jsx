@@ -25,6 +25,7 @@ const mapParticipantsToCompetitors = (participants, teamSize, existingCompetitor
         comp_id: p.id,
         comp_name: p.name,
         comp_size: 1,
+        comp_logo: p.logo || existingComp?.comp_logo,
         members: [
           {
             mem_id: existingMem?.mem_id || p.id,
@@ -38,6 +39,7 @@ const mapParticipantsToCompetitors = (participants, teamSize, existingCompetitor
         comp_id: p.id,
         comp_name: p.name,
         comp_size: teamSize,
+        comp_logo: p.logo || existingComp?.comp_logo,
         members: (p.members || []).map(m => {
           const existingTeamMem = existingComp?.members?.find(em => em.mem_id === m.id);
           return {

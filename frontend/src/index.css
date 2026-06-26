@@ -59,6 +59,7 @@
     opacity: 0;
     transform: translateY(8px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -153,4 +154,8 @@ code {
 
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(18, 56, 38, 0.8);
+}
+
+svg text {
+  fill: #ffffff;
 }

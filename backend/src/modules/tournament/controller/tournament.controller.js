@@ -101,7 +101,7 @@ class TournamentController {
        tourId,
        compId,
        req.body,
-       req.user.id
+       req.auth.userId
       );
       res.status(200).json({ success: true, data: competitor });
     } catch (err) {
