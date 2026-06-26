@@ -18,8 +18,8 @@ const useWindowSize = () => {
 }
 
 const GreenTheme = createTheme({
-    textColor: { main: '#123836', highlighted: '#ffffff', dark: '#123836' },
-    matchBackground: { wonColor: '#e8f5e9', lostColor: '#ffffff' },
+    textColor: { main: '#123836', highlighted: '', dark: '#123836' },
+    matchBackground: { wonColor: '#ffffff', lostColor: '#ffffff' },
     score: {
         background: { wonColor: '#123836', lostColor: '#e0e0e0' },
         text: { highlightedWonColor: '#ffffff', highlightedLostColor: '#888' },
@@ -238,7 +238,7 @@ const TournamentBracket = ({
                             key={key}
                             onClick={() => setMode(key)}
                             className={`px-4 py-1.5 rounded-full text-[13px] font-medium border transition-all
-                ${mode === key
+                            ${mode === key
                                     ? 'bg-[#123836] text-white border-[#123836]'
                                     : 'bg-white text-[#123836] border-gray-300 hover:bg-[#123836]/10'}`}
                         >
@@ -247,7 +247,6 @@ const TournamentBracket = ({
                     ))}
                 </div>
             )}
-
             {mode === 'single' && (
                 <SingleEliminationBracket
                     matches={matches}
@@ -258,7 +257,6 @@ const TournamentBracket = ({
                     onMatchClick={({ match }) => onMatchClick?.(match)}
                 />
             )}
-
             {mode === 'double' && (
                 <DoubleEliminationBracket
                     matches={doubleMatches}
