@@ -275,7 +275,7 @@ class TournamentRepository {
 
   async getParticipants(tourId) {
     const { rows: competitors } = await pool.query(
-      `SELECT comp_id, comp_name, comp_size FROM competitors WHERE tour_id = $1`,
+      `SELECT comp_id, comp_name, comp_size, comp_logo FROM competitors WHERE tour_id = $1`,
       [tourId]
     );
 
@@ -298,13 +298,15 @@ class TournamentRepository {
           type: "individual",
           id: comp.comp_id,
           name: primaryMember.mem_name || comp.comp_name || "Unknown",
-          experience: primaryMember.mem_expe || "Beginner"
+          experience: primaryMember.mem_expe || "Beginner",
+          logo: comp.comp_logo
         };
       } else {
         return {
           type: "team",
           id: comp.comp_id,
           name: comp.comp_name || "Unnamed Team",
+          logo: comp.comp_logo,
           members: members.map(m => ({
             id: m.mem_id,
             name: m.mem_name,
@@ -427,7 +429,7 @@ class TournamentRepository {
   //verify the tournament belongs to this organizer
     const { rows: tourRows } = await pool.query(
       `SELECT tour_id FROM tournament
-       WHERE tour_id = $1 AND created_by = $2`,
+       WHERE tour_id = $1 AND (created_by = $2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')))`,
       [tourId, organizerId]
     );
 
