@@ -1,20 +1,10 @@
 import { useState, useEffect } from 'react'
-import {SingleEliminationBracket, DoubleEliminationBracket, SVGViewer, createTheme} from 'react-tournament-brackets'
+import { SingleEliminationBracket, DoubleEliminationBracket, SVGViewer, createTheme } from 'react-tournament-brackets'
 
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
 import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
 
-const useWindowSize = () => {
-    const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight })
-    useEffect(() => {
-        const handler = () => setSize({ width: window.innerWidth, height: window.innerHeight })
-        window.addEventListener('resize', handler)
-        return () => window.removeEventListener('resize', handler)
-    }, [])
-    return size
-}
-
-export const SINGLE_ELIM_DATA = [
+const SINGLE_ELIM_DATA = [
     {
         id: 260004, name: 'Match 10', nextMatchId: 260006,
         tournamentRoundText: 'Quarter-Final', startTime: '2024-01-01', state: 'DONE',
@@ -73,7 +63,7 @@ export const SINGLE_ELIM_DATA = [
     },
 ]
 
-export const DOUBLE_ELIM_DATA = {
+const DOUBLE_ELIM_DATA = {
     upper: [
         {
             id: 'W1', name: 'WB Match 1', nextMatchId: 'W5', nextLooserMatchId: 'L1',
@@ -176,46 +166,63 @@ export const DOUBLE_ELIM_DATA = {
     ],
 }
 
+//get window size
+const useWindowSize = () => {
+    const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight })
+    useEffect(() => {
+        const handler = () => setSize({ width: window.innerWidth, height: window.innerHeight })
+        window.addEventListener('resize', handler)
+        return () => window.removeEventListener('resize', handler)
+    }, [])
+    return size
+}
+
 const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyClick, onMouseEnter, onMouseLeave }) => {
     const hasResult = match.state === 'DONE'
 
     return (
-        <div className="w-full h-full flex flex-col border border-gray-300 rounded-[5px] overflow-hidden bg-white">
-            <div className={`flex items-center cursor-pointer hover:bg-gray-50 transition-opacity h-[50%] border-b border-gray-300
-                ${hasResult && !topWon ? 'opacity-40' : 'opacity-100'}`}
-                onClick={() => onPartyClick?.(topParty, topWon)}
-                onMouseEnter={() => onMouseEnter?.(topParty?.id)}
-                onMouseLeave={onMouseLeave}
-            >
-                <div className='flex px-2 h-full items-center gap-2'>
-                    <img src={logo1} className='h-[80%] w-[80%] object-contain' />
-                    <span className={`text-[16px] ${topWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
-                        {topParty?.name || 'TBD'}
-                    </span>
-                </div>
-                {topParty?.resultText != null && (
-                    <div className='text-[16px] font-bold px-3 self-stretch flex items-center bg-[#123836] text-white ml-auto'>
-                        {topParty.resultText}
+        <div className="w-full h-full flex flex-col">
+            <div className="flex flex-col border border-gray-300 rounded-[5px] shadow-md">
+                <div className={`flex items-center cursor-pointer hover:bg-gray-50 transition-opacity h-[50%] border-b border-gray-300
+                    ${hasResult && !topWon ? 'opacity-40' : 'opacity-100'}`}
+                    onClick={() => onPartyClick?.(topParty, topWon)}
+                    onMouseEnter={() => onMouseEnter?.(topParty?.id)}
+                    onMouseLeave={onMouseLeave}
+                >
+                    <div className='flex px-2 py-2 h-full items-center gap-2'>
+                        <img src={logo1} className='h-7 w-7 flex-shrink-0' />
+                        <span className={`text-[16px] ${topWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
+                            {topParty?.name || 'TBD'}
+                        </span>
                     </div>
-                )}
+                    {topParty?.resultText != null && (
+                        <div className='text-[16px] font-bold px-3 self-stretch flex items-center bg-[#123836] text-white ml-auto rounded-tr-[5px]'>
+                            {topParty.resultText}
+                        </div>
+                    )}
+                </div>
+                <div className={`flex items-center cursor-pointer hover:bg-gray-50 transition-opacity h-[50%]
+                    ${hasResult && !bottomWon ? 'opacity-40' : 'opacity-100'}`}
+                    onClick={() => onPartyClick?.(bottomParty, bottomWon)}
+                    onMouseEnter={() => onMouseEnter?.(bottomParty?.id)}
+                    onMouseLeave={onMouseLeave}
+                >
+                    <div className='flex px-2 h-full items-center gap-2'>
+                        <img src={logo2} className='h-7 w-7 flex-shrink-0' />
+                        <span className={`text-[16px] ${bottomWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
+                            {bottomParty?.name || 'TBD'}
+                        </span>
+                    </div>
+                    {bottomParty?.resultText != null && (
+                        <div className='text-[16px] font-bold px-3 self-stretch flex items-center bg-[#123836] text-white ml-auto rounded-br-[5px]'>
+                            {bottomParty.resultText}
+                        </div>
+                    )}
+                </div>
             </div>
-            <div className={`flex items-center cursor-pointer hover:bg-gray-50 transition-opacity h-[50%]
-                ${hasResult && !bottomWon ? 'opacity-40' : 'opacity-100'}`}
-                onClick={() => onPartyClick?.(bottomParty, bottomWon)}
-                onMouseEnter={() => onMouseEnter?.(bottomParty?.id)}
-                onMouseLeave={onMouseLeave}
-            >
-                <div className='flex px-2 h-full items-center gap-2'>
-                    <img src={logo2} className='h-[80%] w-[80%] object-contain' />
-                    <span className={`text-[16px] ${bottomWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
-                    {bottomParty?.name || 'TBD'}
-                </span>
-                </div>
-                {bottomParty?.resultText != null && (
-                    <div className='text-[16px] font-bold px-3 self-stretch flex items-center bg-[#123836] text-white ml-auto'>
-                        {bottomParty.resultText}
-                    </div>
-                )}
+            <div className="flex items-center justify-between px-1 pt-1">
+                <span className="text-[13px] text-[#123836] font-medium truncate"> {match.name}</span>
+                <span className="text-[13px] text-gray-400">{match.startTime}</span>
             </div>
         </div>
     )
@@ -230,9 +237,16 @@ const TournamentBracket = ({
 }) => {
     const [mode, setMode] = useState(initialMode)
     const { width } = useWindowSize()
+    const matchHeight = 100
+
+    const singleMatchCount = matches.length
+    const doubleMatchCount = Math.max(
+        doubleMatches.upper.length,
+        doubleMatches.lower.length
+    )
 
     const svgWidth = Math.max(width * 0.8 - 80, 600)
-    const svgHeight = Math.max(svgWidth * 0.55, 400)
+    const svgHeight = mode === 'double' ? Math.max(doubleMatchCount * matchHeight * 2.5, 600) : Math.max(singleMatchCount * matchHeight * 2.5, 400)
 
     const svgWrapper = ({ children, ...props }) => (
         <SVGViewer

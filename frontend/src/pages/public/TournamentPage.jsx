@@ -8,7 +8,7 @@ import { useAuth } from '../../hooks/useAuth'
 import LeaderboardTable from '../../components/tournament_public/LeaderboardTable';
 import TeamCard from '../../components/tournament_public/TeamCard';
 import MatchCard from '../../components/tournament_public/MatchCard';
-import TournamentBracket, { SINGLE_ELIM_DATA } from '../../components/tournament_public/TournamentBracket';
+import TournamentBracket from '../../components/tournament_public/TournamentBracket';
 
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
 import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
@@ -180,7 +180,6 @@ const TournamentPage = () => {
           <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
             <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Play Offs</span>
             <TournamentBracket
-              matches={SINGLE_ELIM_DATA}
               onMatchClick={(match) => console.log('Clicked:', match)}
             />
           </div>
