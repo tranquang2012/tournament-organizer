@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faCalendarDay, faCalendarCheck, faLocationPin } from '@fortawesome/free-solid-svg-icons';
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -8,7 +8,11 @@ import { useAuth } from '../../hooks/useAuth'
 import LeaderboardTable from '../../components/tournament_public/LeaderboardTable';
 import TeamCard from '../../components/tournament_public/TeamCard';
 import MatchCard from '../../components/tournament_public/MatchCard';
-import TournamentBracket, { SINGLE_ELIM_DATA } from '../../components/tournament_public/TournamentBracket';
+import ParticipantTable from '../../components/tournament_public/ParticipantTable';
+import TournamentBracket from '../../components/tournament_public/TournamentBracket';
+
+//importAPI
+import { getParticipants } from '../../services/TournamentService';
 
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
 import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
@@ -112,9 +116,37 @@ const mockMatches = [
 ]
 
 const TournamentPage = () => {
+  const { id } = useParams()
   const { state } = useLocation()
   const tournament = state?.tournament
   const [selectedRound, setSelectedRound] = useState(mockRounds[0].id)
+  const [tourType, setTourType] = useState()
+  const [participants, setParticipants] = useState([])
+  const [loadingParticipants, setLoadingParticipants] = useState(true)
+  const [compType, setCompType] = useState(null)
+
+  useEffect(() => {
+    const fetchParticipants = async () => {
+      try {
+        const data = await getParticipants(id)
+        setParticipants(data)
+
+      } catch (err) {
+        console.error('Failed to fetch participants:', err)
+      } finally {
+        setLoadingParticipants(false)
+      }
+    }
+    if (id) fetchParticipants()
+  }, [id])
+
+  useEffect(() => {
+    if (participants.length > 0) {
+      setCompType(participants[0].type)
+    }
+  }, [participants])
+
+  console.log(participants)
 
   return (
     <div>
@@ -180,7 +212,6 @@ const TournamentPage = () => {
           <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
             <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Play Offs</span>
             <TournamentBracket
-              matches={SINGLE_ELIM_DATA}
               onMatchClick={(match) => console.log('Clicked:', match)}
             />
           </div>
@@ -189,11 +220,15 @@ const TournamentPage = () => {
       <div className='flex mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10'>
         <div className='flex flex-col w-[50%] pr-[1%] gap-5 border-r border-gray-300'>
           <span className='text-[#123836] font-semibold text-[18px] md:text-[32px] py-[1%]'>Tournament Participants</span>
-          <div className='grid grid-cols-2 md:grid-cols-3 gap-10 items-start'>
-            {mockParticipants.map((team) => (
-              <TeamCard key={team.id} team={team} />
-            ))}
-          </div>
+          {compType === 'team' ? (
+            <div className='grid grid-cols-2 md:grid-cols-3 gap-10 items-start'>
+              {participants.map((team) => (
+                <TeamCard key={team.id} team={team} />
+              ))}
+            </div>
+          ) :
+            (<ParticipantTable participants={participants} />)
+          }
         </div>
         <div className='flex flex-col w-[50%] pr-[1%] gap-5'>
           <span className='text-[#123836] font-semibold text-[18px] md:text-[32px] py-[1%]'>Tournament Recent Matches</span>
