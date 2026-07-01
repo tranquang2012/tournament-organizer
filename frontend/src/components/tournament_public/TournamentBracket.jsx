@@ -3,6 +3,7 @@ import { SingleEliminationBracket, DoubleEliminationBracket, SVGViewer, createTh
 
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
 import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
+import trophy from '../../assets/trophy.png'
 
 const SINGLE_ELIM_DATA = [
     {
@@ -215,6 +216,9 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
                             {topParty?.name || 'TBD'}
                         </span>
                     </div>
+                    {topWon && match.nextMatchId === null && (
+                        <img src={trophy} alt='trophy' className='h-6 w-6' />
+                    )}
                     {topParty?.resultText != null && (
                         <div className='text-[16px] font-bold px-3 self-stretch flex items-center bg-[#123836] text-white ml-auto rounded-tr-[5px]'>
                             {topParty.resultText}
@@ -233,6 +237,9 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
                             {bottomParty?.name || 'TBD'}
                         </span>
                     </div>
+                    {bottomWon && match.nextMatchId === null && (
+                        <img src={trophy} alt='trophy' className='h-6 w-6' />
+                    )}
                     {bottomParty?.resultText != null && (
                         <div className='text-[16px] font-bold px-3 self-stretch flex items-center bg-[#123836] text-white ml-auto rounded-br-[5px]'>
                             {bottomParty.resultText}
