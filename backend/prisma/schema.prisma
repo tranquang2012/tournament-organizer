@@ -593,6 +593,8 @@ model matches {
   scheduled_end                                       DateTime?    @db.Timestamptz(6)
   created_at                                          DateTime     @default(now()) @db.Timestamptz(6)
   updated_at                                          DateTime     @default(now()) @db.Timestamptz(6)
+  group_name                                          String?      @default("Bracket") @db.VarChar(50)
+  status                                              String?      @default("locked") @db.VarChar(20)
   competitors_matches_competitor1_idTocompetitors     competitors? @relation("matches_competitor1_idTocompetitors", fields: [competitor1_id], references: [comp_id], onUpdate: NoAction)
   competitors_matches_competitor2_idTocompetitors     competitors? @relation("matches_competitor2_idTocompetitors", fields: [competitor2_id], references: [comp_id], onUpdate: NoAction)
   matches_matches_next_loser_match_idTomatches        matches?     @relation("matches_next_loser_match_idTomatches", fields: [next_loser_match_id], references: [match_id], onUpdate: NoAction)

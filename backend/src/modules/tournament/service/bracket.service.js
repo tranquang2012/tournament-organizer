@@ -2,16 +2,12 @@ const { InMemoryDatabase } = require('brackets-memory-db');
 const { BracketsManager } = require('brackets-manager');
 const pool = require('../../../shared/database/pool');
 const AppError = require('../../../shared/errors/AppError');
+const bracketRepository = require('../repository/bracket.repository');
 
 class BracketService {
   async generateBracket(tourId) {
-
     // 1. Get tournament details
-    const { rows: tourRows } = await pool.query(
-      `SELECT tour_id, tour_format FROM tournament WHERE tour_id = $1`,
-      [tourId]
-    );
-    const tournament = tourRows[0];
+    const tournament = await bracketRepository.getTournamentFormat(tourId);
     if (!tournament) {
       throw new AppError('Tournament not found.', 404);
     }
@@ -22,11 +18,7 @@ class BracketService {
     }
 
     // 2. Get competitors
-    const { rows: competitors } = await pool.query(
-      `SELECT comp_id, comp_name FROM competitors WHERE tour_id = $1 ORDER BY comp_name ASC`,
-      [tourId]
-    );
-
+    const competitors = await bracketRepository.getCompetitorsForSeeding(tourId);
     if (competitors.length < 2) {
       throw new AppError('At least 2 competitors are required to generate matches.', 400);
     }
@@ -37,19 +29,26 @@ class BracketService {
     const db = new InMemoryDatabase();
     const manager = new BracketsManager(db);
 
-    // 4. Create stage in memory
+    // 4. Determine stage size (elimination formats require a power of two)
+    let stageSize = seeding.length;
+    if (format === 'single_elimination' || format === 'double_elimination') {
+      stageSize = Math.pow(2, Math.ceil(Math.log2(seeding.length)));
+      if (stageSize < 2) stageSize = 2;
+    }
+
+    // 5. Create stage in memory
     await manager.create.stage({
       tournamentId: 1, // Dummy ID in-memory
       name: 'Bracket Stage',
       type: format,
       seeding,
       settings: {
-        size: seeding.length,
+        size: stageSize,
         grandFinal: 'double', // standard for double elimination
       }
     });
 
-    // 5. Retrieve all generated data from in-memory storage
+    // 6. Retrieve all generated data from in-memory storage
     const stageData = await manager.get.stageData(0);
     const matches = stageData.match;
     const participants = stageData.participant;
@@ -62,13 +61,13 @@ class BracketService {
     try {
       await client.query('BEGIN');
 
-      // 6. Delete any existing matches for this tournament to ensure clean slate
+      // 7. Delete any existing matches for this tournament to ensure clean slate
       await client.query(`DELETE FROM matches WHERE tour_id = $1`, [tourId]);
 
       const dbMatches = [];
       const memoryToDbIdMap = new Map();
 
-      // 7. Insert all matches to get auto-increment IDs
+      // 8. Insert all matches to get database UUIDs
       for (const m of matches) {
         // Resolve competitor IDs (name in brackets-manager corresponds to seeding element)
         const comp1_id = m.opponent1 && m.opponent1.id !== null ? participantsMap.get(m.opponent1.id)?.name : null;
@@ -77,28 +76,50 @@ class BracketService {
         const roundNum = m.round_id + 1;
         const stageName = format;
 
-        const { rows: inserted } = await client.query(
-          `INSERT INTO matches (
-            tour_id, round, stage, competitor1_id, competitor2_id,
-            score1, score2, result1, result2, winning_competitor_id, is_draw
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-          RETURNING match_id`,
-          [
-            tourId,
-            roundNum,
-            stageName,
-            comp1_id,
-            comp2_id,
-            null, null, null, null, null, false
-          ]
-        );
+        // Resolve Status and Winner for BYEs:
+        let status = 'locked';
+        let winning_competitor_id = null;
 
-        const dbMatchId = inserted[0].match_id;
+        if (m.opponent1 === null || m.opponent2 === null) {
+          status = 'bye';
+          winning_competitor_id = (m.opponent1 && m.opponent1.result === 'win') ? comp1_id : comp2_id;
+        } else if (m.status === 1) {
+          status = 'ready';
+        } else if (m.status === 2) {
+          status = 'running';
+        } else if (m.status === 3) {
+          status = 'completed';
+        } else if (m.status === 4) {
+          status = 'archived';
+        }
+
+        // Resolve Group Name:
+        const group = groupsMap.get(m.group_id);
+        let groupName = 'Bracket';
+        if (format === 'round_robin') {
+          const groupNumber = group ? group.number : 1;
+          const letter = String.fromCharCode(64 + groupNumber);
+          groupName = `Group ${letter}`;
+        } else if (format === 'double_elimination') {
+          const groupNumber = group ? group.number : 1;
+          groupName = groupNumber === 1 ? 'Upper Bracket' : (groupNumber === 2 ? 'Lower Bracket' : 'Grand Final');
+        }
+
+        const dbMatchId = await bracketRepository.insertGeneratedMatch(tourId, {
+          roundNum,
+          stageName,
+          comp1_id,
+          comp2_id,
+          winning_competitor_id,
+          groupName,
+          status
+        }, client);
+
         memoryToDbIdMap.set(m.id, dbMatchId);
         dbMatches.push({ memoryMatch: m, dbMatchId });
       }
 
-      // 8. Update progression references (next_winner_match_id and next_loser_match_id)
+      // 9. Update progression references (next_winner_match_id and next_loser_match_id)
       for (const item of dbMatches) {
         const { memoryMatch, dbMatchId } = item;
 
@@ -117,12 +138,7 @@ class BracketService {
           }
         }
 
-        await client.query(
-          `UPDATE matches
-           SET next_winner_match_id = $1, next_loser_match_id = $2
-           WHERE match_id = $3`,
-          [nextWinnerMatchId, nextLoserMatchId, dbMatchId]
-        );
+        await bracketRepository.updateProgressionReferences(dbMatchId, nextWinnerMatchId, nextLoserMatchId, client);
       }
 
       await client.query('COMMIT');
@@ -143,17 +159,13 @@ class BracketService {
       const group = groupsMap.get(nextMatch.group_id);
       if (!group) continue;
 
-      // group.number === 1 is winner bracket. group.number === 3 is final group (Grand Final)
       if (group.number === 1 || group.number === 3) {
         nextWinnerMatch = nextMatch;
-      }
-      // group.number === 2 is loser bracket
-      else if (group.number === 2) {
+      } else if (group.number === 2) {
         nextLoserMatch = nextMatch;
       }
     }
 
-    //  If there is only 1 next match and we havent identified it as winner, it is winner path
     if (nextMatches.length === 1 && !nextWinnerMatch) {
       nextWinnerMatch = nextMatches[0];
     }
@@ -162,20 +174,7 @@ class BracketService {
   }
 
   async getBracket(tourId) {
-    const { rows: matches } = await pool.query(
-      `SELECT 
-        m.match_id, m.round, m.stage, m.scheduled_start, m.scheduled_end,
-        m.competitor1_id, m.competitor2_id, m.score1, m.score2,
-        m.winning_competitor_id, m.is_draw, m.next_winner_match_id, m.next_loser_match_id,
-        c1.comp_name as c1_name, c1.comp_logo as c1_logo, c1.comp_size as c1_size,
-        c2.comp_name as c2_name, c2.comp_logo as c2_logo, c2.comp_size as c2_size
-      FROM matches m
-      LEFT JOIN competitors c1 ON m.competitor1_id = c1.comp_id
-      LEFT JOIN competitors c2 ON m.competitor2_id = c2.comp_id
-      WHERE m.tour_id = $1
-      ORDER BY m.stage, m.round, m.match_id`,
-      [tourId]
-    );
+    const matches = await bracketRepository.getMatchesByTournament(tourId);
 
     return matches.map(m => {
       const competitors = [];
@@ -189,7 +188,7 @@ class BracketService {
           comp_size: m.c1_size
         });
         results.push({
-          competitorId: m.competitor1_id,
+          comp_id: m.competitor1_id,
           score: m.score1 || 0
         });
       }
@@ -202,23 +201,25 @@ class BracketService {
           comp_size: m.c2_size
         });
         results.push({
-          competitorId: m.competitor2_id,
+          comp_id: m.competitor2_id,
           score: m.score2 || 0
         });
       }
 
       return {
-        matchId: String(m.match_id),
+        match_id: String(m.match_id),
         stage: m.stage,
         round: m.round,
+        group_name: m.group_name,
+        status: m.status,
         competitors,
-        scheduledStart: m.scheduled_start,
-        scheduledEnd: m.scheduled_end,
+        scheduled_start: m.scheduled_start,
+        scheduled_end: m.scheduled_end,
         results,
-        winningCompetitorId: m.winning_competitor_id,
-        isDraw: m.is_draw,
-        nextWinnerMatchId: m.next_winner_match_id ? String(m.next_winner_match_id) : null,
-        nextLoserMatchId: m.next_loser_match_id ? String(m.next_loser_match_id) : null
+        winning_competitor_id: m.winning_competitor_id,
+        is_draw: m.is_draw,
+        next_winner_match_id: m.next_winner_match_id ? String(m.next_winner_match_id) : null,
+        next_loser_match_id: m.next_loser_match_id ? String(m.next_loser_match_id) : null
       };
     });
   }
