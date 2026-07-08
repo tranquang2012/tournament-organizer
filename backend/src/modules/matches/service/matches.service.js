@@ -161,7 +161,17 @@ class MatchesService {
       nextStatus = 'ready';
     }
 
-    await matchesRepository.updateNextMatchSlots(nextMatchId, updatedCompetitor1, updatedCompetitor2, nextStatus, client);
+    let winningCompetitorId = nextMatch.winning_competitor_id;
+    if (nextStatus === 'bye') {
+      winningCompetitorId = newCompId;
+    }
+
+    await matchesRepository.updateNextMatchSlots(nextMatchId, updatedCompetitor1, updatedCompetitor2, nextStatus, winningCompetitorId, client);
+
+    // If next match is a BYE, recursively propagate the winner to the subsequent round immediately!
+    if (nextStatus === 'bye' && winningCompetitorId) {
+      await this._propagateCompetitor(client, nextMatchId, oldCompId, winningCompetitorId, 'winner');
+    }
   }
 
   _mapMatchResponse(m) {

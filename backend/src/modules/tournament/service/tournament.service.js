@@ -126,7 +126,7 @@ class TournamentService {
     const { data, errors } = validateFormatConfigDto(body, tournament.sp_id);
     if (errors) throw new AppError(errors.join(' | '), 400);
 
-    const updated = await repo.updateFormat(tourId, data.tour_format, organizerId);
+    const updated = await repo.updateFormat(tourId, data, organizerId);
     if (!updated) throw new AppError('Update failed.', 500);
     return updated;
   }

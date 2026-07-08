@@ -4,7 +4,7 @@ class BracketRepository {
 
   async getTournamentFormat(tourId, executor = pool) {
     const { rows } = await executor.query(
-      `SELECT tour_id, tour_format FROM tournament WHERE tour_id = $1`,
+      `SELECT tour_id, tour_format, group_count, advance_per_group FROM tournament WHERE tour_id = $1`,
       [tourId]
     );
     return rows[0];
@@ -66,6 +66,27 @@ class BracketRepository {
       [tourId]
     );
     return rows;
+  }
+
+  async deleteMatchesByTournament(tourId, executor = pool) {
+    await executor.query(`DELETE FROM matches WHERE tour_id = $1`, [tourId]);
+  }
+
+  async getMatchCompetitorsAndStatus(matchId, executor = pool) {
+    const { rows } = await executor.query(
+      `SELECT competitor1_id, competitor2_id, status FROM matches WHERE match_id = $1`,
+      [matchId]
+    );
+    return rows[0] || null;
+  }
+
+  async updateMatchCompetitorsAndStatus(matchId, competitor1_id, competitor2_id, status, executor = pool) {
+    await executor.query(
+      `UPDATE matches 
+       SET competitor1_id = $1, competitor2_id = $2, status = $3 
+       WHERE match_id = $4`,
+      [competitor1_id, competitor2_id, status, matchId]
+    );
   }
 }
 

@@ -2,7 +2,7 @@ const { getSportRules } = require('../config/sportRules.config');
 
 function validateFormatConfigDto(body, sp_id) {
   const errors = [];
-  const { tour_format } = body;
+  const { tour_format, group_count, advance_per_group } = body;
 
   if (!tour_format) {
     errors.push('tour_format is required.');
@@ -28,7 +28,34 @@ function validateFormatConfigDto(body, sp_id) {
     return { data: null, errors };
   }
 
-  return { errors: null, data: { tour_format } };
+  let validGroupCount = 1;
+  if (group_count !== undefined && group_count !== null) {
+    validGroupCount = parseInt(group_count, 10);
+    if (isNaN(validGroupCount) || validGroupCount < 1) {
+      errors.push('group_count must be a positive integer.');
+    }
+  }
+
+  let validAdvancePerGroup = 0;
+  if (advance_per_group !== undefined && advance_per_group !== null) {
+    validAdvancePerGroup = parseInt(advance_per_group, 10);
+    if (isNaN(validAdvancePerGroup) || validAdvancePerGroup < 0) {
+      errors.push('advance_per_group must be a non-negative integer.');
+    }
+  }
+
+  if (errors.length > 0) {
+    return { data: null, errors };
+  }
+
+  return {
+    errors: null,
+    data: {
+      tour_format,
+      group_count: validGroupCount,
+      advance_per_group: validAdvancePerGroup
+    }
+  };
 }
 
 module.exports = { validateFormatConfigDto };

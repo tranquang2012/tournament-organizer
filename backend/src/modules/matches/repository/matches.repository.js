@@ -21,7 +21,7 @@ class MatchesRepository {
 
   async getMatchBase(matchId, executor = pool) {
     const { rows } = await executor.query(
-      `SELECT tour_id, competitor1_id, competitor2_id, winning_competitor_id, status 
+      `SELECT tour_id, competitor1_id, competitor2_id, winning_competitor_id, status, group_name, next_winner_match_id, next_loser_match_id 
        FROM matches WHERE match_id = $1`,
       [matchId]
     );
@@ -49,18 +49,18 @@ class MatchesRepository {
 
   async getNextMatchBase(nextMatchId, executor = pool) {
     const { rows } = await executor.query(
-      `SELECT competitor1_id, competitor2_id, status FROM matches WHERE match_id = $1`,
+      `SELECT competitor1_id, competitor2_id, status, winning_competitor_id FROM matches WHERE match_id = $1`,
       [nextMatchId]
     );
     return rows[0];
   }
 
-  async updateNextMatchSlots(nextMatchId, competitor1_id, competitor2_id, status, executor = pool) {
+  async updateNextMatchSlots(nextMatchId, competitor1_id, competitor2_id, status, winning_competitor_id = null, executor = pool) {
     await executor.query(
       `UPDATE matches
-       SET competitor1_id = $1, competitor2_id = $2, status = $3, updated_at = NOW()
-       WHERE match_id = $4`,
-      [competitor1_id, competitor2_id, status, nextMatchId]
+       SET competitor1_id = $1, competitor2_id = $2, status = $3, winning_competitor_id = $4, updated_at = NOW()
+       WHERE match_id = $5`,
+      [competitor1_id, competitor2_id, status, winning_competitor_id, nextMatchId]
     );
   }
 }

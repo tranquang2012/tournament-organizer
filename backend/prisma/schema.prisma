@@ -538,22 +538,24 @@ model teammember {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model tournament {
-  tour_id        String        @id(map: "Tournament_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tour_name      String
-  tour_banner    String?
-  tour_locat     String?
-  tour_descrip   String?
-  tour_format    String?
-  tour_startdate DateTime?     @db.Date
-  tour_enddate   DateTime?     @db.Date
-  tour_status    String
-  tour_pausedate DateTime?     @db.Date
-  created_by     String?       @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sp_id          Int?          @db.SmallInt
-  tour_round     Int           @default(1) @db.SmallInt
-  competitors    competitors[]
-  matches        matches[]
-  sport          sport?        @relation(fields: [sp_id], references: [sport_id], onDelete: NoAction, onUpdate: NoAction)
+  tour_id           String        @id(map: "Tournament_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tour_name         String
+  tour_banner       String?
+  tour_locat        String?
+  tour_descrip      String?
+  tour_format       String?
+  tour_startdate    DateTime?     @db.Date
+  tour_enddate      DateTime?     @db.Date
+  tour_status       String
+  tour_pausedate    DateTime?     @db.Date
+  created_by        String?       @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sp_id             Int?          @db.SmallInt
+  tour_round        Int           @default(1) @db.SmallInt
+  group_count       Int?          @default(1) @db.SmallInt
+  advance_per_group Int?          @default(0) @db.SmallInt
+  competitors       competitors[]
+  matches           matches[]
+  sport             sport?        @relation(fields: [sp_id], references: [sport_id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")
 }
