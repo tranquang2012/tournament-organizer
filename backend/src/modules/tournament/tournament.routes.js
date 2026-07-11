@@ -47,4 +47,7 @@ router.patch('/:id/competitors/:compId', ctrl.updateCompetitor.bind(ctrl));
 // Lock structure and generate bracket/matches
 router.post('/:id/generate-bracket', ctrl.generateBracket.bind(ctrl));
 
+// Submit scores for a round_scoring round
+router.post('/:id/bracket/rounds/:matchId/scores', ctrl.submitRoundScores.bind(ctrl));
+
 module.exports = router;

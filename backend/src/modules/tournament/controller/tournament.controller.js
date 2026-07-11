@@ -130,6 +130,31 @@ class TournamentController {
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
+
+  async submitRoundScores(req, res, next) {
+  try {
+    const { id: tourId, matchId } = req.params;
+    const { scores } = req.body;
+
+    if (!Array.isArray(scores) || scores.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'scores must be a non-empty array of { comp_id, score }.',
+      });
+    }
+
+    const data = await bracketService.submitRoundScores(
+      tourId,
+      matchId,
+      scores,
+      req.user.id
+    );
+
+    res.status(200).json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+}
 }
 
 module.exports = new TournamentController();

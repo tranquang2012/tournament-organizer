@@ -88,6 +88,82 @@ class BracketRepository {
       [competitor1_id, competitor2_id, status, matchId]
     );
   }
+
+  async insertRoundScoringMatch(tourId, roundNum, executor = pool) {
+  const { rows } = await executor.query(
+    `INSERT INTO matches (
+      tour_id, round, stage, status, is_draw, created_at, updated_at
+    ) VALUES ($1, $2, 'round_scoring', 'locked', false, NOW(), NOW())
+    RETURNING match_id`,
+    [tourId, roundNum]
+  );
+  return rows[0].match_id;
+}
+
+async getRoundScoringMatches(tourId, executor = pool) {
+  const { rows } = await executor.query(
+    `SELECT match_id, round, status, round_scores
+     FROM matches
+     WHERE tour_id = $1 AND stage = 'round_scoring'
+     ORDER BY round ASC`,
+    [tourId]
+  );
+  return rows;
+}
+
+async getRoundScoringMatch(matchId, tourId, executor = pool) {
+  const { rows } = await executor.query(
+    `SELECT m.match_id, m.round, m.status, m.round_scores,
+            t.created_by, t.advance_per_group, t.tour_round
+     FROM matches m
+     JOIN tournament t ON t.tour_id = m.tour_id
+     WHERE m.match_id = $1 AND m.tour_id = $2 AND m.stage = 'round_scoring'`,
+    [matchId, tourId]
+  );
+  return rows[0] || null;
+}
+
+async submitRoundScores(matchId, roundScores, survivorIds, executor = pool) {
+  await executor.query(
+    `UPDATE matches
+     SET round_scores  = $1,
+         status        = 'completed',
+         result1       = $2,
+         updated_at    = NOW()
+     WHERE match_id = $3`,
+    [
+      JSON.stringify(roundScores),
+      JSON.stringify(survivorIds),  // reuse result1 to store survivor list
+      matchId,
+    ]
+  );
+}
+
+async unlockNextRound(tourId, nextRoundNum, executor = pool) {
+  await executor.query(
+    `UPDATE matches
+     SET status = 'ready', updated_at = NOW()
+     WHERE tour_id = $1 AND stage = 'round_scoring' AND round = $2`,
+    [tourId, nextRoundNum]
+  );
+}
+
+async getCompetitorsByIds(compIds, executor = pool) {
+  const { rows } = await executor.query(
+    `SELECT comp_id, comp_name, comp_logo
+     FROM competitors
+     WHERE comp_id = ANY($1::uuid[])`,
+    [compIds]
+  );
+  return rows;
+}
+
+async updateTournamentRoundCount(tourId, totalRounds, executor = pool) {
+  await executor.query(
+    `UPDATE tournament SET tour_round = $1 WHERE tour_id = $2`,
+    [totalRounds, tourId]
+  );
+}
 }
 
 module.exports = new BracketRepository();
