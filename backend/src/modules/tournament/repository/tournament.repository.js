@@ -216,6 +216,20 @@ class TournamentRepository {
     return rows;
   }
 
+  async getPublic(tourId) {
+    const query = `
+      SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+             (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
+             (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
+      FROM tournament t
+      LEFT JOIN sport s ON t.sp_id = s.sport_id
+      WHERE t.tour_id = $1 AND COALESCE(t.tour_status, 'draft') <> 'draft'
+    `;
+    const { rows } = await pool.query(query, [tourId]);
+    return rows[0] || null;
+  }
+
+
   async deleteDraft(tourId, organizerId) {
   const client = await pool.connect();
   try {

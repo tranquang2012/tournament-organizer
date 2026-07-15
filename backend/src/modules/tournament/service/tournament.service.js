@@ -160,6 +160,13 @@ class TournamentService {
     return repo.listPublic({ sportId });
   }
 
+  async getPublicTournament(tourId) {
+    const tournament = await repo.getPublic(tourId);
+    if (!tournament) throw new AppError('Tournament not found.', 404);
+    return tournament;
+  }
+
+
   async getParticipants(tourId) {
     const data = await repo.getParticipants(tourId);
     return data;
