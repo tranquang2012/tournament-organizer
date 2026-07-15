@@ -128,12 +128,10 @@ async submitRoundScores(matchId, roundScores, survivorIds, executor = pool) {
     `UPDATE matches
      SET round_scores  = $1,
          status        = 'completed',
-         result1       = $2,
          updated_at    = NOW()
-     WHERE match_id = $3`,
+     WHERE match_id = $2`,
     [
       JSON.stringify(roundScores),
-      JSON.stringify(survivorIds),  // reuse result1 to store survivor list
       matchId,
     ]
   );

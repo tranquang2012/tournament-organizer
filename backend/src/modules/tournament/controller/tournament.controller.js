@@ -147,7 +147,7 @@ class TournamentController {
       tourId,
       matchId,
       scores,
-      req.user.id
+      req.auth.userId
     );
 
     res.status(200).json({ success: true, data });
