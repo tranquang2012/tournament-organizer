@@ -111,13 +111,14 @@ class TournamentRepository {
 
   //Step 3
 
-  async updateFormat(tourId, tour_format, organizerId) {
+  async updateFormat(tourId, data, organizerId) {
+    const { tour_format, group_count, advance_per_group } = data;
     const { rows } = await pool.query(
       `UPDATE tournament
-       SET tour_format=$1
-       WHERE tour_id=$2 AND (created_by=$3 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $3 AND role IN ('superadmin', 'super_admin')))
+       SET tour_format=$1, group_count=$2, advance_per_group=$3
+       WHERE tour_id=$4 AND (created_by=$5 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $5 AND role IN ('superadmin', 'super_admin')))
        RETURNING *`,
-      [tour_format, tourId, organizerId]
+      [tour_format, group_count, advance_per_group, tourId, organizerId]
     );
     return rows[0] || null;
   }
