@@ -316,7 +316,7 @@ async generateRoundScoringBracket(tourId, tournament) {
   }
 
   const advancePerRound = tournament.advance_per_group || 3;
-  const totalRounds     = this._calcRoundScoringRounds(competitors.length, advancePerRound);
+  const totalRounds     = 1;
 
   const client = await pool.connect();
   try {
