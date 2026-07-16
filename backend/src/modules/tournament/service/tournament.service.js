@@ -123,7 +123,10 @@ class TournamentService {
       throw new AppError('Sport must be selected in Step 2 before configuring format.', 400);
     }
 
-    const { data, errors } = validateFormatConfigDto(body, tournament.sp_id);
+    const { data, errors } = validateFormatConfigDto(
+      { ...body, sport_format: tournament.sport_format },
+      tournament.sp_id
+    );
     if (errors) throw new AppError(errors.join(' | '), 400);
 
     const updated = await repo.updateFormat(tourId, data, organizerId);

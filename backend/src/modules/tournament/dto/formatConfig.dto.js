@@ -1,5 +1,49 @@
 const { getSportRules } = require('../config/sportRules.config');
 
+const toPositiveInt = (value, fieldName, errors, { allowZero = false, defaultValue = null } = {}) => {
+  if (value === undefined || value === null || value === '') return defaultValue;
+
+  const parsed = parseInt(value, 10);
+  const min = allowZero ? 0 : 1;
+  if (isNaN(parsed) || parsed < min) {
+    errors.push(`${fieldName} must be a ${allowZero ? 'non-negative' : 'positive'} integer.`);
+    return defaultValue;
+  }
+
+  return parsed;
+};
+
+const HYBRID_FIRST_STAGE_FORMAT = 'round_robin';
+
+const normalizeHybridStructure = (body, errors) => {
+  const stageInput = Array.isArray(body.stages) ? body.stages : null;
+  const inputStageOne = stageInput?.[0] || {};
+
+  if (stageInput && stageInput.length > 2) {
+    errors.push('Hybrid tournaments support a maximum of 2 stages.');
+  }
+
+  const firstStageFormat = inputStageOne.format || body.first_stage_format || HYBRID_FIRST_STAGE_FORMAT;
+  if (firstStageFormat !== HYBRID_FIRST_STAGE_FORMAT) {
+    errors.push(`Stage 1 must use ${HYBRID_FIRST_STAGE_FORMAT}.`);
+  }
+
+  const groupCount = toPositiveInt(
+    inputStageOne.group_count ?? inputStageOne.groupCount ?? body.group_count ?? body.hybridGroups,
+    'group_count',
+    errors,
+    { defaultValue: 1 }
+  );
+  const advancePerGroup = toPositiveInt(
+    inputStageOne.advance_per_group ?? inputStageOne.advancePerGroup ?? body.advance_per_group ?? body.hybridAdvancing,
+    'advance_per_group',
+    errors,
+    { defaultValue: 1 }
+  );
+
+  return { group_count: groupCount, advance_per_group: advancePerGroup };
+};
+
 function validateFormatConfigDto(body, sp_id) {
   const errors = [];
   const { tour_format, group_count, advance_per_group } = body;
@@ -28,21 +72,28 @@ function validateFormatConfigDto(body, sp_id) {
     return { data: null, errors };
   }
 
-  let validGroupCount = 1;
-  if (group_count !== undefined && group_count !== null) {
-    validGroupCount = parseInt(group_count, 10);
-    if (isNaN(validGroupCount) || validGroupCount < 1) {
-      errors.push('group_count must be a positive integer.');
+  if (tour_format === 'hybrid') {
+    const hybridConfig = normalizeHybridStructure(body, errors);
+
+    if (errors.length > 0) {
+      return { data: null, errors };
     }
+
+    return {
+      errors: null,
+      data: {
+        tour_format,
+        group_count: hybridConfig.group_count,
+        advance_per_group: hybridConfig.advance_per_group,
+      }
+    };
   }
 
-  let validAdvancePerGroup = 0;
-  if (advance_per_group !== undefined && advance_per_group !== null) {
-    validAdvancePerGroup = parseInt(advance_per_group, 10);
-    if (isNaN(validAdvancePerGroup) || validAdvancePerGroup < 0) {
-      errors.push('advance_per_group must be a non-negative integer.');
-    }
-  }
+  const validGroupCount = toPositiveInt(group_count, 'group_count', errors, { defaultValue: 1 });
+  const validAdvancePerGroup = toPositiveInt(advance_per_group, 'advance_per_group', errors, {
+    allowZero: true,
+    defaultValue: 0
+  });
 
   if (errors.length > 0) {
     return { data: null, errors };
@@ -53,7 +104,7 @@ function validateFormatConfigDto(body, sp_id) {
     data: {
       tour_format,
       group_count: validGroupCount,
-      advance_per_group: validAdvancePerGroup
+      advance_per_group: validAdvancePerGroup,
     }
   };
 }

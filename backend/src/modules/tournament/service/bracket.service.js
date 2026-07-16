@@ -6,13 +6,15 @@ const bracketRepository = require('../repository/bracket.repository');
 
 class BracketService {
   async generateBracket(tourId) {
-    // 1. Get tournament details
     const tournament = await bracketRepository.getTournamentFormat(tourId);
     if (!tournament) {
       throw new AppError('Tournament not found.', 404);
     }
 
     const format = tournament.tour_format;
+    if (format === 'hybrid') {
+      return this.generateHybridBracket(tourId, tournament);
+    }
     if (format === 'round_scoring') {
       return this.generateRoundScoringBracket(tourId, tournament);
     }
@@ -27,19 +29,152 @@ class BracketService {
     }
 
     const seeding = competitors.map(c => c.comp_id);
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await bracketRepository.deleteMatchesByTournament(tourId, client);
+      const result = await this._generateBracketStage(tourId, {
+        format,
+        seeding,
+        groupCount: tournament.group_count || 1,
+        stageName: format,
+        client
+      });
+      await client.query('COMMIT');
+      return result;
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
 
-    // 3. Initialize brackets-manager in memory
+  async generateHybridBracket(tourId, tournament) {
+    const structure = this._getHybridStructure(tournament);
+    const firstStage = structure.stages[0];
+
+    const competitors = await bracketRepository.getCompetitorsForSeeding(tourId);
+    if (competitors.length < 2) {
+      throw new AppError('At least 2 competitors are required to generate matches.', 400);
+    }
+
+    const seeding = competitors.map(c => c.comp_id);
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      await bracketRepository.deleteMatchesByTournament(tourId, client);
+
+      let result;
+      if (firstStage.format === 'round_scoring') {
+        const matchId = await bracketRepository.insertRoundScoringMatch(
+          tourId,
+          1,
+          client,
+          this._getStageKey(firstStage)
+        );
+        await client.query(
+          `UPDATE matches SET status = 'ready' WHERE match_id = $1`,
+          [matchId]
+        );
+        result = { totalMatches: 1 };
+      } else {
+        result = await this._generateBracketStage(tourId, {
+          format: firstStage.format,
+          seeding,
+          groupCount: firstStage.group_count || 1,
+          stageName: this._getStageKey(firstStage),
+          client
+        });
+      }
+
+      await client.query('COMMIT');
+      return {
+        format: 'hybrid',
+        stage: 1,
+        totalMatches: result.totalMatches,
+        structure
+      };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async ensureHybridStageTwoGenerated(tourId) {
+    const tournament = await bracketRepository.getTournamentFormat(tourId);
+    if (!tournament || tournament.tour_format !== 'hybrid') return null;
+
+    const structure = this._getHybridStructure(tournament);
+    const [firstStage, secondStage] = structure.stages;
+    if (!secondStage) return null;
+
+    const stageTwoKey = this._getStageKey(secondStage);
+    const stageTwoExists = await bracketRepository.hasMatchesForStage(tourId, stageTwoKey);
+    if (stageTwoExists) return null;
+
+    const qualifiers = await this._getHybridQualifiers(tourId, firstStage);
+    const expectedQualifiers = this._getExpectedQualifierCount(firstStage);
+    if (qualifiers.length < 2 || qualifiers.length < expectedQualifiers) return null;
+
+    const client = await pool.connect();
+    try {
+      await client.query('BEGIN');
+      const existingStageTwo = await bracketRepository.hasMatchesForStage(tourId, stageTwoKey, client);
+      if (existingStageTwo) {
+        await client.query('COMMIT');
+        return null;
+      }
+
+      let result;
+      if (secondStage.format === 'round_scoring') {
+        const matchId = await bracketRepository.insertRoundScoringMatch(tourId, 2, client, stageTwoKey);
+        await client.query(
+          `UPDATE matches SET status = 'ready' WHERE match_id = $1`,
+          [matchId]
+        );
+        result = { totalMatches: 1 };
+      } else {
+        result = await this._generateBracketStage(tourId, {
+          format: secondStage.format,
+          seeding: qualifiers,
+          groupCount: secondStage.group_count || 1,
+          stageName: stageTwoKey,
+          client
+        });
+      }
+
+      await client.query('COMMIT');
+      return {
+        format: 'hybrid',
+        stage: 2,
+        totalMatches: result.totalMatches,
+        qualifiers
+      };
+    } catch (err) {
+      await client.query('ROLLBACK');
+      throw err;
+    } finally {
+      client.release();
+    }
+  }
+
+  async _generateBracketStage(tourId, { format, seeding, groupCount = 1, stageName = format, client }) {
+    if (!['single_elimination', 'double_elimination', 'round_robin'].includes(format)) {
+      throw new AppError(`Format '${format}' does not support bracket stage generation.`, 400);
+    }
+
     const db = new InMemoryDatabase();
     const manager = new BracketsManager(db);
 
-    // 4. Determine stage size (elimination formats require a power of two)
     let stageSize = seeding.length;
     if (format === 'single_elimination' || format === 'double_elimination') {
       stageSize = Math.pow(2, Math.ceil(Math.log2(seeding.length)));
       if (stageSize < 2) stageSize = 2;
     }
 
-    // 5. Build settings
     const settings = {
       size: stageSize,
     };
@@ -47,21 +182,19 @@ class BracketService {
     if (format === 'double_elimination') {
       settings.grandFinal = 'single';
     } else if (format === 'single_elimination') {
-      settings.consolationFinal = true;
+      settings.consolationFinal = stageSize > 2;
     } else if (format === 'round_robin') {
-      settings.groupCount = tournament.group_count || 1;
+      settings.groupCount = groupCount || 1;
     }
 
-    // 6. Create stage in memory
     await manager.create.stage({
-      tournamentId: 1, // Dummy ID in-memory
+      tournamentId: 1,
       name: 'Bracket Stage',
       type: format,
       seeding,
       settings
     });
 
-    // 7. Retrieve all generated data from in-memory storage
     const stageData = await manager.get.stageData(0);
     const matches = stageData.match;
     const participants = stageData.participant;
@@ -70,110 +203,88 @@ class BracketService {
     const groupsMap = new Map(groups.map(g => [g.id, g]));
     const participantsMap = new Map(participants.map(p => [p.id, p]));
 
-    // 8. Connect to database client
-    const client = await pool.connect();
-    try {
-      await client.query('BEGIN');
+    const dbMatches = [];
+    const memoryToDbIdMap = new Map();
 
-      // 9. Delete any existing matches for this tournament to ensure clean slate
-      await bracketRepository.deleteMatchesByTournament(tourId, client);
+    for (const m of matches) {
+      const comp1_id = m.opponent1 && m.opponent1.id !== null ? participantsMap.get(m.opponent1.id)?.name : null;
+      const comp2_id = m.opponent2 && m.opponent2.id !== null ? participantsMap.get(m.opponent2.id)?.name : null;
 
-      const dbMatches = [];
-      const memoryToDbIdMap = new Map();
+      const roundNum = m.round_id + 1;
 
-      // 10. Insert all matches to get database UUIDs
-      for (const m of matches) {
-        // Resolve competitor IDs (name in brackets-manager corresponds to seeding element)
-        const comp1_id = m.opponent1 && m.opponent1.id !== null ? participantsMap.get(m.opponent1.id)?.name : null;
-        const comp2_id = m.opponent2 && m.opponent2.id !== null ? participantsMap.get(m.opponent2.id)?.name : null;
+      let status = 'locked';
+      let winning_competitor_id = null;
 
-        const roundNum = m.round_id + 1;
-        const stageName = format;
-
-        // Resolve Status and Winner for BYEs:
-        let status = 'locked';
-        let winning_competitor_id = null;
-
-        const isBye = (m.opponent1 === null && m.opponent2 !== null) || (m.opponent1 !== null && m.opponent2 === null);
-        if (isBye) {
-          status = 'bye';
-          winning_competitor_id = (m.opponent1 !== null) ? comp1_id : comp2_id;
-        } else if (m.status === 1) {
-          status = 'ready';
-        } else if (m.status === 2) {
-          status = 'running';
-        } else if (m.status === 3) {
-          status = 'completed';
-        } else if (m.status === 4) {
-          status = 'archived';
-        }
-
-        // Resolve Group Name:
-        const group = groupsMap.get(m.group_id);
-        let groupName = 'Bracket';
-        if (format === 'round_robin') {
-          const groupNumber = group ? group.number : 1;
-          const letter = String.fromCharCode(64 + groupNumber);
-          groupName = `Group ${letter}`;
-        } else if (format === 'double_elimination') {
-          const groupNumber = group ? group.number : 1;
-          groupName = groupNumber === 1 ? 'Upper Bracket' : (groupNumber === 2 ? 'Lower Bracket' : 'Grand Final');
-        } else if (format === 'single_elimination') {
-          const groupNumber = group ? group.number : 1;
-          groupName = groupNumber === 2 ? 'Consolation Final' : 'Bracket';
-        }
-
-        const dbMatchId = await bracketRepository.insertGeneratedMatch(tourId, {
-          roundNum,
-          stageName,
-          comp1_id,
-          comp2_id,
-          winning_competitor_id,
-          groupName,
-          status
-        }, client);
-
-        memoryToDbIdMap.set(m.id, dbMatchId);
-        dbMatches.push({ memoryMatch: m, dbMatchId, winning_competitor_id, resolvedStatus: status });
+      const isBye = (m.opponent1 === null && m.opponent2 !== null) || (m.opponent1 !== null && m.opponent2 === null);
+      if (isBye) {
+        status = 'bye';
+        winning_competitor_id = (m.opponent1 !== null) ? comp1_id : comp2_id;
+      } else if (m.status === 1) {
+        status = 'ready';
+      } else if (m.status === 2) {
+        status = 'running';
+      } else if (m.status === 3) {
+        status = 'completed';
+      } else if (m.status === 4) {
+        status = 'archived';
       }
 
-      // 11. Update progression references (next_winner_match_id and next_loser_match_id)
-      for (const item of dbMatches) {
-        const { memoryMatch, dbMatchId, winning_competitor_id, resolvedStatus } = item;
+      const group = groupsMap.get(m.group_id);
+      let groupName = 'Bracket';
+      if (format === 'round_robin') {
+        const groupNumber = group ? group.number : 1;
+        const letter = String.fromCharCode(64 + groupNumber);
+        groupName = `Group ${letter}`;
+      } else if (format === 'double_elimination') {
+        const groupNumber = group ? group.number : 1;
+        groupName = groupNumber === 1 ? 'Upper Bracket' : (groupNumber === 2 ? 'Lower Bracket' : 'Grand Final');
+      } else if (format === 'single_elimination') {
+        const groupNumber = group ? group.number : 1;
+        groupName = groupNumber === 2 ? 'Consolation Final' : 'Bracket';
+      }
 
-        let nextWinnerMatchId = null;
-        let nextLoserMatchId = null;
+      const dbMatchId = await bracketRepository.insertGeneratedMatch(tourId, {
+        roundNum,
+        stageName,
+        comp1_id,
+        comp2_id,
+        winning_competitor_id,
+        groupName,
+        status
+      }, client);
 
-        if (format !== 'round_robin') {
-          const nextMemoryMatches = await manager.find.nextMatches(memoryMatch.id);
+      memoryToDbIdMap.set(m.id, dbMatchId);
+      dbMatches.push({ memoryMatch: m, dbMatchId, winning_competitor_id, resolvedStatus: status });
+    }
 
-          if (nextMemoryMatches.length > 0) {
-            const { nextWinnerMatch, nextLoserMatch } = this._getWinnerAndLoserPaths(nextMemoryMatches, groupsMap);
-            if (nextWinnerMatch) {
-              nextWinnerMatchId = memoryToDbIdMap.get(nextWinnerMatch.id) || null;
-            }
-            if (nextLoserMatch) {
-              nextLoserMatchId = memoryToDbIdMap.get(nextLoserMatch.id) || null;
-            }
+    for (const item of dbMatches) {
+      const { memoryMatch, dbMatchId, winning_competitor_id, resolvedStatus } = item;
+
+      let nextWinnerMatchId = null;
+      let nextLoserMatchId = null;
+
+      if (format !== 'round_robin') {
+        const nextMemoryMatches = await manager.find.nextMatches(memoryMatch.id);
+
+        if (nextMemoryMatches.length > 0) {
+          const { nextWinnerMatch, nextLoserMatch } = this._getWinnerAndLoserPaths(nextMemoryMatches, groupsMap);
+          if (nextWinnerMatch) {
+            nextWinnerMatchId = memoryToDbIdMap.get(nextWinnerMatch.id) || null;
+          }
+          if (nextLoserMatch) {
+            nextLoserMatchId = memoryToDbIdMap.get(nextLoserMatch.id) || null;
           }
         }
-
-        await bracketRepository.updateProgressionReferences(dbMatchId, nextWinnerMatchId, nextLoserMatchId, client);
-
-        // Propagate generated BYE winners immediately
-        if (resolvedStatus === 'bye' && winning_competitor_id && nextWinnerMatchId) {
-          await this._propagateGeneratedBye(client, winning_competitor_id, nextWinnerMatchId);
-        }
       }
 
-      await client.query('COMMIT');
-      return { totalMatches: matches.length };
-    } catch (err) {
-      await client.query('ROLLBACK');
-      throw err;
-    } finally {
-      client.release();
+      await bracketRepository.updateProgressionReferences(dbMatchId, nextWinnerMatchId, nextLoserMatchId, client);
+
+      if (resolvedStatus === 'bye' && winning_competitor_id && nextWinnerMatchId) {
+        await this._propagateGeneratedBye(client, winning_competitor_id, nextWinnerMatchId);
+      }
     }
+
+    return { totalMatches: matches.length };
   }
 
   async _propagateGeneratedBye(client, winnerId, nextWinnerMatchId) {
@@ -226,6 +337,146 @@ class BracketService {
     }
 
     return { nextWinnerMatch, nextLoserMatch };
+  }
+
+  _getHybridStructure(tournament) {
+    const firstStageFormat = 'round_robin';
+    return {
+      type: 'hybrid',
+      max_stages: 2,
+      stages: [
+        {
+          stage_number: 1,
+          name: firstStageFormat === 'round_scoring' ? 'Scoring Stage' : 'Group Stage',
+          format: firstStageFormat,
+          stage_key: `hybrid_stage_1_${firstStageFormat}`,
+          group_count: tournament.group_count || 1,
+          advance_per_group: tournament.advance_per_group || 1,
+        },
+        {
+          stage_number: 2,
+          name: 'Final Stage',
+          format: 'single_elimination',
+          stage_key: 'hybrid_stage_2_single_elimination',
+        },
+      ],
+    };
+  }
+
+  _getStageKey(stage) {
+    return stage.stage_key || `hybrid_stage_${stage.stage_number || 1}_${stage.format}`;
+  }
+
+  _parseArray(value) {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  _getExpectedQualifierCount(firstStage) {
+    if (firstStage.format === 'round_scoring') {
+      return firstStage.advance_per_group || 3;
+    }
+    return (firstStage.group_count || 1) * (firstStage.advance_per_group || 1);
+  }
+
+  async _getHybridQualifiers(tourId, firstStage) {
+    if (firstStage.format === 'round_scoring') {
+      const rounds = await bracketRepository.getRoundScoringMatchesByStage(
+        tourId,
+        this._getStageKey(firstStage)
+      );
+      const firstRound = rounds.find(r => r.round === 1);
+      const roundScores = this._parseArray(firstRound?.round_scores);
+      if (!firstRound || firstRound.status !== 'completed' || !roundScores.length) {
+        return [];
+      }
+      return roundScores
+        .filter(r => r.advanced)
+        .sort((a, b) => a.rank - b.rank)
+        .map(r => r.comp_id);
+    }
+
+    if (firstStage.format !== 'round_robin') {
+      throw new AppError(`Hybrid stage 1 format '${firstStage.format}' is not supported.`, 400);
+    }
+
+    const matches = await bracketRepository.getMatchesByTournamentAndStage(
+      tourId,
+      this._getStageKey(firstStage)
+    );
+    if (!matches.length || matches.some(m => !['completed', 'bye'].includes(m.status))) {
+      return [];
+    }
+
+    const groups = new Map();
+    const ensureCompetitor = (groupName, compId, compName) => {
+      if (!compId) return null;
+      if (!groups.has(groupName)) groups.set(groupName, new Map());
+      const group = groups.get(groupName);
+      if (!group.has(compId)) {
+        group.set(compId, {
+          comp_id: compId,
+          comp_name: compName || '',
+          points: 0,
+          wins: 0,
+          draws: 0,
+          score_for: 0,
+          score_against: 0,
+        });
+      }
+      return group.get(compId);
+    };
+
+    for (const match of matches) {
+      const groupName = match.group_name || 'Group A';
+      const comp1 = ensureCompetitor(groupName, match.competitor1_id, match.c1_name);
+      const comp2 = ensureCompetitor(groupName, match.competitor2_id, match.c2_name);
+      if (!comp1 || !comp2) continue;
+
+      const score1 = match.score1 || 0;
+      const score2 = match.score2 || 0;
+      comp1.score_for += score1;
+      comp1.score_against += score2;
+      comp2.score_for += score2;
+      comp2.score_against += score1;
+
+      if (match.is_draw) {
+        comp1.points += 1;
+        comp2.points += 1;
+        comp1.draws += 1;
+        comp2.draws += 1;
+      } else if (match.winning_competitor_id === comp1.comp_id) {
+        comp1.points += 3;
+        comp1.wins += 1;
+      } else if (match.winning_competitor_id === comp2.comp_id) {
+        comp2.points += 3;
+        comp2.wins += 1;
+      }
+    }
+
+    const advancePerGroup = firstStage.advance_per_group || 1;
+    const qualifiers = [];
+
+    for (const group of groups.values()) {
+      const ranked = Array.from(group.values()).sort((a, b) => (
+        b.points - a.points ||
+        b.wins - a.wins ||
+        (b.score_for - b.score_against) - (a.score_for - a.score_against) ||
+        b.score_for - a.score_for ||
+        a.comp_name.localeCompare(b.comp_name)
+      ));
+      qualifiers.push(...ranked.slice(0, advancePerGroup).map(r => r.comp_id));
+    }
+
+    return qualifiers;
   }
 
   async getBracket(tourId) {
@@ -288,6 +539,10 @@ class BracketService {
   // Round scoring has its own standings view — route away from bracket logic
       if (tournament.tour_format === 'round_scoring') {
        return this.getRoundScoringStandings(tourId);
+      }
+
+      if (tournament.tour_format === 'hybrid') {
+        await this.ensureHybridStageTwoGenerated(tourId);
       }
 
     const matches = await this.getBracket(tourId);
@@ -393,8 +648,13 @@ async submitRoundScores(tourId, matchId, scores, organizerId) {
     .sort((a, b) => b.score - a.score)
     .map((s, i) => ({ ...s, rank: i + 1 }));
 
-  const advanceCount = match.advance_per_group || 3;
-  const isLastRound  = match.round === match.tour_round;
+  const hybridStructure = match.tour_format === 'hybrid' ? this._getHybridStructure(match) : null;
+  const hybridFirstStage = hybridStructure?.stages?.[0];
+  const isHybridFirstStage = hybridFirstStage?.format === 'round_scoring' && match.stage === this._getStageKey(hybridFirstStage);
+  const advanceCount = isHybridFirstStage
+    ? (hybridFirstStage.advance_per_group || 3)
+    : (match.advance_per_group || 3);
+  const isLastRound = match.tour_format === 'hybrid' ? false : match.round === match.tour_round;
 
   // On the final round everyone gets ranked, top 3 are podium
   // On earlier rounds, only top advanceCount survive
@@ -434,6 +694,10 @@ async submitRoundScores(tourId, matchId, scores, organizerId) {
     throw err;
   } finally {
     client.release();
+  }
+
+  if (match.tour_format === 'hybrid') {
+    await this.ensureHybridStageTwoGenerated(tourId);
   }
 
   // Enrich response with competitor names

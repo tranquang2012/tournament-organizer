@@ -4,7 +4,11 @@ class BracketRepository {
 
   async getTournamentFormat(tourId, executor = pool) {
     const { rows } = await executor.query(
-      `SELECT tour_id, tour_format, group_count, advance_per_group FROM tournament WHERE tour_id = $1`,
+      `SELECT t.tour_id, t.tour_format, t.group_count, t.advance_per_group,
+              t.tour_round, t.created_by, s.sport_format
+       FROM tournament t
+       LEFT JOIN sport s ON t.sp_id = s.sport_id
+       WHERE t.tour_id = $1`,
       [tourId]
     );
     return rows[0];
@@ -68,6 +72,34 @@ class BracketRepository {
     return rows;
   }
 
+  async getMatchesByTournamentAndStage(tourId, stageName, executor = pool) {
+    const { rows } = await executor.query(
+      `SELECT
+        m.match_id, m.round, m.stage, m.group_name, m.status,
+        m.competitor1_id, m.competitor2_id, m.score1, m.score2,
+        m.winning_competitor_id, m.is_draw,
+        c1.comp_name as c1_name,
+        c2.comp_name as c2_name
+      FROM matches m
+      LEFT JOIN competitors c1 ON m.competitor1_id = c1.comp_id
+      LEFT JOIN competitors c2 ON m.competitor2_id = c2.comp_id
+      WHERE m.tour_id = $1 AND m.stage = $2
+      ORDER BY m.group_name, m.round, m.match_id`,
+      [tourId, stageName]
+    );
+    return rows;
+  }
+
+  async hasMatchesForStage(tourId, stageName, executor = pool) {
+    const { rows } = await executor.query(
+      `SELECT EXISTS (
+        SELECT 1 FROM matches WHERE tour_id = $1 AND stage = $2
+      ) as exists`,
+      [tourId, stageName]
+    );
+    return Boolean(rows[0]?.exists);
+  }
+
   async deleteMatchesByTournament(tourId, executor = pool) {
     await executor.query(`DELETE FROM matches WHERE tour_id = $1`, [tourId]);
   }
@@ -89,13 +121,13 @@ class BracketRepository {
     );
   }
 
-  async insertRoundScoringMatch(tourId, roundNum, executor = pool) {
+  async insertRoundScoringMatch(tourId, roundNum, executor = pool, stageName = 'round_scoring') {
   const { rows } = await executor.query(
     `INSERT INTO matches (
       tour_id, round, stage, status, is_draw, created_at, updated_at
-    ) VALUES ($1, $2, 'round_scoring', 'locked', false, NOW(), NOW())
+    ) VALUES ($1, $2, $3, 'locked', false, NOW(), NOW())
     RETURNING match_id`,
-    [tourId, roundNum]
+    [tourId, roundNum, stageName]
   );
   return rows[0].match_id;
 }
@@ -111,13 +143,28 @@ async getRoundScoringMatches(tourId, executor = pool) {
   return rows;
 }
 
+async getRoundScoringMatchesByStage(tourId, stageName, executor = pool) {
+  const { rows } = await executor.query(
+    `SELECT match_id, round, status, round_scores
+     FROM matches
+     WHERE tour_id = $1 AND stage = $2
+     ORDER BY round ASC`,
+    [tourId, stageName]
+  );
+  return rows;
+}
+
 async getRoundScoringMatch(matchId, tourId, executor = pool) {
   const { rows } = await executor.query(
-    `SELECT m.match_id, m.round, m.status, m.round_scores,
-            t.created_by, t.advance_per_group, t.tour_round
+    `SELECT m.match_id, m.round, m.stage, m.status, m.round_scores,
+            t.created_by, t.advance_per_group, t.tour_round,
+            t.tour_format, t.group_count, s.sport_format
      FROM matches m
      JOIN tournament t ON t.tour_id = m.tour_id
-     WHERE m.match_id = $1 AND m.tour_id = $2 AND m.stage = 'round_scoring'`,
+     LEFT JOIN sport s ON t.sp_id = s.sport_id
+     WHERE m.match_id = $1
+       AND m.tour_id = $2
+       AND (m.stage = 'round_scoring' OR m.stage LIKE 'hybrid_stage_%_round_scoring')`,
     [matchId, tourId]
   );
   return rows[0] || null;
