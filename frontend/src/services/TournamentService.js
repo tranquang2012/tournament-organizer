@@ -311,3 +311,18 @@ export const discardTournamentDraft = async (tournamentId) => {
   const authConfig = await withTournamentAuth();
   return axios.delete(`/api/tournaments/${tournamentId}/discard`, authConfig);
 };
+
+export const getPublicTournamentById = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/public`);
+  return response?.data || null;
+};
+
+export const getTournamentBracket = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/bracket`);
+  return response?.data || [];
+};
+
+export const getTournamentBrackets = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/brackets`);
+  return response?.data || [];
+};

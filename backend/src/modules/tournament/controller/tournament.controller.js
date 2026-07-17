@@ -63,6 +63,14 @@ class TournamentController {
     } catch (err) { next(err); }
   }
 
+  async getPublicTournament(req, res, next) {
+    try {
+      const data = await service.getPublicTournament(req.params.id);
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
+
+
   async discardDraft(req, res, next) {
     try {
       const result = await service.discardDraft(req.params.id, req.auth.userId);
@@ -147,7 +155,7 @@ class TournamentController {
       tourId,
       matchId,
       scores,
-      req.user.id
+      req.auth.userId
     );
 
     res.status(200).json({ success: true, data });

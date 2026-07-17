@@ -1,6 +1,7 @@
 const pool = require('../../../shared/database/pool');
 const AppError = require('../../../shared/errors/AppError');
 const matchesRepository = require('../repository/matches.repository');
+const bracketService = require('../../tournament/service/bracket.service');
 
 class MatchesService {
   async getMatch(matchId) {
@@ -12,6 +13,8 @@ class MatchesService {
   }
 
   async updateMatch(matchId, body) {
+    let shouldCheckHybridStage = false;
+    let tournamentId = null;
     const client = await pool.connect();
     try {
       await client.query('BEGIN');
@@ -21,6 +24,7 @@ class MatchesService {
       if (!currentMatch) {
         throw new AppError('Match not found.', 404);
       }
+      tournamentId = currentMatch.tour_id;
 
       // 2. Parse payload (supporting both flat keys and nested results array with snake_case/camelCase)
       let score1 = body.score1 !== undefined ? body.score1 : null;
@@ -108,12 +112,18 @@ class MatchesService {
         await this._propagateCompetitor(client, matchId, oldLoserId, newLoserId, 'loser');
       }
 
+      shouldCheckHybridStage = newStatus === 'completed';
+
       await client.query('COMMIT');
     } catch (err) {
       await client.query('ROLLBACK');
       throw err;
     } finally {
       client.release();
+    }
+
+    if (shouldCheckHybridStage && tournamentId) {
+      await bracketService.ensureHybridStageTwoGenerated(tournamentId);
     }
 
     // Return the updated match

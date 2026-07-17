@@ -211,7 +211,9 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
                     onMouseLeave={onMouseLeave}
                 >
                     <div className='flex px-2 py-1.5 h-full items-center gap-2'>
-                        <img src={logo1} className='h-7 w-7 flex-shrink-0' />
+                        {topParty?.name !== 'BYE' && (
+                            <img src={topParty?.logo || logo1} className='h-7 w-7 flex-shrink-0 object-contain' />
+                        )}
                         <span className={`text-[16px] ${topWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
                             {topParty?.name || 'TBD'}
                         </span>
@@ -232,7 +234,9 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
                     onMouseLeave={onMouseLeave}
                 >
                     <div className='flex px-2 h-full items-center gap-2'>
-                        <img src={logo2} className='h-7 w-7 flex-shrink-0' />
+                        {bottomParty?.name !== 'BYE' && (
+                            <img src={bottomParty?.logo || logo2} className='h-7 w-7 flex-shrink-0 object-contain' />
+                        )}
                         <span className={`text-[16px] ${bottomWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
                             {bottomParty?.name || 'TBD'}
                         </span>
@@ -259,6 +263,9 @@ const TournamentBracket = ({
     showTabs = true
 }) => {
     const [mode, setMode] = useState(initialMode)
+    useEffect(() => {
+        setMode(initialMode)
+    }, [initialMode])
     const { width } = useWindowSize()
     const matchHeight = 120
 
