@@ -21,7 +21,10 @@ import {
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
 import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
 
-const transformBackendMatchesToBracket = (backendMatches, format) => {
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const PLAYER_DEFAULT_LOGO = `${supabaseUrl}/storage/v1/object/public/tournament-banners/default/playerLogo.png`;
+
+const transformBackendMatchesToBracket = (backendMatches, format, compType) => {
   if (!backendMatches || !Array.isArray(backendMatches)) return format === 'double_elimination' ? { upper: [], lower: [] } : [];
 
   // Sort matches by round, then match_id, to ensure consistent sequential numbering
@@ -86,7 +89,7 @@ const transformBackendMatchesToBracket = (backendMatches, format) => {
       participants.push({
         id: String(m.competitor1_id),
         name: comp1?.comp_name || 'TBD',
-        logo: comp1?.comp_logo,
+        logo: comp1?.comp_logo || (compType === 'individual' ? PLAYER_DEFAULT_LOGO : logo1),
         isWinner: m.winning_competitor_id === m.competitor1_id,
         resultText: result1 ? String(result1.score) : '0',
         status: isCompleted ? 'PLAYED' : undefined
@@ -97,7 +100,7 @@ const transformBackendMatchesToBracket = (backendMatches, format) => {
       participants.push({
         id: String(m.competitor2_id),
         name: comp2?.comp_name || 'TBD',
-        logo: comp2?.comp_logo,
+        logo: comp2?.comp_logo || (compType === 'individual' ? PLAYER_DEFAULT_LOGO : logo2),
         isWinner: m.winning_competitor_id === m.competitor2_id,
         resultText: result2 ? String(result2.score) : '0',
         status: isCompleted ? 'PLAYED' : undefined
@@ -163,7 +166,7 @@ const transformBackendMatchesToBracket = (backendMatches, format) => {
   }
 };
 
-const computeGroupStandings = (matches) => {
+const computeGroupStandings = (matches, compType) => {
   const groups = {};
 
   matches.forEach(m => {
@@ -178,12 +181,12 @@ const computeGroupStandings = (matches) => {
     const g = groups[groupName];
 
     m.competitors?.forEach(c => {
-      if (!c.comp_id) return;
+      if (!c.comp_id || !c.comp_name || !c.comp_name.trim()) return;
       if (!g.teamsMap[c.comp_id]) {
         g.teamsMap[c.comp_id] = {
           comp_id: c.comp_id,
           name: c.comp_name,
-          logo: c.comp_logo || logo1,
+          logo: c.comp_logo || (compType === 'individual' ? PLAYER_DEFAULT_LOGO : logo1),
           win: 0,
           lose: 0,
           eliminated: false
@@ -411,12 +414,12 @@ const TournamentPage = () => {
           status,
           team1: {
             name: comp1?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'),
-            logo: comp1?.comp_logo || logo1,
+            logo: comp1?.comp_logo || (compType === 'individual' ? PLAYER_DEFAULT_LOGO : logo1),
             score: result1 ? result1.score : 0
           },
           team2: {
             name: comp2?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'),
-            logo: comp2?.comp_logo || logo2,
+            logo: comp2?.comp_logo || (compType === 'individual' ? PLAYER_DEFAULT_LOGO : logo2),
             score: result2 ? result2.score : 0
           }
         };
@@ -445,8 +448,8 @@ const TournamentPage = () => {
     ? matches.filter(m => m.group_name !== 'Consolation Final')
     : matches;
 
-  const bracketData = transformBackendMatchesToBracket(mainMatches, tournament.format);
-  const groups = tournament.format === 'round_robin' ? computeGroupStandings(matches) : [];
+  const bracketData = transformBackendMatchesToBracket(mainMatches, tournament.format, compType);
+  const groups = tournament.format === 'round_robin' ? computeGroupStandings(matches, compType) : [];
   const recentMatchesList = getMatchesForRecentSection(matches);
 
 
@@ -530,7 +533,7 @@ const TournamentPage = () => {
             <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
               <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Group Stage</span>
               {groups.length > 0 ? (
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-10'>
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-10 items-start'>
                   {groups.map((group) => (
                     <LeaderboardTable key={group.id} group={group} />
                   ))}
@@ -565,7 +568,7 @@ const TournamentPage = () => {
                     >
                       <span className='w-[10%]'>{row.rank}</span>
                       <div className='w-[60%] flex gap-2 text-start items-center pl-[1%]'>
-                        <img src={row.comp_logo || logo1} className={`h-4 w-4 md:h-7 md:w-7 object-contain ${row.status === 'eliminated' && 'opacity-40'}`} />
+                        <img src={row.comp_logo || (compType === 'individual' ? PLAYER_DEFAULT_LOGO : logo1)} className={`h-4 w-4 md:h-7 md:w-7 object-contain ${row.status === 'eliminated' && 'opacity-40'}`} />
                         <span>{row.comp_name}</span>
                       </div>
                       <span className='w-[15%]'>{row.score}</span>
