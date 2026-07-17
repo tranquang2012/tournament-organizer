@@ -220,12 +220,14 @@ class BracketService {
         status = 'bye';
         winning_competitor_id = (m.opponent1 !== null) ? comp1_id : comp2_id;
       } else if (m.status === 1) {
-        status = 'ready';
+        status = 'waiting';
       } else if (m.status === 2) {
-        status = 'running';
+        status = 'ready';
       } else if (m.status === 3) {
-        status = 'completed';
+        status = 'running';
       } else if (m.status === 4) {
+        status = 'completed';
+      } else if (m.status === 5) {
         status = 'archived';
       }
 
@@ -340,7 +342,8 @@ class BracketService {
   }
 
   _getHybridStructure(tournament) {
-    const firstStageFormat = 'round_robin';
+    const firstStageFormat = tournament.first_stage_format || 'round_robin';
+    const secondStageFormat = tournament.second_stage_format || 'single_elimination';
     return {
       type: 'hybrid',
       max_stages: 2,
@@ -349,22 +352,22 @@ class BracketService {
           stage_number: 1,
           name: firstStageFormat === 'round_scoring' ? 'Scoring Stage' : 'Group Stage',
           format: firstStageFormat,
-          stage_key: `hybrid_stage_1_${firstStageFormat}`,
+          stage_key: 'stage_1',
           group_count: tournament.group_count || 1,
           advance_per_group: tournament.advance_per_group || 1,
         },
         {
           stage_number: 2,
           name: 'Final Stage',
-          format: 'single_elimination',
-          stage_key: 'hybrid_stage_2_single_elimination',
+          format: secondStageFormat,
+          stage_key: 'stage_2',
         },
       ],
     };
   }
 
   _getStageKey(stage) {
-    return stage.stage_key || `hybrid_stage_${stage.stage_number || 1}_${stage.format}`;
+    return stage.stage_key || `stage_${stage.stage_number || 1}`;
   }
 
   _parseArray(value) {
