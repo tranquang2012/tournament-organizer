@@ -297,7 +297,8 @@ const TournamentPage = () => {
             description: t.tour_descrip,
             format: t.tour_format,
             first_stage_format: t.first_stage_format,
-            second_stage_format: t.second_stage_format
+            second_stage_format: t.second_stage_format,
+            advance_per_group: t.advance_per_group
           });
           if (t.tour_format === 'hybrid') {
             setSelectedTab('group_stage');
@@ -576,7 +577,7 @@ const TournamentPage = () => {
               {groups.length > 0 ? (
                 <div className='grid grid-cols-1 md:grid-cols-2 gap-10 items-start'>
                   {groups.map((group) => (
-                    <LeaderboardTable key={group.id} group={group} />
+                    <LeaderboardTable key={group.id} group={group} advanceCount={tournament.advance_per_group} />
                   ))}
                 </div>
               ) : (
@@ -633,7 +634,7 @@ const TournamentPage = () => {
           {groups.length > 0 ? (
             <div className='grid grid-cols-1 md:grid-cols-2 gap-10 items-start'>
               {groups.map((group) => (
-                <LeaderboardTable key={group.id} group={group} />
+                <LeaderboardTable key={group.id} group={group} advanceCount={tournament.advance_per_group} />
               ))}
             </div>
           ) : (

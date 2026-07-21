@@ -12,23 +12,22 @@ async function sleep(ms) {
 }
 
 async function run() {
-  // Query existing group count from the database first
+  // Query existing format and group count from the database
   const { rows } = await pool.query(
     `SELECT tour_format, group_count FROM tournament WHERE tour_id = $1`,
     [TOUR_ID]
   );
   const t = rows[0];
   if (!t) {
-    throw new Error(`Tournament ${TOUR_ID} not found in DB.`);
+    console.error(`Error: Tournament ${TOUR_ID} not found.`);
+    process.exit(1);
+  }
+  if (t.tour_format !== 'round_robin') {
+    console.error(`Error: Tournament format must be 'round_robin' but found '${t.tour_format}'.`);
+    process.exit(1);
   }
 
-  const groupCount = parseInt(process.env.TEST_GROUP_COUNT, 10) || t.group_count || 2;
-
-  console.log(`--- 1. Setting tournament ${TOUR_ID} to round_robin with ${groupCount} groups...`);
-  await pool.query(
-    `UPDATE tournament SET tour_format = 'round_robin', group_count = $1 WHERE tour_id = $2`,
-    [groupCount, TOUR_ID]
-  );
+  console.log(`--- 1. Using tournament ${TOUR_ID} round_robin format...`);
 
   console.log('--- 2. Generating a fresh Round Robin bracket...');
   await bracketService.generateBracket(TOUR_ID);

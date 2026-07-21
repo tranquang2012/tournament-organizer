@@ -13,7 +13,7 @@ async function sleep(ms) {
 async function run() {
   console.log(`--- 1. Checking tournament ${TOUR_ID} format...`);
   const { rows } = await pool.query(
-    `SELECT tour_format FROM tournament WHERE tour_id = $1`,
+    `SELECT tour_format, first_stage_format, second_stage_format FROM tournament WHERE tour_id = $1`,
     [TOUR_ID]
   );
   const t = rows[0];
@@ -21,14 +21,16 @@ async function run() {
     console.error(`Error: Tournament ${TOUR_ID} not found.`);
     process.exit(1);
   }
-  if (t.tour_format !== 'single_elimination') {
-    console.error(`Error: Tournament format must be 'single_elimination' but found '${t.tour_format}'.`);
+  if (t.tour_format !== 'hybrid') {
+    console.error(`Error: Tournament format must be 'hybrid' but found '${t.tour_format}'.`);
     process.exit(1);
   }
 
-  console.log('--- 2. Generating a fresh Single Elimination bracket (with Consolation Final)...');
+  console.log(`Tournament verified as Hybrid. Stage 1: ${t.first_stage_format} | Stage 2: ${t.second_stage_format}`);
+
+  console.log('--- 2. Generating a fresh Hybrid bracket (Stage 1)...');
   await bracketService.generateBracket(TOUR_ID);
-  console.log('Bracket generated successfully. Beginning simulation...\n');
+  console.log('Hybrid bracket generated successfully. Beginning simulation...\n');
 
   let roundCount = 1;
   let matchesPlayedCount = 0;
@@ -53,22 +55,22 @@ async function run() {
       const comp2Name = match.c2_name || 'TBD';
       
       const winnerId = match.competitor1_id; // Set competitor 1 as the winner for simulation
-      console.log(`Playing Match [${match.match_id}] (${match.group_name} R${match.round}): ${comp1Name} vs ${comp2Name}`);
+      console.log(`Playing Match [${match.match_id}] (${match.stage} | ${match.group_name} R${match.round}): ${comp1Name} vs ${comp2Name}`);
       
       await matchesService.updateMatch(match.match_id, {
-        score1: 2,
+        score1: 3,
         score2: 1,
         winning_competitor_id: winnerId,
         is_draw: false
       });
 
       matchesPlayedCount++;
-      await sleep(150); // Delay to ensure write & progression completes in order
+      await sleep(150); // Delay to ensure write & propagation completes in order
     }
 
     roundCount++;
-    if (roundCount > 10) {
-      console.log('Safety break: Exceeded 10 round loops.');
+    if (roundCount > 25) {
+      console.log('Safety break: Exceeded 25 round loops.');
       break;
     }
   }
@@ -82,12 +84,12 @@ async function run() {
   
   for (const m of finalMatches) {
     const winnerName = m.winning_competitor_id === m.competitor1_id ? m.c1_name : (m.winning_competitor_id === m.competitor2_id ? m.c2_name : 'None');
-    console.log(`- Match [${m.match_id}] | ${m.group_name} R${m.round} | Status: ${m.status} | ${m.c1_name || 'TBD'} (${m.score1 || 0}) vs ${m.c2_name || 'TBD'} (${m.score2 || 0}) | Winner: ${winnerName}`);
+    console.log(`- Match [${m.match_id}] | Stage: ${m.stage} | ${m.group_name} R${m.round} | Status: ${m.status} | ${m.c1_name || 'TBD'} (${m.score1 || 0}) vs ${m.c2_name || 'TBD'} (${m.score2 || 0}) | Winner: ${winnerName}`);
   }
 }
 
 run().then(() => {
-  console.log('\nConsolation final live progression simulation successfully completed!');
+  console.log('\nHybrid tournament live progression simulation successfully completed!');
   process.exit(0);
 }).catch(err => {
   console.error('Error during tournament simulation:', err);

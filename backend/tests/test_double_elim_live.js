@@ -11,11 +11,20 @@ async function sleep(ms) {
 }
 
 async function run() {
-  console.log(`--- 1. Setting tournament ${TOUR_ID} to double_elimination...`);
-  await pool.query(
-    `UPDATE tournament SET tour_format = 'double_elimination' WHERE tour_id = $1`,
+  console.log(`--- 1. Checking tournament ${TOUR_ID} format...`);
+  const { rows } = await pool.query(
+    `SELECT tour_format FROM tournament WHERE tour_id = $1`,
     [TOUR_ID]
   );
+  const t = rows[0];
+  if (!t) {
+    console.error(`Error: Tournament ${TOUR_ID} not found.`);
+    process.exit(1);
+  }
+  if (t.tour_format !== 'double_elimination') {
+    console.error(`Error: Tournament format must be 'double_elimination' but found '${t.tour_format}'.`);
+    process.exit(1);
+  }
 
   console.log('--- 2. Generating a fresh Double Elimination bracket (Single Grand Final, no reset)...');
   await bracketService.generateBracket(TOUR_ID);
