@@ -6,17 +6,28 @@ const bracketRepository = require('../src/modules/tournament/repository/bracket.
 
 const TOUR_ID = process.env.TEST_TOUR_ID;
 
-const GROUP_COUNT = parseInt(process.env.TEST_GROUP_COUNT, 10) || 2;
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function run() {
-  console.log(`--- 1. Setting tournament ${TOUR_ID} to round_robin with ${GROUP_COUNT} groups...`);
+  // Query existing group count from the database first
+  const { rows } = await pool.query(
+    `SELECT tour_format, group_count FROM tournament WHERE tour_id = $1`,
+    [TOUR_ID]
+  );
+  const t = rows[0];
+  if (!t) {
+    throw new Error(`Tournament ${TOUR_ID} not found in DB.`);
+  }
+
+  const groupCount = parseInt(process.env.TEST_GROUP_COUNT, 10) || t.group_count || 2;
+
+  console.log(`--- 1. Setting tournament ${TOUR_ID} to round_robin with ${groupCount} groups...`);
   await pool.query(
     `UPDATE tournament SET tour_format = 'round_robin', group_count = $1 WHERE tour_id = $2`,
-    [GROUP_COUNT, TOUR_ID]
+    [groupCount, TOUR_ID]
   );
 
   console.log('--- 2. Generating a fresh Round Robin bracket...');
