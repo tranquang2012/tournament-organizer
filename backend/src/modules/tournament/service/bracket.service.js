@@ -269,7 +269,7 @@ class BracketService {
         const nextMemoryMatches = await manager.find.nextMatches(memoryMatch.id);
 
         if (nextMemoryMatches.length > 0) {
-          const { nextWinnerMatch, nextLoserMatch } = this._getWinnerAndLoserPaths(nextMemoryMatches, groupsMap);
+          const { nextWinnerMatch, nextLoserMatch } = this._getWinnerAndLoserPaths(memoryMatch, nextMemoryMatches, groupsMap);
           if (nextWinnerMatch) {
             nextWinnerMatchId = memoryToDbIdMap.get(nextWinnerMatch.id) || null;
           }
@@ -319,23 +319,47 @@ class BracketService {
     );
   }
 
-  _getWinnerAndLoserPaths(nextMatches, groupsMap) {
+  _getWinnerAndLoserPaths(currentMatch, nextMatches, groupsMap) {
+    const currentGroup = groupsMap.get(currentMatch.group_id);
+    const currentGroupNumber = currentGroup ? currentGroup.number : 1;
+
     let nextWinnerMatch = null;
     let nextLoserMatch = null;
 
-    for (const nextMatch of nextMatches) {
-      const group = groupsMap.get(nextMatch.group_id);
-      if (!group) continue;
+    if (currentGroupNumber === 1) {
+      // Current match is in Upper Bracket
+      for (const nextMatch of nextMatches) {
+        const group = groupsMap.get(nextMatch.group_id);
+        if (!group) continue;
 
-      if (group.number === 1 || group.number === 3) {
-        nextWinnerMatch = nextMatch;
-      } else if (group.number === 2) {
-        nextLoserMatch = nextMatch;
+        if (group.number === 1 || group.number === 3) {
+          nextWinnerMatch = nextMatch;
+        } else if (group.number === 2) {
+          nextLoserMatch = nextMatch;
+        }
       }
-    }
+    } else if (currentGroupNumber === 2) {
+      // Current match is in Lower Bracket
+      // Winner goes to the next Lower Bracket match (group 2) or Grand Final (group 3)
+      // Loser is eliminated
+      for (const nextMatch of nextMatches) {
+        const group = groupsMap.get(nextMatch.group_id);
+        if (!group) continue;
 
-    if (nextMatches.length === 1 && !nextWinnerMatch) {
-      nextWinnerMatch = nextMatches[0];
+        if (group.number === 2 || group.number === 3) {
+          nextWinnerMatch = nextMatch;
+        }
+      }
+    } else if (currentGroupNumber === 3) {
+      // Grand Final
+      for (const nextMatch of nextMatches) {
+        const group = groupsMap.get(nextMatch.group_id);
+        if (!group) continue;
+
+        if (group.number === 3) {
+          nextWinnerMatch = nextMatch;
+        }
+      }
     }
 
     return { nextWinnerMatch, nextLoserMatch };
