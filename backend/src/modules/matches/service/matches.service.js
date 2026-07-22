@@ -87,7 +87,7 @@ class MatchesService {
         newStatus = 'completed';
       } else if (is_draw) {
         newStatus = 'completed';
-      } else if (score1 !== null || score2 !== null) {
+      } else if (score1 !== null || score2 !== null || body.status === 'running') {
         newStatus = 'running';
       }
 
@@ -165,10 +165,18 @@ class MatchesService {
       }
     }
 
-    // If both slots are now filled, transition next match from locked to ready
+    // Update status based on participant presence
     let nextStatus = nextMatch.status || 'locked';
-    if (updatedCompetitor1 !== null && updatedCompetitor2 !== null && nextStatus === 'locked') {
-      nextStatus = 'ready';
+    if (updatedCompetitor1 !== null && updatedCompetitor2 !== null) {
+      if (nextStatus === 'locked' || nextStatus === 'waiting') {
+        nextStatus = 'ready';
+      }
+    } else if (updatedCompetitor1 !== null || updatedCompetitor2 !== null) {
+      if (nextStatus === 'locked') {
+        nextStatus = 'waiting';
+      }
+    } else {
+      nextStatus = 'locked';
     }
 
     let winningCompetitorId = nextMatch.winning_competitor_id;

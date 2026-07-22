@@ -5,7 +5,7 @@ class BracketRepository {
   async getTournamentFormat(tourId, executor = pool) {
     const { rows } = await executor.query(
       `SELECT t.tour_id, t.tour_format, t.group_count, t.advance_per_group,
-              t.tour_round, t.created_by, s.sport_format
+              t.tour_round, t.created_by, s.sport_format, t.first_stage_format, t.second_stage_format
        FROM tournament t
        LEFT JOIN sport s ON t.sp_id = s.sport_id
        WHERE t.tour_id = $1`,
@@ -158,13 +158,13 @@ async getRoundScoringMatch(matchId, tourId, executor = pool) {
   const { rows } = await executor.query(
     `SELECT m.match_id, m.round, m.stage, m.status, m.round_scores,
             t.created_by, t.advance_per_group, t.tour_round,
-            t.tour_format, t.group_count, s.sport_format
+            t.tour_format, t.group_count, s.sport_format, t.first_stage_format, t.second_stage_format
      FROM matches m
      JOIN tournament t ON t.tour_id = m.tour_id
      LEFT JOIN sport s ON t.sp_id = s.sport_id
      WHERE m.match_id = $1
        AND m.tour_id = $2
-       AND (m.stage = 'round_scoring' OR m.stage LIKE 'hybrid_stage_%_round_scoring')`,
+       AND (m.stage = 'round_scoring' OR (m.stage = 'stage_1' AND t.first_stage_format = 'round_scoring'))`,
     [matchId, tourId]
   );
   return rows[0] || null;

@@ -21,7 +21,10 @@ import {
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
 import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
 
-const transformBackendMatchesToBracket = (backendMatches, format) => {
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fcllhdeiknlthwqpafiy.supabase.co';
+const PLAYER_DEFAULT_LOGO = `${supabaseUrl}/storage/v1/object/public/tournament-banners/default/playerLogo.png`;
+
+const transformBackendMatchesToBracket = (backendMatches, format, isIndividual) => {
   if (!backendMatches || !Array.isArray(backendMatches)) return format === 'double_elimination' ? { upper: [], lower: [] } : [];
 
   // Sort matches by round, then match_id, to ensure consistent sequential numbering
@@ -86,7 +89,7 @@ const transformBackendMatchesToBracket = (backendMatches, format) => {
       participants.push({
         id: String(m.competitor1_id),
         name: comp1?.comp_name || 'TBD',
-        logo: comp1?.comp_logo,
+        logo: comp1?.comp_logo || (comp1?.comp_size === 1 || isIndividual ? PLAYER_DEFAULT_LOGO : logo1),
         isWinner: m.winning_competitor_id === m.competitor1_id,
         resultText: result1 ? String(result1.score) : '0',
         status: isCompleted ? 'PLAYED' : undefined
@@ -97,7 +100,7 @@ const transformBackendMatchesToBracket = (backendMatches, format) => {
       participants.push({
         id: String(m.competitor2_id),
         name: comp2?.comp_name || 'TBD',
-        logo: comp2?.comp_logo,
+        logo: comp2?.comp_logo || (comp2?.comp_size === 1 || isIndividual ? PLAYER_DEFAULT_LOGO : logo2),
         isWinner: m.winning_competitor_id === m.competitor2_id,
         resultText: result2 ? String(result2.score) : '0',
         status: isCompleted ? 'PLAYED' : undefined
@@ -105,9 +108,11 @@ const transformBackendMatchesToBracket = (backendMatches, format) => {
     }
 
     while (participants.length < 2) {
+      const idx = participants.length;
       participants.push({
-        id: `tbd-${m.match_id}-${participants.length}`,
+        id: `tbd-${m.match_id}-${idx}`,
         name: m.status === 'bye' ? 'BYE' : 'TBD',
+        logo: m.status === 'bye' ? null : (isIndividual ? PLAYER_DEFAULT_LOGO : (idx === 0 ? logo1 : logo2)),
         isWinner: false,
         resultText: '0',
         status: undefined
@@ -115,7 +120,7 @@ const transformBackendMatchesToBracket = (backendMatches, format) => {
     }
 
     const gName = m.group_name || '';
-    let roundLabel = `Round ${m.round}`;
+    let roundLabel = String(m.round);
     if (format === 'double_elimination') {
       if (gName === 'Grand Final') {
         roundLabel = 'Grand Final';
@@ -163,7 +168,7 @@ const transformBackendMatchesToBracket = (backendMatches, format) => {
   }
 };
 
-const computeGroupStandings = (matches) => {
+const computeGroupStandings = (matches, isIndividual) => {
   const groups = {};
 
   matches.forEach(m => {
@@ -178,12 +183,12 @@ const computeGroupStandings = (matches) => {
     const g = groups[groupName];
 
     m.competitors?.forEach(c => {
-      if (!c.comp_id) return;
+      if (!c.comp_id || !c.comp_name || !c.comp_name.trim()) return;
       if (!g.teamsMap[c.comp_id]) {
         g.teamsMap[c.comp_id] = {
           comp_id: c.comp_id,
           name: c.comp_name,
-          logo: c.comp_logo || logo1,
+          logo: c.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo1),
           win: 0,
           lose: 0,
           eliminated: false
@@ -237,7 +242,6 @@ const TournamentPage = () => {
 
   const [participants, setParticipants] = useState([])
   const [loadingParticipants, setLoadingParticipants] = useState(true)
-  const [compType, setCompType] = useState(null)
 
   const [matches, setMatches] = useState([])
   const [loadingMatches, setLoadingMatches] = useState(true)
@@ -246,6 +250,7 @@ const TournamentPage = () => {
   const [loadingRoundScoring, setLoadingRoundScoring] = useState(false)
 
   const [selectedTab, setSelectedTab] = useState('standings') // 'standings' or 'matches'
+  const [hybridMatchesTab, setHybridMatchesTab] = useState('group') // 'group' or 'elimination'
 
   useEffect(() => {
     const fetchTournament = async () => {
@@ -290,8 +295,14 @@ const TournamentPage = () => {
             image: t.tour_banner || t.sport_banner,
             location: t.tour_locat,
             description: t.tour_descrip,
-            format: t.tour_format
+            format: t.tour_format,
+            first_stage_format: t.first_stage_format,
+            second_stage_format: t.second_stage_format,
+            advance_per_group: t.advance_per_group
           });
+          if (t.tour_format === 'hybrid') {
+            setSelectedTab('group_stage');
+          }
         }
       } catch (err) {
         console.error('Failed to fetch tournament details:', err);
@@ -311,9 +322,6 @@ const TournamentPage = () => {
         setLoadingParticipants(true);
         const data = await getParticipants(id)
         setParticipants(data)
-        if (data.length > 0) {
-          setCompType(data[0].type)
-        }
       } catch (err) {
         console.error('Failed to fetch participants:', err)
       } finally {
@@ -348,10 +356,15 @@ const TournamentPage = () => {
     }
   }, [id, tournament]);
 
-  const getMatchesForRecentSection = (flatMatches) => {
+  const getMatchesForRecentSection = (flatMatches, formatOverride = null) => {
     if (!flatMatches || !Array.isArray(flatMatches)) return [];
 
-    // Pre-calculate sequential match numbers to display (like "1", "WB 1", etc.)
+    const activeFormat = formatOverride || tournament?.format;
+    const isIndividual = participants.length > 0
+      ? participants[0].type === 'individual'
+      : matches.some(m => m.competitors?.some(c => c.comp_size === 1));
+
+    // Sort matches by round, then match_id, to ensure consistent sequential numbering
     const sorted = [...flatMatches].sort((a, b) => {
       if (a.round !== b.round) return a.round - b.round;
       return String(a.match_id).localeCompare(String(b.match_id));
@@ -365,7 +378,7 @@ const TournamentPage = () => {
     sorted.forEach(m => {
       const gName = m.group_name || '';
       let numStr = '';
-      if (tournament?.format === 'double_elimination') {
+      if (activeFormat === 'double_elimination') {
         if (gName === 'Grand Final') {
           numStr = 'GRAND FINAL';
         } else if (gName === 'Lower Bracket') {
@@ -375,7 +388,7 @@ const TournamentPage = () => {
           wbCount++;
           numStr = `WB ${wbCount}`;
         }
-      } else if (tournament?.format === 'single_elimination') {
+      } else if (activeFormat === 'single_elimination') {
         if (gName === 'Consolation Final') {
           numStr = 'CONSOLATION FINAL';
         } else {
@@ -411,12 +424,12 @@ const TournamentPage = () => {
           status,
           team1: {
             name: comp1?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'),
-            logo: comp1?.comp_logo || logo1,
+            logo: comp1?.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo1),
             score: result1 ? result1.score : 0
           },
           team2: {
             name: comp2?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'),
-            logo: comp2?.comp_logo || logo2,
+            logo: comp2?.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo2),
             score: result2 ? result2.score : 0
           }
         };
@@ -441,13 +454,38 @@ const TournamentPage = () => {
     );
   }
 
+  const isIndividual = participants.length > 0
+    ? participants[0].type === 'individual'
+    : matches.some(m => m.competitors?.some(c => c.comp_size === 1));
+
   const mainMatches = tournament.format === 'single_elimination'
     ? matches.filter(m => m.group_name !== 'Consolation Final')
-    : matches;
+    : tournament.format === 'hybrid'
+      ? matches.filter(m => m.stage === 'stage_2' && (tournament.second_stage_format !== 'single_elimination' || m.group_name !== 'Consolation Final'))
+      : matches;
 
-  const bracketData = transformBackendMatchesToBracket(mainMatches, tournament.format);
-  const groups = tournament.format === 'round_robin' ? computeGroupStandings(matches) : [];
-  const recentMatchesList = getMatchesForRecentSection(matches);
+  const bracketData = transformBackendMatchesToBracket(
+    mainMatches,
+    tournament.format === 'hybrid' ? tournament.second_stage_format : tournament.format,
+    isIndividual
+  );
+  const groups = (tournament.format === 'round_robin' || tournament.format === 'hybrid')
+    ? computeGroupStandings(
+        tournament.format === 'hybrid'
+          ? matches.filter(m => !m.stage || m.stage === 'stage_1')
+          : matches,
+        isIndividual
+      )
+    : [];
+  const groupRecentMatches = tournament.format === 'hybrid'
+    ? getMatchesForRecentSection(matches.filter(m => !m.stage || m.stage === 'stage_1'), 'round_robin')
+    : [];
+  const eliminationRecentMatches = tournament.format === 'hybrid'
+    ? getMatchesForRecentSection(matches.filter(m => m.stage === 'stage_2'), tournament.second_stage_format)
+    : [];
+  const recentMatchesList = tournament.format === 'hybrid'
+    ? [...groupRecentMatches, ...eliminationRecentMatches]
+    : getMatchesForRecentSection(matches);
 
 
   return (
@@ -487,10 +525,17 @@ const TournamentPage = () => {
       </div>
 
       <div className='flex mx-[5%] md:mx-[10%] py-[1%] gap-5 border-b border-gray-300'>
-        {[
-          { id: 'standings', name: (tournament.format === 'single_elimination' || tournament.format === 'double_elimination') ? 'Bracket' : 'Standings' },
-          { id: 'matches', name: 'Matches' }
-        ].map((tab) => (
+        {(tournament.format === 'hybrid'
+          ? [
+              { id: 'group_stage', name: 'Group Stage' },
+              { id: 'elimination_stage', name: 'Elimination Stage' },
+              { id: 'matches', name: 'Matches' }
+            ]
+          : [
+              { id: 'standings', name: (tournament.format === 'single_elimination' || tournament.format === 'double_elimination') ? 'Bracket' : 'Standings' },
+              { id: 'matches', name: 'Matches' }
+            ]
+        ).map((tab) => (
           <button
             key={tab.id}
             onClick={() => setSelectedTab(tab.id)}
@@ -530,9 +575,9 @@ const TournamentPage = () => {
             <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
               <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Group Stage</span>
               {groups.length > 0 ? (
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-10'>
+                <div className='grid grid-cols-1 md:grid-cols-2 gap-10 items-start'>
                   {groups.map((group) => (
-                    <LeaderboardTable key={group.id} group={group} />
+                    <LeaderboardTable key={group.id} group={group} advanceCount={tournament.advance_per_group} />
                   ))}
                 </div>
               ) : (
@@ -565,7 +610,7 @@ const TournamentPage = () => {
                     >
                       <span className='w-[10%]'>{row.rank}</span>
                       <div className='w-[60%] flex gap-2 text-start items-center pl-[1%]'>
-                        <img src={row.comp_logo || logo1} className={`h-4 w-4 md:h-7 md:w-7 object-contain ${row.status === 'eliminated' && 'opacity-40'}`} />
+                        <img src={row.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo1)} className={`h-4 w-4 md:h-7 md:w-7 object-contain ${row.status === 'eliminated' && 'opacity-40'}`} />
                         <span>{row.comp_name}</span>
                       </div>
                       <span className='w-[15%]'>{row.score}</span>
@@ -583,10 +628,96 @@ const TournamentPage = () => {
         </>
       )}
 
+      {selectedTab === 'group_stage' && (
+        <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
+          <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Group Stage Standings</span>
+          {groups.length > 0 ? (
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-10 items-start'>
+              {groups.map((group) => (
+                <LeaderboardTable key={group.id} group={group} advanceCount={tournament.advance_per_group} />
+              ))}
+            </div>
+          ) : (
+            <div className='flex flex-col py-[5%] items-center justify-center text-gray-500'>
+              <span>No group stages generated yet.</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {selectedTab === 'elimination_stage' && (
+        <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
+          <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Elimination Stage Bracket</span>
+          {matches.filter(m => m.stage === 'stage_2').length > 0 ? (
+            <TournamentBracket
+              mode={tournament.second_stage_format === 'double_elimination' ? 'double' : 'single'}
+              matches={tournament.second_stage_format === 'double_elimination' ? undefined : bracketData}
+              doubleMatches={tournament.second_stage_format === 'double_elimination' ? bracketData : undefined}
+              showTabs={false}
+              onMatchClick={(match) => console.log('Clicked:', match)}
+            />
+          ) : (
+            <div className='flex flex-col py-[5%] items-center justify-center text-gray-500'>
+              <span>Elimination stage bracket has not been generated yet. It will be created once the group stage matches are completed.</span>
+            </div>
+          )}
+        </div>
+      )}
+
       {selectedTab === 'matches' && (
         <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
           <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Matches List</span>
-          {tournament.format === 'round_scoring' ? (
+          {tournament.format === 'hybrid' ? (
+            <div>
+              <div className='flex gap-4 mb-6'>
+                <button
+                  onClick={() => setHybridMatchesTab('group')}
+                  className={`px-4 py-1.5 rounded-[15px] text-[13px] md:text-[18px] font-semibold transition-colors cursor-pointer ${
+                    hybridMatchesTab === 'group'
+                      ? 'bg-[#123836] text-white shadow-md'
+                      : 'bg-white text-[#123836] border border-gray-300 hover:bg-[#123836]/50 hover:text-white shadow-sm'
+                  }`}
+                >
+                  Group Stage Matches
+                </button>
+                <button
+                  onClick={() => setHybridMatchesTab('elimination')}
+                  className={`px-4 py-1.5 rounded-[15px] text-[13px] md:text-[18px] font-semibold transition-colors cursor-pointer ${
+                    hybridMatchesTab === 'elimination'
+                      ? 'bg-[#123836] text-white shadow-md'
+                      : 'bg-white text-[#123836] border border-gray-300 hover:bg-[#123836]/50 hover:text-white shadow-sm'
+                  }`}
+                >
+                  Elimination Stage Matches
+                </button>
+              </div>
+
+              {hybridMatchesTab === 'group' ? (
+                groupRecentMatches.length > 0 ? (
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-10 items-start'>
+                    {groupRecentMatches.map((match) => (
+                      <MatchCard key={match.id} match={match} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className='flex flex-col py-[5%] items-center justify-center text-gray-500'>
+                    <span>No group stage matches generated yet.</span>
+                  </div>
+                )
+              ) : (
+                eliminationRecentMatches.length > 0 ? (
+                  <div className='grid grid-cols-1 md:grid-cols-2 gap-10 items-start'>
+                    {eliminationRecentMatches.map((match) => (
+                      <MatchCard key={match.id} match={match} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className='flex flex-col py-[5%] items-center justify-center text-gray-500'>
+                    <span>No elimination stage matches generated yet.</span>
+                  </div>
+                ))}
+            </div>
+          ) : tournament.format === 'round_scoring' ? (
             roundScoringData && roundScoringData.rounds && roundScoringData.rounds.length > 0 ? (
               <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
                 {roundScoringData.rounds.map((round) => (
@@ -628,7 +759,7 @@ const TournamentPage = () => {
             <div className="flex justify-center items-center py-10">
               <div className="w-8 h-8 border-4 border-slate-200 border-t-[#123836] rounded-full animate-spin" />
             </div>
-          ) : compType === 'team' ? (
+          ) : !isIndividual ? (
             <div className='grid grid-cols-2 md:grid-cols-3 gap-10 items-start'>
               {participants.map((team) => (
                 <TeamCard key={team.id} team={team} />

@@ -75,6 +75,15 @@ function validateFormatConfigDto(body, sp_id) {
   if (tour_format === 'hybrid') {
     const hybridConfig = normalizeHybridStructure(body, errors);
 
+    const isRoundScoringSport = rules && rules.formats.includes('round_scoring') && !rules.formats.includes('round_robin');
+    const firstStageFormat = isRoundScoringSport ? 'round_scoring' : 'round_robin';
+
+    const allowedSecondStageFormats = ['single_elimination', 'double_elimination', 'round_scoring'];
+    const secondStageFormat = body.second_stage_format || 'single_elimination';
+    if (!allowedSecondStageFormats.includes(secondStageFormat)) {
+      errors.push(`Invalid second stage format '${secondStageFormat}'. Allowed formats: ${allowedSecondStageFormats.join(', ')}.`);
+    }
+
     if (errors.length > 0) {
       return { data: null, errors };
     }
@@ -85,6 +94,8 @@ function validateFormatConfigDto(body, sp_id) {
         tour_format,
         group_count: hybridConfig.group_count,
         advance_per_group: hybridConfig.advance_per_group,
+        first_stage_format: firstStageFormat,
+        second_stage_format: secondStageFormat
       }
     };
   }

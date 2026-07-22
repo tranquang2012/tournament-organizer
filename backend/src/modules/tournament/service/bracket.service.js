@@ -220,12 +220,14 @@ class BracketService {
         status = 'bye';
         winning_competitor_id = (m.opponent1 !== null) ? comp1_id : comp2_id;
       } else if (m.status === 1) {
-        status = 'ready';
+        status = 'waiting';
       } else if (m.status === 2) {
-        status = 'running';
+        status = 'ready';
       } else if (m.status === 3) {
-        status = 'completed';
+        status = 'running';
       } else if (m.status === 4) {
+        status = 'completed';
+      } else if (m.status === 5) {
         status = 'archived';
       }
 
@@ -267,7 +269,7 @@ class BracketService {
         const nextMemoryMatches = await manager.find.nextMatches(memoryMatch.id);
 
         if (nextMemoryMatches.length > 0) {
-          const { nextWinnerMatch, nextLoserMatch } = this._getWinnerAndLoserPaths(nextMemoryMatches, groupsMap);
+          const { nextWinnerMatch, nextLoserMatch } = this._getWinnerAndLoserPaths(memoryMatch, nextMemoryMatches, groupsMap);
           if (nextWinnerMatch) {
             nextWinnerMatchId = memoryToDbIdMap.get(nextWinnerMatch.id) || null;
           }
@@ -317,30 +319,55 @@ class BracketService {
     );
   }
 
-  _getWinnerAndLoserPaths(nextMatches, groupsMap) {
+  _getWinnerAndLoserPaths(currentMatch, nextMatches, groupsMap) {
+    const currentGroup = groupsMap.get(currentMatch.group_id);
+    const currentGroupNumber = currentGroup ? currentGroup.number : 1;
+
     let nextWinnerMatch = null;
     let nextLoserMatch = null;
 
-    for (const nextMatch of nextMatches) {
-      const group = groupsMap.get(nextMatch.group_id);
-      if (!group) continue;
+    if (currentGroupNumber === 1) {
+      // Current match is in Upper Bracket
+      for (const nextMatch of nextMatches) {
+        const group = groupsMap.get(nextMatch.group_id);
+        if (!group) continue;
 
-      if (group.number === 1 || group.number === 3) {
-        nextWinnerMatch = nextMatch;
-      } else if (group.number === 2) {
-        nextLoserMatch = nextMatch;
+        if (group.number === 1 || group.number === 3) {
+          nextWinnerMatch = nextMatch;
+        } else if (group.number === 2) {
+          nextLoserMatch = nextMatch;
+        }
       }
-    }
+    } else if (currentGroupNumber === 2) {
+      // Current match is in Lower Bracket
+      // Winner goes to the next Lower Bracket match (group 2) or Grand Final (group 3)
+      // Loser is eliminated
+      for (const nextMatch of nextMatches) {
+        const group = groupsMap.get(nextMatch.group_id);
+        if (!group) continue;
 
-    if (nextMatches.length === 1 && !nextWinnerMatch) {
-      nextWinnerMatch = nextMatches[0];
+        if (group.number === 2 || group.number === 3) {
+          nextWinnerMatch = nextMatch;
+        }
+      }
+    } else if (currentGroupNumber === 3) {
+      // Grand Final
+      for (const nextMatch of nextMatches) {
+        const group = groupsMap.get(nextMatch.group_id);
+        if (!group) continue;
+
+        if (group.number === 3) {
+          nextWinnerMatch = nextMatch;
+        }
+      }
     }
 
     return { nextWinnerMatch, nextLoserMatch };
   }
 
   _getHybridStructure(tournament) {
-    const firstStageFormat = 'round_robin';
+    const firstStageFormat = tournament.first_stage_format || 'round_robin';
+    const secondStageFormat = tournament.second_stage_format || 'single_elimination';
     return {
       type: 'hybrid',
       max_stages: 2,
@@ -349,22 +376,22 @@ class BracketService {
           stage_number: 1,
           name: firstStageFormat === 'round_scoring' ? 'Scoring Stage' : 'Group Stage',
           format: firstStageFormat,
-          stage_key: `hybrid_stage_1_${firstStageFormat}`,
+          stage_key: 'stage_1',
           group_count: tournament.group_count || 1,
           advance_per_group: tournament.advance_per_group || 1,
         },
         {
           stage_number: 2,
           name: 'Final Stage',
-          format: 'single_elimination',
-          stage_key: 'hybrid_stage_2_single_elimination',
+          format: secondStageFormat,
+          stage_key: 'stage_2',
         },
       ],
     };
   }
 
   _getStageKey(stage) {
-    return stage.stage_key || `hybrid_stage_${stage.stage_number || 1}_${stage.format}`;
+    return stage.stage_key || `stage_${stage.stage_number || 1}`;
   }
 
   _parseArray(value) {
