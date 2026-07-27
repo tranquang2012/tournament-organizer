@@ -8,6 +8,7 @@ import MatchScoreCard from '../../components/match_public/MatchScoreCard'
 import MatchLeaderBoardCard from '../../components/match_public/MatchLeaderBoardCard'
 import TournamentCard from '../../components/tournament_public/TournamentCard'
 import TopLoadingBar from '../../components/common/TopLoadingBar'
+import InputField from '../../components/common/InputField'
 
 //import endpoints
 import { getSportInformation } from '../../services/SportService'
@@ -245,22 +246,20 @@ const SportsPage = () => {
             className='w-full border border-[#d9d9d9] rounded-lg px-3 py-2 text-[14px] outline-none focus:border-[#123836] transition-colors duration-200 mt-5 md:mt-0'
           />
           <div className='flex items-center gap-3'>
-            <div className='flex flex-col gap-1 w-[50%]'>
-              <span className='text-[12px] text-gray-500'>From:</span>
-              <input
+            <div className='w-[50%]'>
+              <InputField
+                label='From:'
                 type='date'
                 value={dateFrom}
                 onChange={(e) => setDateFrom(e.target.value)}
-                className='border border-[#d9d9d9] rounded-lg px-3 py-2 text-[14px] text-gray-500 outline-none focus:border-[#123836]'
               />
             </div>
-            <div className='flex flex-col gap-1 w-[50%]'>
-              <span className='text-[12px] text-gray-500'>To:</span>
-              <input
+            <div className='w-[50%]'>
+              <InputField
+                label='To:'
                 type='date'
                 value={dateTo}
                 onChange={(e) => setDateTo(e.target.value)}
-                className='border border-[#d9d9d9] rounded-lg px-3 py-2 text-[14px] text-gray-500 outline-none focus:border-[#123836]'
               />
             </div>
           </div>
