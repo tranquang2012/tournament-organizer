@@ -59,51 +59,6 @@ const mockGroups = [
 
 ]
 
-const mockParticipants = [
-  {
-    id: 1, name: 'GEN', logo: logo1,
-    members: ['Nguyen Vu Duy', 'Le Chanh Tri', 'To Nhat Duy', 'Tran Quang', 'Huynh Nhat Anh']
-  },
-  {
-    id: 2, name: 'T1', logo: logo1,
-    members: ['Faker', 'Gumayusi', 'Keria', 'Zeus', 'Oner']
-  },
-  {
-    id: 3, name: 'HLE', logo: logo1,
-    members: ['Chovy', 'Viper', 'Deft', 'Zeka', 'Lehends']
-  },
-  {
-    id: 4, name: 'KT', logo: logo1,
-    members: ['Bdd', 'Aiming', 'Doran', 'Cuzz', 'Lehends']
-  },
-  {
-    id: 5, name: 'DRX', logo: logo1,
-    members: ['Zeka', 'Teddy', 'Kingen', 'Pyosik', 'Effort']
-  },
-  {
-    id: 6, name: 'NS', logo: logo1,
-    members: ['Blossom', 'Gori', 'Dread', 'Ghost', 'Peter']
-  },
-  {
-    id: 7, name: 'BFX', logo: logo1,
-    members: ['Player1', 'Player2', 'Player3', 'Player4', 'Player5']
-  },
-  {
-    id: 8, name: 'DNS', logo: logo1,
-    members: ['Player1', 'Player2', 'Player3', 'Player4', 'Player5']
-  },
-  {
-    id: 9, name: 'BRO', logo: logo1,
-    members: ['Player1', 'Player2', 'Player3', 'Player4', 'Player5']
-  },
-  {
-    id: 10, name: 'DK', logo: logo1,
-    members: ['ShowMaker', 'Canyon', 'Nuguri', 'Ghost', 'Beryl']
-  },
-]
-
-
-
 const mockMatches = [
   { id: 1, matchNumber: 10, team1: { name: 'GEN', logo: logo1, score: 2 }, team2: { name: 'NS', logo: logo2, score: 0 }, status: 'Completed' },
   { id: 2, matchNumber: 9, team1: { name: 'KT', logo: logo1, score: 1 }, team2: { name: 'DK', logo: logo2, score: 2 }, status: 'Completed' },
@@ -145,8 +100,6 @@ const TournamentPage = () => {
       setCompType(participants[0].type)
     }
   }, [participants])
-
-  console.log(participants)
 
   return (
     <div>
@@ -217,8 +170,8 @@ const TournamentPage = () => {
           </div>
         )
       }
-      <div className='flex mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10'>
-        <div className='flex flex-col w-[50%] pr-[1%] gap-5 border-r border-gray-300'>
+      <div className='flex flex-col md:flex-row mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10'>
+        <div className='flex flex-col w-full md:w-[50%] pr-[1%] gap-5 border-r border-gray-300'>
           <span className='text-[#123836] font-semibold text-[18px] md:text-[32px] py-[1%]'>Tournament Participants</span>
           {compType === 'team' ? (
             <div className='grid grid-cols-2 md:grid-cols-3 gap-10 items-start'>
@@ -230,7 +183,7 @@ const TournamentPage = () => {
             (<ParticipantTable participants={participants} />)
           }
         </div>
-        <div className='flex flex-col w-[50%] pr-[1%] gap-5'>
+        <div className='flex flex-col w-full md:w-[50%] pr-[1%] gap-5'>
           <span className='text-[#123836] font-semibold text-[18px] md:text-[32px] py-[1%]'>Tournament Recent Matches</span>
           <div className='grid grid-cols-2 md:grid-cols-2 gap-10 items-start'>
             {mockMatches.map((match) => (
