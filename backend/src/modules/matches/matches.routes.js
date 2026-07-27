@@ -1,0 +1,17 @@
+const express = require('express');
+const router = express.Router();
+const ctrl = require('./controller/matches.controller');
+const auth = require('../../shared/middleware/authenticateSupabaseUser');
+const requireAdminUser = require('../../shared/middleware/requireAdminUser');
+
+// Public route to view match details
+router.get('/:matchId', ctrl.getMatch.bind(ctrl));
+
+// Admin-only routes to update scores and results
+router.put('/:matchId', auth, requireAdminUser, ctrl.updateMatch.bind(ctrl));
+router.patch('/:matchId', auth, requireAdminUser, ctrl.updateMatch.bind(ctrl));
+
+// Support contract-defined result endpoint for compatibility
+router.put('/:matchId/result', auth, requireAdminUser, ctrl.updateMatch.bind(ctrl));
+
+module.exports = router;

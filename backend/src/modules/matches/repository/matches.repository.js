@@ -1,0 +1,68 @@
+const pool = require('../../../shared/database/pool');
+
+class MatchesRepository {
+
+  async getMatch(matchId, executor = pool) {
+    const { rows } = await executor.query(
+      `SELECT 
+        m.match_id, m.tour_id, m.round, m.stage, m.group_name, m.status, m.scheduled_start, m.scheduled_end,
+        m.competitor1_id, m.competitor2_id, m.score1, m.score2,
+        m.winning_competitor_id, m.is_draw, m.next_winner_match_id, m.next_loser_match_id,
+        c1.comp_name as c1_name, c1.comp_logo as c1_logo, c1.comp_size as c1_size,
+        c2.comp_name as c2_name, c2.comp_logo as c2_logo, c2.comp_size as c2_size
+      FROM matches m
+      LEFT JOIN competitors c1 ON m.competitor1_id = c1.comp_id
+      LEFT JOIN competitors c2 ON m.competitor2_id = c2.comp_id
+      WHERE m.match_id = $1`,
+      [matchId]
+    );
+    return rows[0];
+  }
+
+  async getMatchBase(matchId, executor = pool) {
+    const { rows } = await executor.query(
+      `SELECT tour_id, competitor1_id, competitor2_id, winning_competitor_id, status, group_name, next_winner_match_id, next_loser_match_id 
+       FROM matches WHERE match_id = $1`,
+      [matchId]
+    );
+    return rows[0];
+  }
+
+  async updateMatch(matchId, data, executor = pool) {
+    const { score1, score2, winning_competitor_id, result1, result2, is_draw, status } = data;
+    await executor.query(
+      `UPDATE matches
+       SET score1 = $1, score2 = $2, winning_competitor_id = $3,
+           result1 = $4, result2 = $5, is_draw = $6, status = $7, updated_at = NOW()
+       WHERE match_id = $8`,
+      [score1, score2, winning_competitor_id, result1, result2, is_draw, status, matchId]
+    );
+  }
+
+  async getNextMatchRef(matchId, executor = pool) {
+    const { rows } = await executor.query(
+      `SELECT next_winner_match_id, next_loser_match_id FROM matches WHERE match_id = $1`,
+      [matchId]
+    );
+    return rows[0];
+  }
+
+  async getNextMatchBase(nextMatchId, executor = pool) {
+    const { rows } = await executor.query(
+      `SELECT competitor1_id, competitor2_id, status, winning_competitor_id FROM matches WHERE match_id = $1`,
+      [nextMatchId]
+    );
+    return rows[0];
+  }
+
+  async updateNextMatchSlots(nextMatchId, competitor1_id, competitor2_id, status, winning_competitor_id = null, executor = pool) {
+    await executor.query(
+      `UPDATE matches
+       SET competitor1_id = $1, competitor2_id = $2, status = $3, winning_competitor_id = $4, updated_at = NOW()
+       WHERE match_id = $5`,
+      [competitor1_id, competitor2_id, status, winning_competitor_id, nextMatchId]
+    );
+  }
+}
+
+module.exports = new MatchesRepository();

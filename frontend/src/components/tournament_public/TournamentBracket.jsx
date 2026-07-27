@@ -115,7 +115,7 @@ const DOUBLE_ELIM_DATA = {
             ],
         },
         {
-            id: 'W7', name: 'WB Final', nextMatchId: 'GF', nextLooserMatchId: 'L4',
+            id: 'W7', name: 'WB Final', nextMatchId: 'GF', nextLooserMatchId: 'L6',
             tournamentRoundText: 'WB Final', startTime: '2024-01-03', state: 'DONE',
             participants: [
                 { id: 'gen', name: 'GEN', isWinner: true, resultText: '2', status: 'PLAYED' },
@@ -141,7 +141,7 @@ const DOUBLE_ELIM_DATA = {
             ],
         },
         {
-            id: 'L2', name: 'LB Match 2', nextMatchId: 'L3', nextLooserMatchId: null,
+            id: 'L2', name: 'LB Match 2', nextMatchId: 'L4', nextLooserMatchId: null,
             tournamentRoundText: 'LB Round 1', startTime: '2024-01-02', state: 'DONE',
             participants: [
                 { id: 'kt', name: 'KT', isWinner: true, resultText: '2', status: 'PLAYED' },
@@ -211,7 +211,9 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
                     onMouseLeave={onMouseLeave}
                 >
                     <div className='flex px-2 py-1.5 h-full items-center gap-2'>
-                        <img src={logo1} className='h-7 w-7 flex-shrink-0' />
+                        {topParty?.name !== 'BYE' && (
+                            <img src={topParty?.logo || logo1} className='h-7 w-7 flex-shrink-0 object-contain' />
+                        )}
                         <span className={`text-[16px] ${topWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
                             {topParty?.name || 'TBD'}
                         </span>
@@ -232,7 +234,9 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
                     onMouseLeave={onMouseLeave}
                 >
                     <div className='flex px-2 h-full items-center gap-2'>
-                        <img src={logo2} className='h-7 w-7 flex-shrink-0' />
+                        {bottomParty?.name !== 'BYE' && (
+                            <img src={bottomParty?.logo || logo2} className='h-7 w-7 flex-shrink-0 object-contain' />
+                        )}
                         <span className={`text-[16px] ${bottomWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
                             {bottomParty?.name || 'TBD'}
                         </span>
@@ -259,6 +263,9 @@ const TournamentBracket = ({
     showTabs = true
 }) => {
     const [mode, setMode] = useState(initialMode)
+    useEffect(() => {
+        setMode(initialMode)
+    }, [initialMode])
     const { width } = useWindowSize()
     const matchHeight = 120
 

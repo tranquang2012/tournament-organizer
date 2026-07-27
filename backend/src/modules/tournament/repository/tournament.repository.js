@@ -111,13 +111,14 @@ class TournamentRepository {
 
   //Step 3
 
-  async updateFormat(tourId, tour_format, organizerId) {
+  async updateFormat(tourId, data, organizerId) {
+    const { tour_format, group_count, advance_per_group, first_stage_format, second_stage_format } = data;
     const { rows } = await pool.query(
       `UPDATE tournament
-       SET tour_format=$1
-       WHERE tour_id=$2 AND (created_by=$3 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $3 AND role IN ('superadmin', 'super_admin')))
+       SET tour_format=$1, group_count=$2, advance_per_group=$3, first_stage_format=$6, second_stage_format=$7
+       WHERE tour_id=$4 AND (created_by=$5 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $5 AND role IN ('superadmin', 'super_admin')))
        RETURNING *`,
-      [tour_format, tourId, organizerId]
+      [tour_format, group_count, advance_per_group, tourId, organizerId, first_stage_format, second_stage_format]
     );
     return rows[0] || null;
   }
@@ -127,7 +128,7 @@ class TournamentRepository {
   async getFullTournament(tourId, organizerId) {
     //Tournament + sport info
     const { rows: tourRows } = await pool.query(
-      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner, s.sport_format,
               (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
        FROM tournament t
        LEFT JOIN sport s ON t.sp_id = s.sport_id
@@ -175,7 +176,10 @@ class TournamentRepository {
 
   async findById(tourId, organizerId) {
     const { rows } = await pool.query(
-      `SELECT * FROM tournament WHERE tour_id=$1 AND (created_by=$2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')))`,
+      `SELECT t.*, s.sport_format
+       FROM tournament t
+       LEFT JOIN sport s ON t.sp_id = s.sport_id
+       WHERE t.tour_id=$1 AND (t.created_by=$2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')))`,
       [tourId, organizerId]
     );
     return rows[0] || null;
@@ -183,7 +187,7 @@ class TournamentRepository {
 
   async listAll(organizerId) {
     const { rows } = await pool.query(
-      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner, s.sport_format,
               (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
               (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
        FROM tournament t
@@ -197,7 +201,7 @@ class TournamentRepository {
 
   async listPublic({ sportId } = {}) {
     let query = `
-      SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+      SELECT t.*, s.sport_name, s.sport_type, s.sport_banner, s.sport_format,
              (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
              (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
       FROM tournament t
@@ -214,6 +218,20 @@ class TournamentRepository {
     const { rows } = await pool.query(query, params);
     return rows;
   }
+
+  async getPublic(tourId) {
+    const query = `
+      SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+             (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
+             (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
+      FROM tournament t
+      LEFT JOIN sport s ON t.sp_id = s.sport_id
+      WHERE t.tour_id = $1 AND COALESCE(t.tour_status, 'draft') <> 'draft'
+    `;
+    const { rows } = await pool.query(query, [tourId]);
+    return rows[0] || null;
+  }
+
 
   async deleteDraft(tourId, organizerId) {
   const client = await pool.connect();

@@ -24,30 +24,31 @@ model audit_log_entries {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model custom_oauth_providers {
-  id                    String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  provider_type         String
-  identifier            String    @unique
-  name                  String
-  client_id             String
-  client_secret         String
-  acceptable_client_ids String[]  @default([])
-  scopes                String[]  @default([])
-  pkce_enabled          Boolean   @default(true)
-  attribute_mapping     Json      @default("{}")
-  authorization_params  Json      @default("{}")
-  enabled               Boolean   @default(true)
-  email_optional        Boolean   @default(false)
-  issuer                String?
-  discovery_url         String?
-  skip_nonce_check      Boolean   @default(false)
-  cached_discovery      Json?
-  discovery_cached_at   DateTime? @db.Timestamptz(6)
-  authorization_url     String?
-  token_url             String?
-  userinfo_url          String?
-  jwks_uri              String?
-  created_at            DateTime  @default(now()) @db.Timestamptz(6)
-  updated_at            DateTime  @default(now()) @db.Timestamptz(6)
+  id                      String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  provider_type           String
+  identifier              String    @unique
+  name                    String
+  client_id               String
+  client_secret           String
+  acceptable_client_ids   String[]  @default([])
+  scopes                  String[]  @default([])
+  pkce_enabled            Boolean   @default(true)
+  attribute_mapping       Json      @default("{}")
+  authorization_params    Json      @default("{}")
+  enabled                 Boolean   @default(true)
+  email_optional          Boolean   @default(false)
+  issuer                  String?
+  discovery_url           String?
+  skip_nonce_check        Boolean   @default(false)
+  cached_discovery        Json?
+  discovery_cached_at     DateTime? @db.Timestamptz(6)
+  authorization_url       String?
+  token_url               String?
+  userinfo_url            String?
+  jwks_uri                String?
+  created_at              DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime  @default(now()) @db.Timestamptz(6)
+  custom_claims_allowlist String[]  @default([])
 
   @@index([created_at])
   @@index([enabled])
@@ -499,22 +500,27 @@ model webauthn_credentials {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model competitors {
-  comp_id    String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tour_id    String       @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  comp_name  String?
-  comp_size  Int?         @db.SmallInt
-  tournament tournament   @relation(fields: [tour_id], references: [tour_id], onDelete: NoAction, onUpdate: NoAction)
-  teammember teammember[]
+  comp_id                                     String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tour_id                                     String       @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  comp_name                                   String?
+  comp_size                                   Int?         @db.SmallInt
+  comp_logo                                   String?
+  tournament                                  tournament   @relation(fields: [tour_id], references: [tour_id], onDelete: NoAction, onUpdate: NoAction)
+  matches_matches_competitor1_idTocompetitors matches[]    @relation("matches_competitor1_idTocompetitors")
+  matches_matches_competitor2_idTocompetitors matches[]    @relation("matches_competitor2_idTocompetitors")
+  teammember                                  teammember[]
 
   @@schema("public")
 }
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model sport {
-  sport_name String
-  background String?
-  sport_id   Int          @id @db.SmallInt
-  tournament tournament[]
+  sport_name   String
+  sport_id     Int          @id @db.SmallInt
+  sport_type   String[]
+  sport_banner String?
+  sport_format String?
+  tournament   tournament[]
 
   @@schema("public")
 }
@@ -532,21 +538,26 @@ model teammember {
 
 /// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
 model tournament {
-  tour_id        String        @id(map: "Tournament_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  tour_name      String
-  tour_banner    String?
-  tour_locat     String?
-  tour_descrip   String?
-  tour_format    String?
-  tour_startdate DateTime?     @db.Date
-  tour_enddate   DateTime?     @db.Date
-  tour_status    String?
-  tour_pausedate DateTime?     @db.Date
-  created_by     String?       @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  max_size       Int?          @db.SmallInt
-  sp_id          Int?          @db.SmallInt
-  competitors    competitors[]
-  sport          sport?        @relation(fields: [sp_id], references: [sport_id], onDelete: NoAction, onUpdate: NoAction)
+  tour_id             String        @id(map: "Tournament_pkey") @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tour_name           String
+  tour_banner         String?
+  tour_locat          String?
+  tour_descrip        String?
+  tour_format         String?
+  tour_startdate      DateTime?     @db.Date
+  tour_enddate        DateTime?     @db.Date
+  tour_status         String
+  tour_pausedate      DateTime?     @db.Date
+  created_by          String?       @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sp_id               Int?          @db.SmallInt
+  tour_round          Int           @default(1) @db.SmallInt
+  group_count         Int?          @default(1) @db.SmallInt
+  advance_per_group   Int?          @default(0) @db.SmallInt
+  first_stage_format  String?       @db.VarChar(50)
+  second_stage_format String?       @db.VarChar(50)
+  competitors         competitors[]
+  matches             matches[]
+  sport               sport?        @relation(fields: [sp_id], references: [sport_id], onDelete: NoAction, onUpdate: NoAction)
 
   @@schema("public")
 }
@@ -559,9 +570,43 @@ model user_roles {
   full_name  String?
   role       String?  @default("user")
   avatar_url String?
-  providers  Json?
+  provider   Json?
   is_disable Boolean? @default(false)
   users      users    @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_roles_user_id_fkey")
+
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model matches {
+  match_id                                            String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  tour_id                                             String       @db.Uuid
+  round                                               Int
+  stage                                               String
+  competitor1_id                                      String?      @db.Uuid
+  competitor2_id                                      String?      @db.Uuid
+  score1                                              Int?
+  score2                                              Int?
+  result1                                             String?      @db.VarChar(10)
+  result2                                             String?      @db.VarChar(10)
+  winning_competitor_id                               String?      @db.Uuid
+  is_draw                                             Boolean      @default(false)
+  next_winner_match_id                                String?      @db.Uuid
+  next_loser_match_id                                 String?      @db.Uuid
+  scheduled_start                                     DateTime?    @db.Timestamptz(6)
+  scheduled_end                                       DateTime?    @db.Timestamptz(6)
+  created_at                                          DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at                                          DateTime     @default(now()) @db.Timestamptz(6)
+  group_name                                          String?      @default("Bracket") @db.VarChar(50)
+  status                                              String?      @default("locked") @db.VarChar(20)
+  round_scores                                        Json?
+  competitors_matches_competitor1_idTocompetitors     competitors? @relation("matches_competitor1_idTocompetitors", fields: [competitor1_id], references: [comp_id], onUpdate: NoAction)
+  competitors_matches_competitor2_idTocompetitors     competitors? @relation("matches_competitor2_idTocompetitors", fields: [competitor2_id], references: [comp_id], onUpdate: NoAction)
+  matches_matches_next_loser_match_idTomatches        matches?     @relation("matches_next_loser_match_idTomatches", fields: [next_loser_match_id], references: [match_id], onUpdate: NoAction)
+  other_matches_matches_next_loser_match_idTomatches  matches[]    @relation("matches_next_loser_match_idTomatches")
+  matches_matches_next_winner_match_idTomatches       matches?     @relation("matches_next_winner_match_idTomatches", fields: [next_winner_match_id], references: [match_id], onUpdate: NoAction)
+  other_matches_matches_next_winner_match_idTomatches matches[]    @relation("matches_next_winner_match_idTomatches")
+  tournament                                          tournament   @relation(fields: [tour_id], references: [tour_id], onDelete: Cascade, onUpdate: NoAction)
 
   @@schema("public")
 }

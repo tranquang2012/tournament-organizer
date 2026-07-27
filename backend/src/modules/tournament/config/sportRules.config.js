@@ -3,15 +3,17 @@ const FORMATS = {
   DOUBLE_ELIM:  'double_elimination',
   ROUND_ROBIN:  'round_robin',
   ROUND_SCORING: 'round_scoring',
+  HYBRID:        'hybrid',
 };
 
 const ALL_EXCEPT_ROUND_SCORING = [
   FORMATS.SINGLE_ELIM,
   FORMATS.DOUBLE_ELIM,
   FORMATS.ROUND_ROBIN,
+  FORMATS.HYBRID,
 ];
 
-const ROUND_SCORING_ONLY = [FORMATS.ROUND_SCORING];
+const ROUND_SCORING_ONLY = [FORMATS.ROUND_SCORING, FORMATS.HYBRID];
 
 
 const SPORT_RULES = {

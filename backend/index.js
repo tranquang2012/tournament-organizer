@@ -11,6 +11,7 @@ const userRoutes = require("./src/modules/user/user.routes");
 const errorHandler = require("./src/shared/middleware/errorHandler");
 const tournamentRoutes = require('./src/modules/tournament/tournament.routes');
 const sportRoutes = require("./src/modules/sport/sport.routes");
+const matchesRoutes = require("./src/modules/matches/matches.routes");
 
 app.get("/", (req, res) => {
   res.send("Backend running");
@@ -19,6 +20,7 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use("/api/sports", sportRoutes);
+app.use("/api/matches", matchesRoutes);
 
 app.use(errorHandler);
 

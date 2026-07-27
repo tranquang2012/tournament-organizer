@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useBlocker, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
@@ -96,6 +96,7 @@ const TournamentCreatePage = () => {
   };
 
   const tokenRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const updateToken = async () => {
@@ -402,6 +403,7 @@ const TournamentCreatePage = () => {
       await publishTournament(tournamentId);
       setIsDirty(false);
       setToast({ message: 'Tournament published successfully!', type: 'success' });
+      setTimeout(() => navigate('/admin/tournaments/list'), 1500);
     } catch (error) {
       setToast({ message: getErrorMessage(error), type: 'error' });
     } finally {
