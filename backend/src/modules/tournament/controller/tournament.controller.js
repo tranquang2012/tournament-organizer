@@ -1,5 +1,6 @@
 const service = require('../service/tournament.service');
 const bracketService = require('../service/bracket.service');
+const rankingService = require('../service/ranking.service');
 
 class TournamentController {
   //Step 1
@@ -135,6 +136,13 @@ class TournamentController {
   async getBrackets(req, res, next) {
     try {
       const data = await bracketService.getBrackets(req.params.id);
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
+
+  async getRankings(req, res, next) {
+    try {
+      const data = await rankingService.getTournamentRankings(req.params.id);
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }

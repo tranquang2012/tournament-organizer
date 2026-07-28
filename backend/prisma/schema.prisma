@@ -553,6 +553,7 @@ model tournament {
   tour_round          Int           @default(1) @db.SmallInt
   group_count         Int?          @default(1) @db.SmallInt
   advance_per_group   Int?          @default(0) @db.SmallInt
+  participant_type    String?
   first_stage_format  String?       @db.VarChar(50)
   second_stage_format String?       @db.VarChar(50)
   competitors         competitors[]
