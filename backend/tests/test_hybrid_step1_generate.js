@@ -4,7 +4,7 @@ const pool = require('../src/shared/database/pool');
 const bracketService = require('../src/modules/tournament/service/bracket.service');
 const bracketRepository = require('../src/modules/tournament/repository/bracket.repository');
 
-const TOUR_ID = process.env.TEST_TOUR_ID;
+const TOUR_ID = process.env.TEST_TOUR_ID_HYBRID;
 
 async function run() {
   console.log(`\n--- [STEP 1] Checking tournament ${TOUR_ID} format...`);

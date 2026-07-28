@@ -3,7 +3,7 @@ require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const pool = require('../src/shared/database/pool');
 const bracketRepository = require('../src/modules/tournament/repository/bracket.repository');
 
-const TOUR_ID = process.env.TEST_TOUR_ID;
+const TOUR_ID = process.env.TEST_TOUR_ID_HYBRID || process.env.TEST_TOUR_ID;
 
 async function run() {
   console.log(`--- 1. Checking tournament ${TOUR_ID} existence...`);
