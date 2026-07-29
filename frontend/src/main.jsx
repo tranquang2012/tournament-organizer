@@ -40,7 +40,7 @@ const router = createBrowserRouter(
         <Route path="/" element={<LandingPage />} />
         <Route path="/sports/:id" element={<SportsPage />} />
         <Route path="/tournaments/:id" element={<TournamentPage />} />
-        <Route path="/matches" element={<MatchesPage />} />
+        <Route path="/matches/:id" element={<MatchesPage />} />
         <Route
           path="account-management"
           element={
