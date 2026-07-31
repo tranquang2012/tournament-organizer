@@ -443,17 +443,19 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
               </div>
             </div>
 
-            <div className="mb-6">
-              <InputField
-                label="Number of members in a team"
-                type="number"
-                placeholder="e.g. 5"
-                value={data.membersPerTeam || ''}
-                onChange={(e) => update('membersPerTeam', e.target.value)}
-                required
-                className="max-w-[250px]"
-              />
-            </div>
+            {data.teamMode === 'randomize' && (
+              <div className="mb-6">
+                <InputField
+                  label="Number of members in a team"
+                  type="number"
+                  placeholder="e.g. 5"
+                  value={data.membersPerTeam || ''}
+                  onChange={(e) => update('membersPerTeam', e.target.value)}
+                  required
+                  className="max-w-[250px]"
+                />
+              </div>
+            )}
 
             {/*  Pre-define Teams  */}
             {data.teamMode === 'predefine' && (

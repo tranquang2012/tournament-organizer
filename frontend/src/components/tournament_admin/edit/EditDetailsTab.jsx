@@ -24,8 +24,8 @@ const DEFAULT_BANNERS = [
 ];
 
 const FORMAT_LABELS = {
-  single_elim: 'Single Elimination',
-  double_elim: 'Double Elimination',
+  single_elimination: 'Single Elimination',
+  double_elimination: 'Double Elimination',
   round_robin: 'Round Robin',
   hybrid: 'Hybrid',
 };

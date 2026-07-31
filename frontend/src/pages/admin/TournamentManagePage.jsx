@@ -79,8 +79,8 @@ const TournamentManagePage = () => {
 
           // Format name label
           const formatMapping = {
-            'single_elim': 'Single Elimination',
-            'double_elim': 'Double Elimination',
+            'single_elimination': 'Single Elimination',
+            'double_elimination': 'Double Elimination',
             'round_robin': 'Round Robin',
             'hybrid': 'Hybrid',
           };
