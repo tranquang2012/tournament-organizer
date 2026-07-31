@@ -162,8 +162,13 @@ const TournamentActionModal = ({ tournament, onClose, onDeleted }) => {
                   <FontAwesomeIcon icon={faChevronRight} className="text-slate-300 text-xs shrink-0 group-hover:text-[#123836] transition-colors duration-200" />
                 </button>
 
-                {/* Configure Matches — stub */}
+                {/* Configure Matches */}
                 <button
+                  onClick={() => {
+                    onClose();
+                    setConfirmDelete(false);
+                    navigate(`/admin/tournaments/${id}/matches`);
+                  }}
                   className="w-full flex items-center gap-4 px-4 py-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-[#123836] hover:shadow-sm transition-all duration-200 cursor-pointer text-left group"
                 >
                   <div className="w-10 h-10 rounded-xl bg-[#f0fdf4] flex items-center justify-center shrink-0 group-hover:bg-[#123836] transition-colors duration-200">
