@@ -212,6 +212,143 @@ test('breaks equal round-robin records by competitor name without advancing extr
   assert.equal(rankings.filter(row => row.advanced).length, 1);
 });
 
+test('uses head-to-head results before overall score difference for tied group competitors', async () => {
+  const service = createService({
+    tournament: tournament({ advance_per_group: 2 }),
+    competitors,
+    matches: [
+      match({
+        match_id: 'a-beats-b',
+        competitor1_id: COMP_A,
+        competitor2_id: COMP_B,
+        score1: 1,
+        score2: 0,
+        winning_competitor_id: COMP_A,
+      }),
+      match({
+        match_id: 'c-beats-a',
+        competitor1_id: COMP_C,
+        competitor2_id: COMP_A,
+        score1: 10,
+        score2: 0,
+        winning_competitor_id: COMP_C,
+      }),
+      match({
+        match_id: 'b-beats-d',
+        competitor1_id: COMP_B,
+        competitor2_id: COMP_D,
+        score1: 20,
+        score2: 0,
+        winning_competitor_id: COMP_B,
+      }),
+      match({
+        match_id: 'c-beats-d',
+        competitor1_id: COMP_C,
+        competitor2_id: COMP_D,
+        score1: 1,
+        score2: 0,
+        winning_competitor_id: COMP_C,
+      }),
+    ],
+  });
+
+  const result = await service.getTournamentRankings(TOUR_ID, { group: 'group a' });
+  const rankings = result.rankings;
+  const alpha = rankings.find(row => row.comp_id === COMP_A);
+  const beta = rankings.find(row => row.comp_id === COMP_B);
+
+  assert.deepEqual(rankings.map(row => row.comp_id), [COMP_C, COMP_A, COMP_B, COMP_D]);
+  assert.deepEqual(rankings.map(row => row.rank), [1, 2, 3, 4]);
+  assert.ok(beta.score_difference > alpha.score_difference);
+  assert.equal(alpha.head_to_head_points, 3);
+  assert.equal(beta.head_to_head_points, 0);
+  assert.equal(result.selected_stage, 'round_robin');
+  assert.equal(result.selected_group, 'Group A');
+});
+
+test('filters rankings by stage or group and rejects unknown filter values', async () => {
+  const service = createService({
+    tournament: tournament({
+      tour_format: 'hybrid',
+      first_stage_format: 'round_robin',
+      second_stage_format: 'single_elimination',
+      advance_per_group: 1,
+    }),
+    competitors,
+    matches: [
+      match({ match_id: 'group-a', stage: 'stage_1', group_name: 'Group A' }),
+      match({
+        match_id: 'group-b',
+        stage: 'stage_1',
+        group_name: 'Group B',
+        competitor1_id: COMP_C,
+        competitor2_id: COMP_D,
+        winning_competitor_id: COMP_C,
+      }),
+      match({
+        match_id: 'stage-2-final',
+        stage: 'stage_2',
+        group_name: 'Bracket',
+        competitor1_id: COMP_A,
+        competitor2_id: COMP_C,
+        winning_competitor_id: COMP_A,
+      }),
+    ],
+  });
+
+  const stageResult = await service.getTournamentRankings(TOUR_ID, { stage: 'STAGE_2' });
+  assert.equal(stageResult.selected_stage, 'stage_2');
+  assert.deepEqual(stageResult.rankings.map(row => row.comp_id), [COMP_A, COMP_C]);
+  assert.equal(stageResult.stages.length, 1);
+
+  const groupResult = await service.getTournamentRankings(TOUR_ID, {
+    stage: 'stage_1',
+    group: 'group b',
+  });
+  assert.equal(groupResult.selected_stage, 'stage_1');
+  assert.equal(groupResult.selected_group, 'Group B');
+  assert.deepEqual(groupResult.rankings.map(row => row.comp_id), [COMP_C, COMP_D]);
+  assert.equal(groupResult.groups.length, 1);
+
+  await assert.rejects(
+    service.getTournamentRankings(TOUR_ID, { stage: 'stage_3' }),
+    error => error.statusCode === 400 && error.message.includes('Available stages: stage_1, stage_2')
+  );
+  await assert.rejects(
+    service.getTournamentRankings(TOUR_ID, { stage: 'stage_1', group: 'Group Z' }),
+    error => error.statusCode === 400 && error.message.includes('Available groups: Group A, Group B')
+  );
+});
+
+test('uses unique group ranks as the default hybrid ranking during stage one', async () => {
+  const service = createService({
+    tournament: tournament({
+      tour_format: 'hybrid',
+      first_stage_format: 'round_robin',
+      second_stage_format: 'single_elimination',
+    }),
+    competitors: competitors.slice(0, 2),
+    matches: [
+      match({
+        match_id: 'hybrid-stage-one-draw',
+        stage: 'stage_1',
+        score1: 1,
+        score2: 1,
+        result1: 'draw',
+        result2: 'draw',
+        winning_competitor_id: null,
+        is_draw: true,
+      }),
+    ],
+  });
+
+  const result = await service.getTournamentRankings(TOUR_ID);
+
+  assert.equal(result.current_stage, 'stage_1');
+  assert.deepEqual(result.rankings.map(row => row.rank), [1, 2]);
+  assert.deepEqual(result.rankings.map(row => row.comp_name), ['Alpha', 'Beta']);
+});
+
 test('uses the latest completed round-scoring ranking and appends absent competitors as pending', async () => {
   const service = createService({
     tournament: tournament({ tour_format: 'round_scoring' }),

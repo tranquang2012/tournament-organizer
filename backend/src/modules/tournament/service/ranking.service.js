@@ -50,6 +50,93 @@ const decorateRankingResponse = (response, participantType) => {
   };
 };
 
+const normalizeFilter = (value, fieldName) => {
+  if (value === undefined || value === null) return null;
+  if (typeof value !== 'string' || !value.trim()) {
+    throw new AppError(`${fieldName} must be a non-empty string.`, 400);
+  }
+
+  const normalized = value.trim();
+  if (normalized.length > 100) {
+    throw new AppError(`${fieldName} must be 100 characters or fewer.`, 400);
+  }
+  return normalized;
+};
+
+const findCaseInsensitive = (items, value, selector) => {
+  const normalized = value.toLocaleLowerCase();
+  return items.find(item => selector(item).toLocaleLowerCase() === normalized) || null;
+};
+
+const applyRankingFilters = (response, rawFilters = {}) => {
+  const requestedStage = normalizeFilter(rawFilters.stage, 'stage');
+  const requestedGroup = normalizeFilter(rawFilters.group, 'group');
+  if (!requestedStage && !requestedGroup) return response;
+
+  const availableStages = response.stages || [];
+  let selectedStage = null;
+
+  if (requestedStage) {
+    selectedStage = findCaseInsensitive(availableStages, requestedStage, stage => stage.stage);
+    if (!selectedStage) {
+      const available = availableStages.map(stage => stage.stage).join(', ') || 'none';
+      throw new AppError(`Unknown stage '${requestedStage}'. Available stages: ${available}.`, 400);
+    }
+  }
+
+  if (requestedGroup) {
+    const candidateStages = selectedStage ? [selectedStage] : availableStages;
+    const groupMatches = [];
+
+    for (const stage of candidateStages) {
+      const group = findCaseInsensitive(stage.groups || [], requestedGroup, item => item.group_name);
+      if (group) groupMatches.push({ stage, group });
+    }
+
+    if (groupMatches.length === 0) {
+      const available = candidateStages
+        .flatMap(stage => (stage.groups || []).map(group => group.group_name))
+        .filter((name, index, names) => names.indexOf(name) === index)
+        .join(', ') || 'none';
+      throw new AppError(`Unknown group '${requestedGroup}'. Available groups: ${available}.`, 400);
+    }
+    if (groupMatches.length > 1 && !selectedStage) {
+      throw new AppError(`Group '${requestedGroup}' exists in multiple stages. Include the stage filter.`, 400);
+    }
+
+    const selected = groupMatches[0];
+    const filteredStage = {
+      ...selected.stage,
+      rankings: selected.group.rankings,
+      groups: [selected.group],
+    };
+
+    return {
+      ...response,
+      ranking_type: 'standings',
+      rankings: selected.group.rankings,
+      groups: [selected.group],
+      stages: [filteredStage],
+      selected_stage: selected.stage.stage,
+      selected_group: selected.group.group_name,
+      applied_filters: {
+        stage: selected.stage.stage,
+        group: selected.group.group_name,
+      },
+    };
+  }
+
+  return {
+    ...response,
+    ranking_type: FORMAT_TYPES[selectedStage.format] || response.ranking_type,
+    rankings: selectedStage.rankings,
+    groups: selectedStage.groups || [],
+    stages: [selectedStage],
+    selected_stage: selectedStage.stage,
+    applied_filters: { stage: selectedStage.stage },
+  };
+};
+
 const toNumber = (value) => {
   if (value === null || value === undefined || value === '') return null;
   const parsed = Number(value);
@@ -227,6 +314,72 @@ const rankStandings = (competitors, matches, { includeAll = true } = {}) => {
   return assignCompetitionRanks(standings, standingsMetrics);
 };
 
+const compareGroupStandings = (a, b) => (
+  b.points - a.points ||
+  b.head_to_head_points - a.head_to_head_points ||
+  b.head_to_head_wins - a.head_to_head_wins ||
+  b.head_to_head_score_difference - a.head_to_head_score_difference ||
+  b.head_to_head_score_for - a.head_to_head_score_for ||
+  b.wins - a.wins ||
+  b.score_difference - a.score_difference ||
+  b.score_for - a.score_for ||
+  b.played - a.played ||
+  a.comp_name.localeCompare(b.comp_name) ||
+  a.comp_id.localeCompare(b.comp_id)
+);
+
+const rankGroupStandings = (competitors, matches) => {
+  const records = Array.from(buildRecords(competitors, matches).values())
+    .map(finalizeRecord)
+    .map(record => ({
+      ...record,
+      head_to_head_played: 0,
+      head_to_head_wins: 0,
+      head_to_head_points: 0,
+      head_to_head_score_for: 0,
+      head_to_head_score_against: 0,
+      head_to_head_score_difference: 0,
+    }));
+  const tiedByPoints = new Map();
+
+  for (const record of records) {
+    if (!tiedByPoints.has(record.points)) tiedByPoints.set(record.points, []);
+    tiedByPoints.get(record.points).push(record);
+  }
+
+  for (const tiedRecords of tiedByPoints.values()) {
+    if (tiedRecords.length < 2) continue;
+
+    const tiedIds = new Set(tiedRecords.map(record => record.comp_id));
+    const tiedCompetitors = competitors.filter(competitor => tiedIds.has(competitor.comp_id));
+    const directMatches = matches.filter(match => (
+      tiedIds.has(match.competitor1_id) && tiedIds.has(match.competitor2_id)
+    ));
+    const headToHead = buildRecords(tiedCompetitors, directMatches);
+
+    for (const record of tiedRecords) {
+      const directRecord = finalizeRecord(headToHead.get(record.comp_id));
+      record.head_to_head_played = directRecord.played;
+      record.head_to_head_wins = directRecord.wins;
+      record.head_to_head_points = directRecord.points;
+      record.head_to_head_score_for = directRecord.score_for;
+      record.head_to_head_score_against = directRecord.score_against;
+      record.head_to_head_score_difference = directRecord.score_difference;
+    }
+  }
+
+  const ranked = records
+    .filter(record => record.played > 0)
+    .sort(compareGroupStandings)
+    .map((record, index) => ({ ...record, rank: index + 1 }));
+  const pending = records
+    .filter(record => record.played === 0)
+    .sort((a, b) => a.comp_name.localeCompare(b.comp_name) || a.comp_id.localeCompare(b.comp_id))
+    .map(record => ({ ...record, rank: null }));
+
+  return [...ranked, ...pending];
+};
+
 const buildGroupStandings = (competitors, matches, advancePerGroup) => {
   const competitorMap = new Map(competitors.map(c => [c.comp_id, c]));
   const groupedMatches = new Map();
@@ -248,13 +401,12 @@ const buildGroupStandings = (competitors, matches, advancePerGroup) => {
 
       const groupCompetitors = Array.from(groupCompetitorIds)
         .map(compId => competitorMap.get(compId));
-      const rankings = rankStandings(groupCompetitors, groupMatches)
-        .map((record, index) => ({
+      const rankings = rankGroupStandings(groupCompetitors, groupMatches)
+        .map(record => ({
           ...record,
-          rank: record.played > 0 ? index + 1 : null,
           group_name: groupName,
           advanced: Number(advancePerGroup) > 0
-            ? record.played > 0 && index < Number(advancePerGroup)
+            ? record.rank !== null && record.rank <= Number(advancePerGroup)
             : false,
         }));
 
@@ -398,7 +550,7 @@ class TournamentRankingService {
     this.repository = repository;
   }
 
-  async getTournamentRankings(tourId) {
+  async getTournamentRankings(tourId, filters = {}) {
     if (!UUID_PATTERN.test(String(tourId || ''))) {
       throw new AppError('Invalid tournament id.', 400);
     }
@@ -415,7 +567,7 @@ class TournamentRankingService {
 
     if (tournament.tour_format === 'hybrid') {
       const response = this._buildHybridResponse(tournament, competitors, matches, state);
-      return decorateRankingResponse(response, participantType);
+      return decorateRankingResponse(applyRankingFilters(response, filters), participantType);
     }
 
     const stage = tournament.tour_format || null;
@@ -427,7 +579,7 @@ class TournamentRankingService {
       tournament.tour_format
     );
 
-    return decorateRankingResponse({
+    const response = {
       tournament_id: tournament.tour_id,
       tour_format: tournament.tour_format,
       ranking_type: rankingType,
@@ -436,7 +588,8 @@ class TournamentRankingService {
       rankings: stageResponse.rankings,
       groups: stageResponse.groups,
       stages: stage ? [stageResponse] : [],
-    }, participantType);
+    };
+    return decorateRankingResponse(applyRankingFilters(response, filters), participantType);
   }
 
   _buildHybridResponse(tournament, competitors, matches, state) {
@@ -491,6 +644,9 @@ class TournamentRankingService {
         ...standingsMetrics(record),
       ]
     );
+    const defaultRankings = currentStage === 'stage_1' && currentStageResponse?.format === 'round_robin'
+      ? currentStageResponse.rankings
+      : rankedOverall;
 
     return {
       tournament_id: tournament.tour_id,
@@ -498,7 +654,7 @@ class TournamentRankingService {
       ranking_type: 'hybrid',
       state,
       current_stage: currentStage,
-      rankings: rankedOverall,
+      rankings: defaultRankings,
       groups: stages.find(stage => stage.stage === 'stage_1')?.groups || [],
       stages,
       current_stage_rankings: currentStageResponse?.rankings || [],
@@ -541,7 +697,9 @@ class TournamentRankingService {
         stage,
         format,
         state,
-        rankings: rankStandings(stageCompetitors, matches),
+        rankings: groups.length > 0
+          ? groups.flatMap(group => group.rankings)
+          : rankStandings(stageCompetitors, matches),
         groups,
       };
     }

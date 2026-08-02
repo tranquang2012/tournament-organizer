@@ -142,7 +142,10 @@ class TournamentController {
 
   async getRankings(req, res, next) {
     try {
-      const data = await rankingService.getTournamentRankings(req.params.id);
+      const data = await rankingService.getTournamentRankings(req.params.id, {
+        stage: req.query.stage,
+        group: req.query.group,
+      });
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
