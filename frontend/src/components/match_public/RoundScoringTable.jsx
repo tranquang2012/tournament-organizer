@@ -1,3 +1,5 @@
+import trophy from '../../assets/trophy.png'
+
 const RoundScoringTable = ({ match }) => {
     const isCompleted = match.status === 'completed';
     const isOngoing = match.status === 'ongoing';
@@ -14,25 +16,25 @@ const RoundScoringTable = ({ match }) => {
             {/* Header */}
             <div className='flex items-center justify-between mb-3'>
                 <div className='flex items-center gap-2'>
-                    {isCompleted ? (
-                        <span className='flex items-center gap-1 text-green-500 font-semibold text-[14px]'>
+                    {!isCompleted ? (
+                        <span className='flex items-center gap-1 text-green-500 font-semibold text-[17px]'>
                             <span className='w-2 h-2 rounded-full bg-green-500 inline-block'></span> Finished
                         </span>
                     ) : (
-                        <span className='flex items-center gap-1 text-red-500 font-semibold text-[14px]'>
+                        <span className='flex items-center gap-1 text-red-500 font-semibold text-[17px]'>
                             <span className='w-2 h-2 rounded-full bg-red-500 inline-block animate-pulse'></span> Live
                         </span>
                     )}
                 </div>
-                <div className='flex items-center gap-2 font-bold text-[16px] uppercase tracking-wide'>
-                    Match Scores 🏆
+                <div className='flex items-center gap-2 font-bold text-[20px] uppercase tracking-wide'>
+                    Match Scores <img src={trophy} alt='trophy' className='w-3 h-3 md:h-6 md:w-6 object-contain' />
                 </div>
                 <div className='w-20' />
             </div>
 
             {/* Table */}
             <div className='border border-gray-200 rounded-[10px] overflow-hidden shadow-sm'>
-                <table className='w-full text-[14px]'>
+                <table className='w-full text-[15px]'>
                     <thead>
                         <tr className='bg-[#123836] text-white'>
                             <th className='text-left px-4 py-3 font-semibold'>Participants</th>
@@ -52,7 +54,7 @@ const RoundScoringTable = ({ match }) => {
                                         {rankBadge(p.rank) && <span>{rankBadge(p.rank)}</span>}
                                     </td>
                                     {p.scores.map((s, j) => (
-                                        <td key={j} className='text-center px-3 py-3 text-gray-700'>{s}</td>
+                                        <td key={j} className='text-center px-3 py-3 text-gray-700'>{!s ? '--' : s}</td>
                                     ))}
                                     <td className='text-center px-3 py-3 font-bold text-red-500'>{total}</td>
                                 </tr>
