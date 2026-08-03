@@ -14,7 +14,7 @@ router.patch('/:matchId', auth, requireAdminUser, ctrl.updateMatch.bind(ctrl));
 // Support contract-defined result endpoint for compatibility
 router.put('/:matchId/result', auth, requireAdminUser, ctrl.updateMatch.bind(ctrl));
 
-// ── NEW: schedule a match ─────────────────────────────────────────────────
+// schedule a match
 router.patch('/:matchId/schedule', auth, requireAdminUser, ctrl.scheduleMatch.bind(ctrl));
 
 module.exports = router;
