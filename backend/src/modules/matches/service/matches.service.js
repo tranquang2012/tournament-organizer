@@ -2,7 +2,7 @@ const pool = require('../../../shared/database/pool');
 const AppError = require('../../../shared/errors/AppError');
 const matchesRepository = require('../repository/matches.repository');
 const bracketService = require('../../tournament/service/bracket.service');
-const validateScheduleDto = require('../dto/scheduleMatch.dto');
+const {validateScheduleDto} = require('../dto/scheduleMatch.dto');
 
 class MatchesService {
   async getMatch(matchId) {
