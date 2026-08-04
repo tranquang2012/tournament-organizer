@@ -48,15 +48,6 @@ class MatchesService {
         }
       }
 
-      // If winner is not explicitly provided but scores are, determine winner automatically
-      if (winning_competitor_id === null && score1 !== null && score2 !== null && !is_draw) {
-        if (score1 > score2) {
-          winning_competitor_id = currentMatch.competitor1_id;
-        } else if (score2 > score1) {
-          winning_competitor_id = currentMatch.competitor2_id;
-        }
-      }
-
       // Determine old winner and loser
       const oldWinnerId = currentMatch.winning_competitor_id;
       let oldLoserId = null;

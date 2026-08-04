@@ -60,8 +60,8 @@ const RoundRobinMatchTemplate = ({ tournament }) => {
             id: m.match_id,
             status,
             round: m.group_name && m.group_name !== 'Group' ? `${m.group_name} - R${m.round}` : `Round ${m.round}`,
-            team1: { name: comp1?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'), logo: comp1?.comp_logo, score: result1?.score || 0, winner: m.winning_competitor_id === m.competitor1_id },
-            team2: { name: comp2?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'), logo: comp2?.comp_logo, score: result2?.score || 0, winner: m.winning_competitor_id === m.competitor2_id },
+            team1: { id: m.competitor1_id, name: comp1?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'), logo: comp1?.comp_logo, score: result1?.score || 0, winner: m.winning_competitor_id === m.competitor1_id },
+            team2: { id: m.competitor2_id, name: comp2?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'), logo: comp2?.comp_logo, score: result2?.score || 0, winner: m.winning_competitor_id === m.competitor2_id },
             startTime,
             endTime,
             date
