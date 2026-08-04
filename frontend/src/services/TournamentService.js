@@ -328,4 +328,9 @@ export const getTournamentBracket = async (tournamentId) => {
 export const getTournamentBrackets = async (tournamentId) => {
   const response = await axios.get(`/api/tournaments/${tournamentId}/brackets`);
   return response?.data || [];
+};
+
+export const getTournamentRankings = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/rankings`);
+  return response?.data || null;
 };

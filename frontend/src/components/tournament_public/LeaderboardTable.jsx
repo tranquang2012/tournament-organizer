@@ -17,7 +17,7 @@ const LeaderboardTable = ({ group, advanceCount }) => {
             </div>
             {group.teams.map((team, index) => {
                 const winRate = team.win + team.lose > 0 ? Math.round((team.win / (team.win + team.lose)) * 100) : 0
-                const isEliminated = team.eliminated || (typeof advanceCount === 'number' && advanceCount > 0 && team.rank > advanceCount);
+                const isEliminated = team.status === 'eliminated' || team.eliminated === true || (Number(advanceCount) > 0 && team.advanced === false);
                 return (
                     <div
                         key={index}
