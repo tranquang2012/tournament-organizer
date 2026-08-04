@@ -1,14 +1,55 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faCalendarDays, faCheckCircle } from '@fortawesome/free-regular-svg-icons';
 import InputField from '../common/InputField';
+import ConfirmationModal from '../common/ConfirmationModal';
+import { scheduleMatch } from '../../services/MatchService';
 
-const MatchCard = ({ match }) => {
-  const { status, round, team1, team2, startTime, endTime, date, autoStartAt, autoStopAt } = match;
+const MatchCard = ({ match, onUpdate }) => {
+  const { status, round, team1, team2, startTime, endTime, date, autoStartAt, autoStopAt, id } = match;
 
   const isLive = status === 'Live';
   const isUpcoming = status === 'Upcoming';
   const isCompleted = status === 'Completed';
+
+  const [scheduleDate, setScheduleDate] = useState(date || '');
+  const [scheduleStart, setScheduleStart] = useState(startTime || '');
+  const [scheduleEnd, setScheduleEnd] = useState(endTime || '');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [modalContent, setModalContent] = useState(null); // { title, description, intent }
+
+  const handleScheduleUpdate = async () => {
+    try {
+      if (!scheduleDate || !scheduleStart || !scheduleEnd) {
+        setModalContent({ title: 'Validation Error', description: 'Please fill in Date, Start Time, and End Time.', intent: 'danger' });
+        return;
+      }
+      setIsUpdating(true);
+      const startIso = new Date(`${scheduleDate}T${scheduleStart}`).toISOString();
+      const endIso = new Date(`${scheduleDate}T${scheduleEnd}`).toISOString();
+      const res = await scheduleMatch(id, startIso, endIso);
+      const warning = res?.data?.conflict_warning;
+      if (warning) {
+        setModalContent({ title: 'Schedule Conflict Detected', description: warning, intent: 'warning' });
+      } else {
+        if (onUpdate) onUpdate();
+        else window.location.reload();
+      }
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Error updating schedule';
+      setModalContent({ title: 'Update Failed', description: msg, intent: 'danger' });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setModalContent(null);
+    if (modalContent?.intent === 'warning') {
+      if (onUpdate) onUpdate();
+      else window.location.reload();
+    }
+  };
 
   let borderColor = 'border-slate-200';
   let badgeColor = 'bg-slate-100 text-slate-600';
@@ -120,29 +161,41 @@ const MatchCard = ({ match }) => {
                 <FontAwesomeIcon icon={faCalendarDays} className="text-slate-400 text-sm" />
                 <InputField
                   type="date"
-                  defaultValue={date || ''}
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
                   className="w-40"
-                  disabled={isCompleted}
+                  disabled={isCompleted || isUpdating}
                 />
              </div>
              <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-slate-600">Start</span>
                 <InputField
                   type="time"
-                  defaultValue={startTime}
+                  value={scheduleStart}
+                  onChange={(e) => setScheduleStart(e.target.value)}
                   className="w-32"
-                  disabled={isCompleted}
+                  disabled={isCompleted || isUpdating}
                 />
              </div>
              <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-slate-600">End</span>
                 <InputField
                   type="time"
-                  defaultValue={endTime}
+                  value={scheduleEnd}
+                  onChange={(e) => setScheduleEnd(e.target.value)}
                   className="w-32"
-                  disabled={isCompleted}
+                  disabled={isCompleted || isUpdating}
                 />
              </div>
+             {(scheduleDate !== (date || '') || scheduleStart !== (startTime || '') || scheduleEnd !== (endTime || '')) && (
+               <button 
+                 onClick={handleScheduleUpdate}
+                 disabled={isUpdating}
+                 className="px-3 py-1.5 bg-[#123836] text-white text-xs font-bold rounded-lg hover:bg-[#123836]/80 transition-colors shadow-sm cursor-pointer"
+               >
+                 {isUpdating ? 'Saving...' : 'Save Schedule'}
+               </button>
+             )}
           </div>
           {isLive && autoStopAt && (
             <span className="text-[11px] font-medium text-emerald-600 ml-5">
@@ -183,6 +236,17 @@ const MatchCard = ({ match }) => {
         </div>
 
       </div>
+
+      <ConfirmationModal
+        open={!!modalContent}
+        onClose={handleCloseModal}
+        onConfirm={handleCloseModal}
+        title={modalContent?.title}
+        description={modalContent?.description}
+        intent={modalContent?.intent}
+        confirmLabel="Understood"
+        cancelLabel="Close"
+      />
     </div>
   );
 };
