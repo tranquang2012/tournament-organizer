@@ -215,6 +215,9 @@ const buildSportParticipantsPayload = async (data) => {
 
 const buildFormatConfigPayload = (data) => ({
   tour_format: data.format,
+  group_count: data.format === 'hybrid' ? Number(data.hybridGroups) : undefined,
+  advance_per_group: data.format === 'hybrid' ? Number(data.hybridAdvancing) : undefined,
+  second_stage_format: data.format === 'hybrid' ? data.hybridSecondRound : undefined,
 });
 
 const withTournamentAuth = async () => {
@@ -311,3 +314,18 @@ export const discardTournamentDraft = async (tournamentId) => {
   const authConfig = await withTournamentAuth();
   return axios.delete(`/api/tournaments/${tournamentId}/discard`, authConfig);
 };
+
+export const getPublicTournamentById = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/public`);
+  return response?.data || null;
+};
+
+export const getTournamentBracket = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/bracket`);
+  return response?.data || [];
+};
+
+export const getTournamentBrackets = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/brackets`);
+  return response?.data || [];
+};
