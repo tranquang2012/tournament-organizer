@@ -25,6 +25,7 @@ import TournamentCreatePage from './pages/admin/TournamentCreatePage.jsx'
 import TournamentManagePage from './pages/admin/TournamentManagePage.jsx'
 import TournamentEditPage from './pages/admin/TournamentEditPage.jsx'
 import UserManagementPage from './pages/admin/UserManagementPage.jsx'
+import CalendarPage from './pages/public/CalendarPage.jsx'
 
 const AuthProviderWrapper = () => (
   <AuthProvider>
@@ -41,6 +42,7 @@ const router = createBrowserRouter(
         <Route path="/sports/:id" element={<SportsPage />} />
         <Route path="/tournaments/:id" element={<TournamentPage />} />
         <Route path="/matches/:id" element={<MatchesPage />} />
+        <Route path="/calendar" element={<CalendarPage />} />
         <Route
           path="account-management"
           element={
