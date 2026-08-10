@@ -17,4 +17,12 @@ router.put('/:matchId/result', auth, requireAdminUser, ctrl.updateMatch.bind(ctr
 // schedule a match
 router.patch('/:matchId/schedule', auth, requireAdminUser, ctrl.scheduleMatch.bind(ctrl));
 
+const statCtrl = require('./controller/matchStat.controller');
+
+// Match Stats
+router.get('/:id/stats', statCtrl.getStats.bind(statCtrl));
+router.post('/:id/stats', auth, requireAdminUser, statCtrl.createStat.bind(statCtrl));
+router.patch('/:id/stats/:statId', auth, requireAdminUser, statCtrl.updateStat.bind(statCtrl));
+router.delete('/:id/stats/:statId', auth, requireAdminUser, statCtrl.deleteStat.bind(statCtrl));
+
 module.exports = router;

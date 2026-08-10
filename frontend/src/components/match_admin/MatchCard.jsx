@@ -4,6 +4,8 @@ import { faClock, faCalendarDays, faCheckCircle } from '@fortawesome/free-regula
 import InputField from '../common/InputField';
 import ConfirmationModal from '../common/ConfirmationModal';
 import { scheduleMatch, updateMatch } from '../../services/MatchService';
+import MatchStatModal from './MatchStatModal';
+import { faChartBar } from '@fortawesome/free-solid-svg-icons';
 
 const MatchCard = ({ match, onUpdate }) => {
   const { status, round, team1, team2, startTime, endTime, date, autoStartAt, autoStopAt, id } = match;
@@ -19,6 +21,7 @@ const MatchCard = ({ match, onUpdate }) => {
   const [localScore2, setLocalScore2] = useState(team2.score || 0);
   const [isUpdating, setIsUpdating] = useState(false);
   const [modalContent, setModalContent] = useState(null); 
+  const [showStatsModal, setShowStatsModal] = useState(false);
 
   const handleScoreBlur = async () => {
     if (localScore1 === (team1.score || 0) && localScore2 === (team2.score || 0)) return;
@@ -285,6 +288,16 @@ const MatchCard = ({ match, onUpdate }) => {
 
         {/* Right: Action Buttons */}
         <div className="flex items-center gap-3">
+          {(isLive || isCompleted) && (
+            <button 
+              onClick={() => setShowStatsModal(true)}
+              className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer flex items-center gap-2"
+            >
+              <FontAwesomeIcon icon={faChartBar} />
+              Stats
+            </button>
+          )}
+
           {isLive && (
             <>
               <button 
@@ -323,6 +336,15 @@ const MatchCard = ({ match, onUpdate }) => {
         confirmLabel={modalContent?.confirmLabel || "Understood"}
         cancelLabel={modalContent?.cancelLabel || "Close"}
       />
+
+      {showStatsModal && (
+        <MatchStatModal
+          matchId={id}
+          team1={team1}
+          team2={team2}
+          onClose={() => setShowStatsModal(false)}
+        />
+      )}
     </div>
   );
 };

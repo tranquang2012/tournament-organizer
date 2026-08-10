@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const ctrl = require('./controller/tournament.controller');
+const statTemplateCtrl = require('./controller/statTemplate.controller');
 const auth = require('../../shared/middleware/authenticateSupabaseUser');
 const requireAdminUser = require('../../shared/middleware/requireAdminUser');
 const { SPORT_RULES } = require('./config/sportRules.config');
@@ -52,5 +53,10 @@ router.post('/:id/generate-bracket', ctrl.generateBracket.bind(ctrl));
 
 // Submit scores for a round_scoring round
 router.post('/:id/bracket/rounds/:matchId/scores', ctrl.submitRoundScores.bind(ctrl));
+
+// Stat Templates
+router.get('/:id/stat-templates', statTemplateCtrl.getTemplates.bind(statTemplateCtrl));
+router.post('/:id/stat-templates', statTemplateCtrl.createTemplate.bind(statTemplateCtrl));
+router.delete('/:id/stat-templates/:templateId', statTemplateCtrl.deleteTemplate.bind(statTemplateCtrl));
 
 module.exports = router;

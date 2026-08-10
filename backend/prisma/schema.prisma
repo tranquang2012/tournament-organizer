@@ -553,9 +553,9 @@ model tournament {
   tour_round          Int           @default(1) @db.SmallInt
   group_count         Int?          @default(1) @db.SmallInt
   advance_per_group   Int?          @default(0) @db.SmallInt
-  participant_type    String?
   first_stage_format  String?       @db.VarChar(50)
   second_stage_format String?       @db.VarChar(50)
+  participant_type    String?
   competitors         competitors[]
   matches             matches[]
   sport               sport?        @relation(fields: [sp_id], references: [sport_id], onDelete: NoAction, onUpdate: NoAction)
@@ -680,4 +680,14 @@ enum one_time_token_type {
   phone_change_token
 
   @@schema("auth")
+}
+
+enum stat_value_type {
+  INTEGER
+  PERCENTAGE
+  TEXT
+  DURATION
+  BOOLEAN
+
+  @@schema("public")
 }

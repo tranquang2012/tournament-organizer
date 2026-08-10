@@ -12,6 +12,32 @@ import {
 import { deleteTournament } from '../../services/TournamentService';
 import Button from '../common/Button';
 
+const ActionButton = ({ icon, label, sublabel, onClick, variant = 'default' }) => {
+  const isDanger = variant === 'danger';
+  return (
+    <button
+      onClick={onClick}
+      className={`w-full flex items-center gap-4 px-4 ${isDanger ? 'py-3.5 mt-1' : 'py-4'} rounded-xl border ${
+        isDanger
+          ? 'border-transparent bg-transparent hover:bg-red-50 hover:border-red-100'
+          : 'border-slate-200 bg-white hover:bg-slate-50 hover:border-[#123836] hover:shadow-sm'
+      } transition-all duration-200 cursor-pointer text-left group`}
+    >
+      <div className={`w-10 h-10 rounded-xl ${isDanger ? 'bg-transparent group-hover:bg-red-100' : 'bg-[#f0fdf4] group-hover:bg-[#123836]'} flex items-center justify-center shrink-0 transition-colors duration-200`}>
+        <FontAwesomeIcon
+          icon={icon}
+          className={`text-sm transition-colors duration-200 ${isDanger ? 'text-slate-400 group-hover:text-red-600' : 'text-[#123836] group-hover:text-white'}`}
+        />
+      </div>
+      <div className="flex-1 min-w-0">
+        <p className={`text-sm font-bold mb-0.5 transition-colors duration-200 ${isDanger ? 'text-slate-600 group-hover:text-red-600' : 'text-slate-800'}`}>{label}</p>
+        <p className={`text-xs leading-relaxed transition-colors duration-200 ${isDanger ? 'text-slate-400 group-hover:text-red-500/80' : 'text-slate-400'}`}>{sublabel}</p>
+      </div>
+      <FontAwesomeIcon icon={faChevronRight} className={`text-xs shrink-0 transition-colors duration-200 ${isDanger ? 'text-slate-300 group-hover:text-red-500' : 'text-slate-300 group-hover:text-[#123836]'}`} />
+    </button>
+  );
+};
+
 const TournamentActionModal = ({ tournament, onClose, onDeleted }) => {
   const navigate = useNavigate();
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -48,6 +74,12 @@ const TournamentActionModal = ({ tournament, onClose, onDeleted }) => {
     onClose();
     setConfirmDelete(false);
     navigate(`/admin/tournaments/${id}/edit`);
+  };
+
+  const handleNavigate = (path) => {
+    onClose();
+    setConfirmDelete(false);
+    navigate(path);
   };
 
   const handleDelete = async () => {
@@ -142,71 +174,34 @@ const TournamentActionModal = ({ tournament, onClose, onDeleted }) => {
                   What would you like to do?
                 </p>
 
-                {/* Edit Tournament */}
-                <button
+                <ActionButton
+                  icon={faPenToSquare}
+                  label="Edit Tournament"
+                  sublabel="Update details, participants, and banner"
                   onClick={handleEditTournament}
-                  className="w-full flex items-center gap-4 px-4 py-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-[#123836] hover:shadow-sm transition-all duration-200 cursor-pointer text-left group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-[#f0fdf4] flex items-center justify-center shrink-0 group-hover:bg-[#123836] transition-colors duration-200">
-                    <FontAwesomeIcon
-                      icon={faPenToSquare}
-                      className="text-[#123836] text-sm group-hover:text-white transition-colors duration-200"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-800 mb-0.5">Edit Tournament</p>
-                    <p className="text-xs text-slate-400 leading-relaxed">
-                      Update details, participants, and banner
-                    </p>
-                  </div>
-                  <FontAwesomeIcon icon={faChevronRight} className="text-slate-300 text-xs shrink-0 group-hover:text-[#123836] transition-colors duration-200" />
-                </button>
+                />
 
-                {/* Configure Matches */}
-                <button
-                  onClick={() => {
-                    onClose();
-                    setConfirmDelete(false);
-                    navigate(`/admin/tournaments/${id}/matches`);
-                  }}
-                  className="w-full flex items-center gap-4 px-4 py-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:border-[#123836] hover:shadow-sm transition-all duration-200 cursor-pointer text-left group"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-[#f0fdf4] flex items-center justify-center shrink-0 group-hover:bg-[#123836] transition-colors duration-200">
-                    <FontAwesomeIcon
-                      icon={faDiagramProject}
-                      className="text-[#123836] text-sm group-hover:text-white transition-colors duration-200"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-800 mb-0.5">Configure Matches</p>
-                    <p className="text-xs text-slate-400 leading-relaxed">
-                      Manage brackets, schedule matches, and scores
-                    </p>
-                  </div>
-                  <FontAwesomeIcon icon={faChevronRight} className="text-slate-300 text-xs shrink-0 group-hover:text-[#123836] transition-colors duration-200" />
-                </button>
+                <ActionButton
+                  icon={faDiagramProject}
+                  label="Manage Stat Templates"
+                  sublabel="Define global statistics for matches"
+                  onClick={() => handleNavigate(`/admin/tournaments/${id}/stat-templates`)}
+                />
 
-                {/* Delete Tournament */}
-                <button
+                <ActionButton
+                  icon={faDiagramProject}
+                  label="Configure Matches"
+                  sublabel="Manage brackets, schedule matches, and scores"
+                  onClick={() => handleNavigate(`/admin/tournaments/${id}/matches`)}
+                />
+
+                <ActionButton
+                  icon={faTrashCan}
+                  label="Delete Tournament"
+                  sublabel="Permanently remove this tournament"
                   onClick={() => setConfirmDelete(true)}
-                  className="w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border border-transparent bg-transparent hover:bg-red-50 hover:border-red-100 transition-all duration-200 cursor-pointer text-left group mt-1"
-                >
-                  <div className="w-10 h-10 rounded-xl bg-transparent flex items-center justify-center shrink-0 group-hover:bg-red-100 transition-colors duration-200">
-                    <FontAwesomeIcon
-                      icon={faTrashCan}
-                      className="text-slate-400 text-sm group-hover:text-red-600 transition-colors duration-200"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-bold text-slate-600 group-hover:text-red-600 transition-colors duration-200 mb-0.5">
-                      Delete Tournament
-                    </p>
-                    <p className="text-xs text-slate-400 group-hover:text-red-500/80 transition-colors duration-200 leading-relaxed">
-                      Permanently remove this tournament
-                    </p>
-                  </div>
-                  <FontAwesomeIcon icon={faChevronRight} className="text-slate-300 text-xs shrink-0 group-hover:text-red-500 transition-colors duration-200" />
-                </button>
+                  variant="danger"
+                />
               </div>
 
               {/* Footer */}
