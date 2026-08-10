@@ -1,4 +1,5 @@
 import { Calendar, dayjsLocalizer } from 'react-big-calendar'
+import { useState } from 'react'
 import dayjs from 'dayjs'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 
@@ -24,11 +25,25 @@ const mockEvents = [
     { id: 5, title: 'Match 14 (Valorant tournament 1)', start: new Date(2026, 4, 24, 18, 0), end: new Date(2026, 4, 24, 19, 30) },
 ]
 
+const EventComponent = ({ event }) => (
+    <div>
+        <div style={{ fontSize: '11px', opacity: 0.8 }}>
+            {dayjs(event.start).format('h:mm A')} – {dayjs(event.end).format('h:mm A')}
+        </div>
+        <div style={{ fontSize: '13px', fontWeight: 600 }}>
+            {event.title}
+        </div>
+    </div>
+)
+
 const CalendarPage = () => {
+    const [currentView, setCurrentView] = useState('day')
+    const [currentDate, setCurrentDate] = useState(new Date(2026, 4, 24))
+
     return (
         <div className='flex flex-col'>
-            <div className='bg-[#123836] text-white px-[3%] py-3'>
-                <span className='text-[35px]'>Tournament Calendar</span>
+            <div className='bg-[#123836] text-white px-8 py-5'>
+                <span className='text-[22px] font-semibold'>Tournament Calendar</span>
             </div>
 
             <div className='p-8' style={{ height: '90vh' }}>
@@ -65,20 +80,41 @@ const CalendarPage = () => {
                         border-radius: 6px !important;
                         border: none !important;
                         padding: 3px 8px !important;
-                        font-size: 15px !important;
-                        font-weight: 500 !important;
                         box-shadow: 0 1px 3px rgba(0,0,0,0.15);
                     }
-                    .rbc-event-label { font-size: 14px !important; opacity: 0.85; }
+                    .rbc-event-label { display: none; }
                     .rbc-today { background: #f0fdf4 !important; }
+
+                    /* Hover ô ngày trong month view */
+                    .rbc-month-row .rbc-day-bg {
+                        cursor: pointer;
+                        transition: background 0.2s;
+                    }
+                    .rbc-month-row .rbc-day-bg:hover {
+                        background: #e6f0ee !important;
+                    }
+                    .rbc-date-cell {
+                        cursor: pointer;
+                    }
                 `}</style>
 
                 <Calendar
                     localizer={localizer}
                     events={mockEvents}
-                    defaultView='day'
+                    view={currentView}
+                    date={currentDate}
                     views={['month', 'day']}
-                    defaultDate={new Date(2026, 4, 24)}
+                    onView={(view) => setCurrentView(view)}
+                    onNavigate={(date) => setCurrentDate(date)}
+                    onDrillDown={(date) => {
+                        setCurrentDate(date)
+                        setCurrentView('day')
+                    }}
+                    selectable={true}
+                    onSelectSlot={(slot) => {
+                        setCurrentDate(slot.start)
+                        setCurrentView('day')
+                    }}
                     dayLayoutAlgorithm='no-overlap'
                     eventPropGetter={(event) => ({
                         style: {
@@ -86,6 +122,9 @@ const CalendarPage = () => {
                             opacity: 0.9,
                         }
                     })}
+                    components={{
+                        event: EventComponent
+                    }}
                     onSelectEvent={(event) => console.log('Clicked:', event.title)}
                     formats={{
                         timeGutterFormat: (date, culture, loc) =>
