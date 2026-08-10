@@ -10,6 +10,119 @@ const MatchCard = ({ match }) => {
   const isUpcoming = status === 'Upcoming';
   const isCompleted = status === 'Completed';
 
+<<<<<<< Updated upstream
+=======
+  const [scheduleDate, setScheduleDate] = useState(date || '');
+  const [scheduleStart, setScheduleStart] = useState(startTime || '');
+  const [scheduleEnd, setScheduleEnd] = useState(endTime || '');
+  const [localScore1, setLocalScore1] = useState(team1.score || 0);
+  const [localScore2, setLocalScore2] = useState(team2.score || 0);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [modalContent, setModalContent] = useState(null); 
+  const [showStatsModal, setShowStatsModal] = useState(false);
+
+  const handleScoreBlur = async () => {
+    if (localScore1 === (team1.score || 0) && localScore2 === (team2.score || 0)) return;
+    try {
+      setIsUpdating(true);
+      await updateMatch(id, { score1: Number(localScore1), score2: Number(localScore2) });
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Error updating score';
+      setModalContent({ title: 'Update Failed', description: msg, intent: 'danger' });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleStartMatch = async () => {
+    try {
+      setIsUpdating(true);
+      await updateMatch(id, { status: 'running' });
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Error starting match';
+      setModalContent({ title: 'Start Failed', description: msg, intent: 'danger' });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const confirmEndMatch = async () => {
+    try {
+      setIsUpdating(true);
+      const s1 = Number(localScore1);
+      const s2 = Numbegr(localScore2);
+      
+      let winnerId = null;
+      let isDraw = false;
+      
+      if (s1 > s2) winnerId = team1.id;
+      else if (s2 > s1) winnerId = team2.id;
+      else isDraw = true;
+
+      await updateMatch(id, { 
+        score1: s1, 
+        score2: s2, 
+        winning_competitor_id: winnerId,
+        is_draw: isDraw,
+        status: 'completed'
+      });
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Error ending match';
+      setModalContent({ title: 'End Match Failed', description: msg, intent: 'danger' });
+    } finally {
+      setIsUpdating(false);
+      setModalContent(null);
+    }
+  };
+
+  const handleEndMatchClick = () => {
+    setModalContent({
+      title: 'Confirm Match End',
+      description: 'Are you sure you want to end this match? This will lock the scores and officially determine the winner.',
+      intent: 'warning',
+      confirmLabel: 'End Match',
+      cancelLabel: 'Cancel',
+      action: confirmEndMatch
+    });
+  };
+
+  const handleScheduleUpdate = async () => {
+    try {
+      if (!scheduleDate || !scheduleStart || !scheduleEnd) {
+        setModalContent({ title: 'Validation Error', description: 'Please fill in Date, Start Time, and End Time.', intent: 'danger' });
+        return;
+      }
+      setIsUpdating(true);
+      const startIso = new Date(`${scheduleDate}T${scheduleStart}`).toISOString();
+      const endIso = new Date(`${scheduleDate}T${scheduleEnd}`).toISOString();
+      const res = await scheduleMatch(id, startIso, endIso);
+      const warning = res?.data?.conflict_warning;
+      if (warning) {
+        setModalContent({ title: 'Schedule Conflict Detected', description: warning, intent: 'warning' });
+      } else {
+        if (onUpdate) onUpdate();
+        else window.location.reload();
+      }
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Error updating schedule';
+      setModalContent({ title: 'Update Failed', description: msg, intent: 'danger' });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    if (modalContent?.intent === 'warning' && !modalContent?.action) {
+      if (onUpdate) onUpdate();
+      else window.location.reload();
+    }
+    setModalContent(null);
+  };
+
+>>>>>>> Stashed changes
   let borderColor = 'border-slate-200';
   let badgeColor = 'bg-slate-100 text-slate-600';
   let badgeDot = 'bg-slate-400';
