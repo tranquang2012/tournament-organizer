@@ -1,9 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTableCells, faRankingStar, faFilter, faTrophy, faCalendarDays, faBolt, faClock, faCheck } from '@fortawesome/free-solid-svg-icons';
 import MatchCard from './MatchCard';
 import GroupStandingsTable from './GroupStandingsTable';
-import { mockRoundRobinMatches, mockGroupStandings } from './mockMatchData';
+import { getTournamentBracket, getTournamentRankings } from '../../services/TournamentService';
 
 import imgFootball from '../../assets/sportImages/football.jpg';
 
@@ -16,10 +16,84 @@ const RoundRobinMatchTemplate = ({ tournament }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [roundFilter, setRoundFilter] = useState('All Rounds');
+  const [matches, setMatches] = useState([]);
+  const [standings, setStandings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
-  // Mock
-  const matches = mockRoundRobinMatches;
-  const standings = mockGroupStandings;
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setIsLoading(true);
+        const [bracketData, rankData] = await Promise.all([
+          getTournamentBracket(tournament.tour_id),
+          getTournamentRankings(tournament.tour_id)
+        ]);
+
+        const mappedMatches = (bracketData || []).map(m => {
+          let status = 'Upcoming';
+          if (m.status === 'completed' || m.status === 'resolved' || m.status === 'bye') status = 'Completed';
+          else if (m.status === 'running') status = 'Live';
+
+          const comp1 = m.competitors?.find(c => c.comp_id === m.competitor1_id);
+          const comp2 = m.competitors?.find(c => c.comp_id === m.competitor2_id);
+          const result1 = m.results?.find(r => r.comp_id === m.competitor1_id);
+          const result2 = m.results?.find(r => r.comp_id === m.competitor2_id);
+
+          let startTime = '';
+          let endTime = '';
+          let date = '';
+          if (m.scheduled_start) {
+            const sd = new Date(m.scheduled_start);
+            const year = sd.getFullYear();
+            const month = String(sd.getMonth() + 1).padStart(2, '0');
+            const day = String(sd.getDate()).padStart(2, '0');
+            date = `${year}-${month}-${day}`;
+            startTime = `${String(sd.getHours()).padStart(2, '0')}:${String(sd.getMinutes()).padStart(2, '0')}`;
+          }
+          if (m.scheduled_end) {
+            const ed = new Date(m.scheduled_end);
+            endTime = `${String(ed.getHours()).padStart(2, '0')}:${String(ed.getMinutes()).padStart(2, '0')}`;
+          }
+
+          return {
+            id: m.match_id,
+            status,
+            round: m.group_name && m.group_name !== 'Group' ? `${m.group_name} - R${m.round}` : `Round ${m.round}`,
+            team1: { id: m.competitor1_id, name: comp1?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'), logo: comp1?.comp_logo, score: result1?.score || 0, winner: m.winning_competitor_id === m.competitor1_id },
+            team2: { id: m.competitor2_id, name: comp2?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'), logo: comp2?.comp_logo, score: result2?.score || 0, winner: m.winning_competitor_id === m.competitor2_id },
+            startTime,
+            endTime,
+            date
+          };
+        });
+        setMatches(mappedMatches);
+
+        const mappedStandings = (rankData?.groups?.[0]?.rankings || []).map((r, idx) => {
+          const played = (r.wins || 0) + (r.losses || 0);
+          return {
+            rank: idx + 1,
+            team: { name: r.comp_name, logo: r.comp_logo },
+            played,
+            wins: r.wins || 0,
+            losses: r.losses || 0,
+            winRate: played > 0 ? `${Math.round((r.wins / played) * 100)}%` : '0%',
+          };
+        });
+        setStandings(mappedStandings);
+
+      } catch (err) {
+        console.error('Failed to fetch round robin data:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    if (tournament?.tour_id) fetchData();
+  }, [tournament, refreshTrigger]);
+
+  const handleMatchUpdate = () => {
+    setRefreshTrigger(prev => prev + 1);
+  };
 
   // Mock stats
   const totalMatches = matches.length;
@@ -223,9 +297,13 @@ const RoundRobinMatchTemplate = ({ tournament }) => {
 
           {/* 4. Match Cards */}
           <div className="flex flex-col gap-2">
-            {filteredMatches.length > 0 ? (
+            {isLoading ? (
+               <div className="flex justify-center items-center min-h-[20vh]">
+                 <div className="w-8 h-8 border-4 border-slate-200 border-t-[#123836] rounded-full animate-spin" />
+               </div>
+            ) : filteredMatches.length > 0 ? (
               filteredMatches.map(match => (
-                <MatchCard key={match.id} match={match} />
+                <MatchCard key={match.id} match={match} onUpdate={handleMatchUpdate} />
               ))
             ) : (
               <div className="py-12 text-center text-slate-400 font-medium bg-white rounded-xl border border-dashed border-slate-300">
@@ -238,7 +316,13 @@ const RoundRobinMatchTemplate = ({ tournament }) => {
 
       {activeTab === 'standings' && (
         <div className="animate-[fadeIn_0.2s_ease-out]">
-          <GroupStandingsTable standings={standings} totalRoundRobinMatches={totalMatches} />
+          {isLoading ? (
+            <div className="flex justify-center items-center min-h-[20vh]">
+               <div className="w-8 h-8 border-4 border-slate-200 border-t-[#123836] rounded-full animate-spin" />
+            </div>
+          ) : (
+            <GroupStandingsTable standings={standings} totalRoundRobinMatches={totalMatches} />
+          )}
         </div>
       )}
 

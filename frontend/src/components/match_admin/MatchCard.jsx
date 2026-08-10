@@ -1,14 +1,128 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faCalendarDays, faCheckCircle } from '@fortawesome/free-regular-svg-icons';
 import InputField from '../common/InputField';
+import ConfirmationModal from '../common/ConfirmationModal';
+import { scheduleMatch, updateMatch } from '../../services/MatchService';
+import MatchStatModal from './MatchStatModal';
+import { faChartBar } from '@fortawesome/free-solid-svg-icons';
 
-const MatchCard = ({ match }) => {
-  const { status, round, team1, team2, startTime, endTime, date, autoStartAt, autoStopAt } = match;
+const MatchCard = ({ match, onUpdate }) => {
+  const { status, round, team1, team2, startTime, endTime, date, autoStartAt, autoStopAt, id } = match;
 
   const isLive = status === 'Live';
   const isUpcoming = status === 'Upcoming';
   const isCompleted = status === 'Completed';
+
+  const [scheduleDate, setScheduleDate] = useState(date || '');
+  const [scheduleStart, setScheduleStart] = useState(startTime || '');
+  const [scheduleEnd, setScheduleEnd] = useState(endTime || '');
+  const [localScore1, setLocalScore1] = useState(team1.score || 0);
+  const [localScore2, setLocalScore2] = useState(team2.score || 0);
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [modalContent, setModalContent] = useState(null); 
+  const [showStatsModal, setShowStatsModal] = useState(false);
+
+  const handleScoreBlur = async () => {
+    if (localScore1 === (team1.score || 0) && localScore2 === (team2.score || 0)) return;
+    try {
+      setIsUpdating(true);
+      await updateMatch(id, { score1: Number(localScore1), score2: Number(localScore2) });
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Error updating score';
+      setModalContent({ title: 'Update Failed', description: msg, intent: 'danger' });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleStartMatch = async () => {
+    try {
+      setIsUpdating(true);
+      await updateMatch(id, { status: 'running' });
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Error starting match';
+      setModalContent({ title: 'Start Failed', description: msg, intent: 'danger' });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const confirmEndMatch = async () => {
+    try {
+      setIsUpdating(true);
+      const s1 = Number(localScore1);
+      const s2 = Number(localScore2);
+      
+      let winnerId = null;
+      let isDraw = false;
+      
+      if (s1 > s2) winnerId = team1.id;
+      else if (s2 > s1) winnerId = team2.id;
+      else isDraw = true;
+
+      await updateMatch(id, { 
+        score1: s1, 
+        score2: s2, 
+        winning_competitor_id: winnerId,
+        is_draw: isDraw,
+        status: 'completed'
+      });
+      if (onUpdate) onUpdate();
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Error ending match';
+      setModalContent({ title: 'End Match Failed', description: msg, intent: 'danger' });
+    } finally {
+      setIsUpdating(false);
+      setModalContent(null);
+    }
+  };
+
+  const handleEndMatchClick = () => {
+    setModalContent({
+      title: 'Confirm Match End',
+      description: 'Are you sure you want to end this match? This will lock the scores and officially determine the winner.',
+      intent: 'warning',
+      confirmLabel: 'End Match',
+      cancelLabel: 'Cancel',
+      action: confirmEndMatch
+    });
+  };
+
+  const handleScheduleUpdate = async () => {
+    try {
+      if (!scheduleDate || !scheduleStart || !scheduleEnd) {
+        setModalContent({ title: 'Validation Error', description: 'Please fill in Date, Start Time, and End Time.', intent: 'danger' });
+        return;
+      }
+      setIsUpdating(true);
+      const startIso = new Date(`${scheduleDate}T${scheduleStart}`).toISOString();
+      const endIso = new Date(`${scheduleDate}T${scheduleEnd}`).toISOString();
+      const res = await scheduleMatch(id, startIso, endIso);
+      const warning = res?.data?.conflict_warning;
+      if (warning) {
+        setModalContent({ title: 'Schedule Conflict Detected', description: warning, intent: 'warning' });
+      } else {
+        if (onUpdate) onUpdate();
+        else window.location.reload();
+      }
+    } catch (err) {
+      const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Error updating schedule';
+      setModalContent({ title: 'Update Failed', description: msg, intent: 'danger' });
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    if (modalContent?.intent === 'warning' && !modalContent?.action) {
+      if (onUpdate) onUpdate();
+      else window.location.reload();
+    }
+    setModalContent(null);
+  };
 
   let borderColor = 'border-slate-200';
   let badgeColor = 'bg-slate-100 text-slate-600';
@@ -73,15 +187,19 @@ const MatchCard = ({ match }) => {
         <div className="flex items-center justify-center gap-4 px-6">
           <input 
             type="number"
-            defaultValue={team1.score}
-            disabled={!isLive}
+            value={localScore1}
+            onChange={(e) => setLocalScore1(e.target.value)}
+            onBlur={handleScoreBlur}
+            disabled={!isLive || isUpdating}
             className={`w-14 h-12 text-center outline-none rounded-lg border-2 text-xl font-bold focus:ring-2 focus:ring-[#123836]/20 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isLive ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : isCompleted ? 'border-slate-300 bg-slate-100 text-slate-800' : 'border-slate-200 bg-slate-50 text-slate-400'}`}
           />
           <div className="text-slate-400 font-bold text-sm">VS</div>
           <input 
             type="number"
-            defaultValue={team2.score}
-            disabled={!isLive}
+            value={localScore2}
+            onChange={(e) => setLocalScore2(e.target.value)}
+            onBlur={handleScoreBlur}
+            disabled={!isLive || isUpdating}
             className={`w-14 h-12 text-center outline-none rounded-lg border-2 text-xl font-bold focus:ring-2 focus:ring-[#123836]/20 transition-all [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${isLive ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : isCompleted ? 'border-slate-300 bg-slate-100 text-slate-800' : 'border-slate-200 bg-slate-50 text-slate-400'}`}
           />
         </div>
@@ -120,29 +238,41 @@ const MatchCard = ({ match }) => {
                 <FontAwesomeIcon icon={faCalendarDays} className="text-slate-400 text-sm" />
                 <InputField
                   type="date"
-                  defaultValue={date || ''}
+                  value={scheduleDate}
+                  onChange={(e) => setScheduleDate(e.target.value)}
                   className="w-40"
-                  disabled={isCompleted}
+                  disabled={isCompleted || isUpdating}
                 />
              </div>
              <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-slate-600">Start</span>
                 <InputField
                   type="time"
-                  defaultValue={startTime}
+                  value={scheduleStart}
+                  onChange={(e) => setScheduleStart(e.target.value)}
                   className="w-32"
-                  disabled={isCompleted}
+                  disabled={isCompleted || isUpdating}
                 />
              </div>
              <div className="flex items-center gap-2">
                 <span className="text-sm font-semibold text-slate-600">End</span>
                 <InputField
                   type="time"
-                  defaultValue={endTime}
+                  value={scheduleEnd}
+                  onChange={(e) => setScheduleEnd(e.target.value)}
                   className="w-32"
-                  disabled={isCompleted}
+                  disabled={isCompleted || isUpdating}
                 />
              </div>
+             {(scheduleDate !== (date || '') || scheduleStart !== (startTime || '') || scheduleEnd !== (endTime || '')) && (
+               <button 
+                 onClick={handleScheduleUpdate}
+                 disabled={isUpdating}
+                 className="px-3 py-1.5 bg-[#123836] text-white text-xs font-bold rounded-lg hover:bg-[#123836]/80 transition-colors shadow-sm cursor-pointer"
+               >
+                 {isUpdating ? 'Saving...' : 'Save Schedule'}
+               </button>
+             )}
           </div>
           {isLive && autoStopAt && (
             <span className="text-[11px] font-medium text-emerald-600 ml-5">
@@ -158,24 +288,36 @@ const MatchCard = ({ match }) => {
 
         {/* Right: Action Buttons */}
         <div className="flex items-center gap-3">
+          {(isLive || isCompleted) && (
+            <button 
+              onClick={() => setShowStatsModal(true)}
+              className="px-4 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer flex items-center gap-2"
+            >
+              <FontAwesomeIcon icon={faChartBar} />
+              Stats
+            </button>
+          )}
+
           {isLive && (
             <>
-              <button className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm cursor-pointer">
+              <button 
+                onClick={handleEndMatchClick}
+                disabled={isUpdating}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-red-500 hover:bg-red-600 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              >
                 End Match
-              </button>
-              <button className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-sm cursor-pointer">
-                Stop Match
               </button>
             </>
           )}
           
           {isUpcoming && (
             <>
-              <button className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-600 transition-colors shadow-sm cursor-pointer">
+              <button 
+                onClick={handleStartMatch}
+                disabled={isUpdating}
+                className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-emerald-500 hover:bg-emerald-600 transition-colors shadow-sm cursor-pointer disabled:opacity-50"
+              >
                 Start Now
-              </button>
-              <button className="px-4 py-2 rounded-lg text-sm font-bold text-white bg-teal-700 hover:bg-teal-800 transition-colors shadow-sm cursor-pointer">
-                Stop Match
               </button>
             </>
           )}
@@ -183,6 +325,26 @@ const MatchCard = ({ match }) => {
         </div>
 
       </div>
+
+      <ConfirmationModal
+        open={!!modalContent}
+        onClose={handleCloseModal}
+        onConfirm={modalContent?.action || handleCloseModal}
+        title={modalContent?.title}
+        description={modalContent?.description}
+        intent={modalContent?.intent}
+        confirmLabel={modalContent?.confirmLabel || "Understood"}
+        cancelLabel={modalContent?.cancelLabel || "Close"}
+      />
+
+      {showStatsModal && (
+        <MatchStatModal
+          matchId={id}
+          team1={team1}
+          team2={team2}
+          onClose={() => setShowStatsModal(false)}
+        />
+      )}
     </div>
   );
 };

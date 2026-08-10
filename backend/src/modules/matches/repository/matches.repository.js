@@ -63,6 +63,35 @@ class MatchesRepository {
       [competitor1_id, competitor2_id, status, winning_competitor_id, nextMatchId]
     );
   }
+
+  async updateSchedule(matchId, scheduled_start, scheduled_end, executor = pool) {
+  const { rows } = await executor.query(
+    `UPDATE matches
+     SET scheduled_start = $1,
+         scheduled_end   = $2,
+         updated_at      = NOW()
+     WHERE match_id = $3
+     RETURNING match_id, scheduled_start, scheduled_end, status, tour_id`,
+    [scheduled_start, scheduled_end, matchId]
+  );
+  return rows[0] || null;
+}
+
+async getScheduleConflicts(tourId, scheduled_start, scheduled_end, excludeMatchId = null, executor = pool) {
+//return warning if overlap
+  const { rows } = await executor.query(
+    `SELECT match_id, round, stage, group_name, scheduled_start, scheduled_end,
+            competitor1_id, competitor2_id
+     FROM matches
+     WHERE tour_id = $1
+       AND match_id != $2
+       AND scheduled_start IS NOT NULL
+       AND scheduled_end   IS NOT NULL
+       AND tstzrange(scheduled_start, scheduled_end) && tstzrange($3::timestamptz, $4::timestamptz)`,
+    [tourId, excludeMatchId ?? '00000000-0000-0000-0000-000000000000', scheduled_start, scheduled_end]
+  );
+  return rows;
+}
 }
 
 module.exports = new MatchesRepository();

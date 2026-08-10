@@ -2,6 +2,7 @@ const pool = require('../../../shared/database/pool');
 const AppError = require('../../../shared/errors/AppError');
 const matchesRepository = require('../repository/matches.repository');
 const bracketService = require('../../tournament/service/bracket.service');
+const {validateScheduleDto} = require('../dto/scheduleMatch.dto');
 
 class MatchesService {
   async getMatch(matchId) {
@@ -44,15 +45,6 @@ class MatchesService {
           } else if (rCompId === currentMatch.competitor2_id) {
             score2 = r.score;
           }
-        }
-      }
-
-      // If winner is not explicitly provided but scores are, determine winner automatically
-      if (winning_competitor_id === null && score1 !== null && score2 !== null && !is_draw) {
-        if (score1 > score2) {
-          winning_competitor_id = currentMatch.competitor1_id;
-        } else if (score2 > score1) {
-          winning_competitor_id = currentMatch.competitor2_id;
         }
       }
 
@@ -129,6 +121,58 @@ class MatchesService {
     // Return the updated match
     return this.getMatch(matchId);
   }
+
+  async scheduleMatch(matchId, body) {
+  // 1. Validate input
+  const { data, errors } = validateScheduleDto(body);
+  if (errors) throw new AppError(errors.join(' | '), 400);
+
+  // 2. Fetch match to confirm it exists and get tour_id
+  const current = await matchesRepository.getMatchBase(matchId);
+  if (!current) throw new AppError('Match not found.', 404);
+
+  // 3. Guard: cannot schedule a completed or archived match
+  if (['completed', 'archived', 'bye'].includes(current.status)) {
+    throw new AppError(`Cannot schedule a match with status '${current.status}'.`, 400);
+  }
+
+  // 4. Check for overlapping matches in the same tournament (warn, not block)
+  const conflicts = await matchesRepository.getScheduleConflicts(
+    current.tour_id,
+    data.scheduled_start,
+    data.scheduled_end,
+    matchId
+  );
+
+  // 5. Save schedule
+  const updated = await matchesRepository.updateSchedule(
+    matchId,
+    data.scheduled_start,
+    data.scheduled_end
+  );
+
+  if (!updated) throw new AppError('Failed to update schedule.', 500);
+
+  return {
+    match_id:        String(updated.match_id),
+    scheduled_start: updated.scheduled_start,
+    scheduled_end:   updated.scheduled_end,
+    status:          updated.status,
+    conflicts: conflicts.length > 0
+      ? conflicts.map(c => ({
+          match_id:        String(c.match_id),
+          round:           c.round,
+          stage:           c.stage,
+          group_name:      c.group_name,
+          scheduled_start: c.scheduled_start,
+          scheduled_end:   c.scheduled_end,
+        }))
+      : [],
+    conflict_warning: conflicts.length > 0
+      ? `${conflicts.length} other match(es) overlap this time window.`
+      : null,
+  };
+}
 
   async _propagateCompetitor(client, matchId, oldCompId, newCompId, pathType) {
     const nextRefs = await matchesRepository.getNextMatchRef(matchId, client);

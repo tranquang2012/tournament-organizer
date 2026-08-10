@@ -1,0 +1,3 @@
+const VALID_STAT_TYPES = ['INTEGER', 'PERCENTAGE', 'TEXT', 'DURATION', 'BOOLEAN'];
+
+module.exports = { VALID_STAT_TYPES };
