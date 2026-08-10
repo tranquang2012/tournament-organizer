@@ -6,6 +6,7 @@ import { getTournamentById } from '../../services/TournamentService';
 import EliminationMatchTemplate from '../../components/match_admin/EliminationMatchTemplate';
 import RoundRobinMatchTemplate from '../../components/match_admin/RoundRobinMatchTemplate';
 import RoundScoringMatchTemplate from '../../components/match_admin/RoundScoringMatchTemplate';
+import HybridMatchTemplate from '../../components/match_admin/HybridMatchTemplate';
 
 const MatchConfigPage = () => {
   const { id } = useParams();
@@ -61,6 +62,7 @@ const MatchConfigPage = () => {
   const isElimination = format === 'single_elimination' || format === 'double_elimination';
   const isRoundRobin = format === 'round_robin';
   const isRoundScoring = format === 'round_scoring';
+  const isHybrid = format === 'hybrid';
 
   return (
     <div className="flex flex-col font-['Inter',_'Segoe_UI',_system-ui,_sans-serif] pb-16">
@@ -95,6 +97,8 @@ const MatchConfigPage = () => {
           <RoundRobinMatchTemplate tournament={tournament} />
         ) : isRoundScoring ? (
           <RoundScoringMatchTemplate tournament={tournament} />
+        ) : isHybrid ? (
+          <HybridMatchTemplate tournament={tournament} />
         ) : (
           <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-12 text-center">
             <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-slate-100">
