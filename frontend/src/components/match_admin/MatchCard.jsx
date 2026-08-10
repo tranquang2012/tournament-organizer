@@ -10,8 +10,6 @@ const MatchCard = ({ match }) => {
   const isUpcoming = status === 'Upcoming';
   const isCompleted = status === 'Completed';
 
-<<<<<<< Updated upstream
-=======
   const [scheduleDate, setScheduleDate] = useState(date || '');
   const [scheduleStart, setScheduleStart] = useState(startTime || '');
   const [scheduleEnd, setScheduleEnd] = useState(endTime || '');
@@ -122,7 +120,6 @@ const MatchCard = ({ match }) => {
     setModalContent(null);
   };
 
->>>>>>> Stashed changes
   let borderColor = 'border-slate-200';
   let badgeColor = 'bg-slate-100 text-slate-600';
   let badgeDot = 'bg-slate-400';
