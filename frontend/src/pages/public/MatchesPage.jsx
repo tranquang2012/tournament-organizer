@@ -36,21 +36,48 @@ const buildTeamMatchData = (match, stats, participants) => {
     return comp?.members?.map(m => m.name) || [];
   };
 
-  // Build stats array: group by stat name and pair home/away using comp_id
-  const statsByName = {};
+  // Build stats arrays: group by stat name and scope using comp_id
+  const groupedStats = {};
   stats.forEach(s => {
-    if (!statsByName[s.name]) statsByName[s.name] = { name: s.name, home: '—', away: '—', matchLevel: '—' };
+    if (!groupedStats[s.name]) {
+      groupedStats[s.name] = { name: s.name, type: s.type, home: null, away: null, matchLevel: null };
+    }
     const val = s.type === 'INTEGER' ? Number(s.value || 0) : (s.value || '—');
     if (s.comp_id && s.comp_id === c1?.comp_id) {
-      statsByName[s.name].home = val;
+      groupedStats[s.name].home = val;
     } else if (s.comp_id && s.comp_id === c2?.comp_id) {
-      statsByName[s.name].away = val;
+      groupedStats[s.name].away = val;
     } else if (!s.comp_id) {
-      // Match-level stat (no comp_id)
-      statsByName[s.name].matchLevel = val;
+      groupedStats[s.name].matchLevel = val;
     }
   });
-  const statRows = Object.values(statsByName);
+
+  const matchStats = [];
+  const teamStats = [];
+
+  Object.values(groupedStats).forEach(s => {
+    const hasTeamStat = s.home !== null || s.away !== null;
+    const hasMatchStat = s.matchLevel !== null;
+
+    if (hasTeamStat && hasMatchStat) {
+      console.warn(`Stat "${s.name}" has both team and match scopes. Dropping match scope.`);
+    }
+
+    if (hasTeamStat) {
+      teamStats.push({
+        name: s.name,
+        type: s.type,
+        home: s.home !== null ? s.home : (s.type === 'INTEGER' ? 0 : '—'),
+        away: s.away !== null ? s.away : (s.type === 'INTEGER' ? 0 : '—')
+      });
+    } else if (hasMatchStat) {
+      matchStats.push({
+        name: s.name,
+        type: s.type,
+        value: s.matchLevel
+      });
+    }
+  });
 
   return {
     id: match.match_id,
@@ -82,7 +109,8 @@ const buildTeamMatchData = (match, stats, participants) => {
       scorers: [],
       participants: findMembers(c2?.comp_id),
     },
-    stats: statRows,
+    matchStats,
+    teamStats,
   };
 };
 
@@ -220,9 +248,28 @@ const MatchesPage = () => {
               }
             </div>
           </div>
+
+          {!isRoundScoring && matchData.matchStats?.length > 0 && (
+            <div className='mt-10 border border-gray-200 rounded-[10px] overflow-hidden shadow-sm'>
+              <div className='bg-[#123836] text-white text-[15px] font-semibold px-4 py-2'>
+                Match Stats
+              </div>
+              <div className='p-4 bg-gray-50'>
+                <div className='grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-4'>
+                  {matchData.matchStats.map(s => (
+                    <div key={s.name} className='border border-gray-200 rounded-[10px] p-3 bg-white shadow-sm flex flex-col items-start'>
+                      <span className='text-xs text-slate-500 uppercase font-semibold mb-1'>{s.name}</span>
+                      <span className='text-2xl font-bold text-[#123836]'>{s.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className='flex gap-10 mt-10'>
             {isTeamMode && (
-              <div className='border border-gray-200 rounded-[10px] overflow-hidden shadow-sm w-[35%]'>
+              <div className='border border-gray-200 rounded-[10px] overflow-hidden shadow-sm w-[35%] self-start'>
                 <div className='bg-[#123836] text-white text-[15px] font-semibold px-4 py-2'>
                   Match Participants
                 </div>
@@ -244,58 +291,81 @@ const MatchesPage = () => {
                 </table>
               </div>
             )}
-            {matchData.stats.length > 0 && (
-              <div className='flex-1 border border-gray-200 rounded-[10px] overflow-hidden shadow-sm'>
-                <table className='w-full text-[14px]'>
-                  <thead>
-                    <tr className='bg-gray-50'>
-                      <th className='text-left px-4 py-3 text-[#123836] font-semibold border-b border-gray-200'>Teams</th>
-                      {matchData.stats.map(s => (
-                        <th key={s.name} className='text-center px-3 py-3 text-[#123836] font-semibold border-b border-gray-200'>
-                          {s.name}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {!isRoundScoring ? (
-                      <>
-                        <tr className='border-b border-gray-100 hover:bg-gray-50 transition-colors'>
-                          <td className='px-4 py-3 font-semibold text-gray-700'>{matchData.team1}</td>
-                          {matchData.stats.map(s => (
-                            <td key={s.name} className='text-center px-3 py-3 text-gray-600'>{s.home}</td>
-                          ))}
-                        </tr>
-                        <tr className='border-b border-gray-100 hover:bg-gray-50 transition-colors'>
-                          <td className='px-4 py-3 font-semibold text-gray-700'>{matchData.team2}</td>
-                          {matchData.stats.map(s => (
-                            <td key={s.name} className='text-center px-3 py-3 text-gray-600'>{s.away}</td>
-                          ))}
-                        </tr>
-                        {matchData.stats.some(s => s.matchLevel !== '—') && (
-                          <tr className='hover:bg-gray-50 transition-colors bg-[#f8fafa]'>
-                            <td className='px-4 py-3 font-semibold text-[#123836]'>Match Overall</td>
-                            {matchData.stats.map(s => (
-                              <td key={s.name} className='text-center px-3 py-3 font-medium text-[#123836]'>
-                                {s.matchLevel !== '—' ? s.matchLevel : ''}
-                              </td>
-                            ))}
-                          </tr>
-                        )}
-                      </>
-                    ) : (
+            {isRoundScoring ? (
+              matchData.stats?.length > 0 && (
+                <div className='flex-1 border border-gray-200 rounded-[10px] overflow-hidden shadow-sm self-start'>
+                  <table className='w-full text-[14px]'>
+                    <thead>
+                      <tr className='bg-gray-50'>
+                        <th className='text-left px-4 py-3 text-[#123836] font-semibold border-b border-gray-200'>Overall</th>
+                        {matchData.stats.map(s => (
+                          <th key={s.name} className='text-center px-3 py-3 text-[#123836] font-semibold border-b border-gray-200'>
+                            {s.name}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
                       <tr className='hover:bg-gray-50 transition-colors'>
-                        <td className='px-4 py-3 font-semibold text-gray-700'>Overall</td>
+                        <td className='px-4 py-3 font-semibold text-gray-700'>Values</td>
                         {matchData.stats.map(s => (
                           <td key={s.name} className='text-center px-3 py-3 text-gray-600'>
                             {s.home !== '—' ? s.home : s.matchLevel}
                           </td>
                         ))}
                       </tr>
-                    )}
-                  </tbody>
-                </table>
-              </div>
+                    </tbody>
+                  </table>
+                </div>
+              )
+            ) : (
+              matchData.teamStats?.length > 0 && (
+                <div className='flex-1 border border-gray-200 rounded-[10px] overflow-hidden shadow-sm self-start'>
+                  <div className='bg-[#123836] text-white text-[15px] font-semibold px-4 py-2'>
+                    Team Stats
+                  </div>
+                  <table className='w-full text-[14px]'>
+                    <thead>
+                      <tr className='bg-gray-50'>
+                        <th className='text-left px-4 py-3 text-[#123836] font-semibold border-b border-gray-200'>Teams</th>
+                        {matchData.teamStats.map(s => (
+                          <th key={s.name} className='text-center px-3 py-3 text-[#123836] font-semibold border-b border-gray-200'>
+                            {s.name}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className='border-b border-gray-100 hover:bg-gray-50 transition-colors'>
+                        <td className='px-4 py-3 font-semibold text-gray-700'>{matchData.team1}</td>
+                        {matchData.teamStats.map(s => (
+                          <td key={s.name} className='text-center px-3 py-3 text-gray-600'>{s.home}</td>
+                        ))}
+                      </tr>
+                      <tr className='border-b border-gray-100 hover:bg-gray-50 transition-colors'>
+                        <td className='px-4 py-3 font-semibold text-gray-700'>{matchData.team2}</td>
+                        {matchData.teamStats.map(s => (
+                          <td key={s.name} className='text-center px-3 py-3 text-gray-600'>{s.away}</td>
+                        ))}
+                      </tr>
+                      {matchData.teamStats.some(s => s.type === 'INTEGER' && !(/^(highest|best|max|min|average|avg)\b/i.test(s.name) || /^rank$/i.test(s.name))) && (
+                        <tr className='hover:bg-gray-50 transition-colors bg-[#f8fafa]'>
+                          <td className='px-4 py-3 font-semibold text-[#123836]'>Total</td>
+                          {matchData.teamStats.map(s => {
+                          const isNonAdditive = /^(highest|best|max|min|average|avg)\b/i.test(s.name) || /^rank$/i.test(s.name);
+                            const canSum = s.type === 'INTEGER' && !isNonAdditive && typeof s.home === 'number' && typeof s.away === 'number';
+                            return (
+                              <td key={s.name} className='text-center px-3 py-3 font-medium text-[#123836]'>
+                                {canSum ? (s.home + s.away) : ''}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              )
             )}
           </div>
         </div>
