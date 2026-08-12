@@ -335,6 +335,12 @@ export const getTournamentRankings = async (tournamentId) => {
   return response?.data || null;
 };
 
+export const generateBracket = async (tournamentId) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.post(`/api/tournaments/${tournamentId}/generate-bracket`, {}, authConfig);
+  return response?.data || null;
+};
+
 // --- STAT TEMPLATES ---
 
 export const getStatTemplates = async (tournamentId) => {

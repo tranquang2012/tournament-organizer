@@ -268,6 +268,11 @@ class MatchesService {
 
     return {
       match_id: String(m.match_id),
+      tour_id: m.tour_id ? String(m.tour_id) : null,
+      tour_name: m.tour_name || null,
+      tour_banner: m.tour_banner || null,
+      tour_format: m.tour_format || null,
+      participant_type: m.participant_type || null,
       stage: m.stage,
       round: m.round,
       group_name: m.group_name,
@@ -276,6 +281,7 @@ class MatchesService {
       scheduled_start: m.scheduled_start,
       scheduled_end: m.scheduled_end,
       results,
+      round_scores: m.round_scores || null,
       winning_competitor_id: m.winning_competitor_id,
       is_draw: m.is_draw,
       next_winner_match_id: m.next_winner_match_id ? String(m.next_winner_match_id) : null,

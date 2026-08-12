@@ -17,7 +17,7 @@ class MatchStatService {
     return repo.getStats(matchId);
   }
 
-  async createStat(matchId, name, type, organizerId) {
+  async createStat(matchId, name, type, compId, organizerId) {
     await this._assertAccess(matchId, organizerId);
 
     if (!VALID_STAT_TYPES.includes(type)) {
@@ -25,10 +25,10 @@ class MatchStatService {
     }
     
     try {
-      return await repo.createStat(matchId, name, type);
+      return await repo.createStat(matchId, name, type, compId || null);
     } catch (err) {
       if (err.code === '23505') { // Postgres unique violation
-        throw new AppError(`A stat with the name "${name}" already exists for this match.`, 409);
+        throw new AppError(`A stat with the name "${name}" already exists for this competitor in this match.`, 409);
       }
       throw err;
     }

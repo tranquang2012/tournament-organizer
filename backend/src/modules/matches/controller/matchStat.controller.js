@@ -10,8 +10,8 @@ class MatchStatController {
 
   async createStat(req, res, next) {
     try {
-      const { name, type } = req.body;
-      const data = await service.createStat(req.params.id, name, type, req.auth.userId);
+      const { name, type, comp_id } = req.body;
+      const data = await service.createStat(req.params.id, name, type, comp_id, req.auth.userId);
       res.status(201).json({ success: true, data });
     } catch (err) { next(err); }
   }
