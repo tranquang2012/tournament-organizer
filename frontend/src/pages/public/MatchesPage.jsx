@@ -348,20 +348,7 @@ const MatchesPage = () => {
                           <td key={s.name} className='text-center px-3 py-3 text-gray-600'>{s.away}</td>
                         ))}
                       </tr>
-                      {matchData.teamStats.some(s => s.type === 'INTEGER' && !(/^(highest|best|max|min|average|avg)\b/i.test(s.name) || /^rank$/i.test(s.name))) && (
-                        <tr className='hover:bg-gray-50 transition-colors bg-[#f8fafa]'>
-                          <td className='px-4 py-3 font-semibold text-[#123836]'>Total</td>
-                          {matchData.teamStats.map(s => {
-                          const isNonAdditive = /^(highest|best|max|min|average|avg)\b/i.test(s.name) || /^rank$/i.test(s.name);
-                            const canSum = s.type === 'INTEGER' && !isNonAdditive && typeof s.home === 'number' && typeof s.away === 'number';
-                            return (
-                              <td key={s.name} className='text-center px-3 py-3 font-medium text-[#123836]'>
-                                {canSum ? (s.home + s.away) : ''}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      )}
+
                     </tbody>
                   </table>
                 </div>

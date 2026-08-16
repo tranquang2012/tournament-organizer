@@ -201,7 +201,7 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
         <div className="w-full h-full flex flex-col justify-center relative">
             <div className="absolute -top-1.5 left-0 right-0 flex items-center justify-between px-1">
                 <span className="text-[13px] text-[#123836] font-medium ">{match.name}</span>
-                <span className="text-[13px] text-gray-400">{match.startTime} | 13:00 PM</span>
+                <span className="text-[13px] text-gray-400">{match.startTime}</span>
             </div>
             <div className="flex flex-col border border-gray-300 rounded-[5px] shadow-md">
                 <div className={`flex items-center cursor-pointer hover:bg-gray-50 transition-opacity h-[50%] border-b border-gray-300
