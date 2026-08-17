@@ -3,6 +3,7 @@ const AppError = require('../../../shared/errors/AppError');
 const matchesRepository = require('../repository/matches.repository');
 const bracketService = require('../../tournament/service/bracket.service');
 const {validateScheduleDto} = require('../dto/scheduleMatch.dto');
+const { validateResumeDto } = require('../dto/pauseMatch.dto');
 
 class MatchesService {
   async getMatch(matchId) {
@@ -171,6 +172,140 @@ class MatchesService {
     conflict_warning: conflicts.length > 0
       ? `${conflicts.length} other match(es) overlap this time window.`
       : null,
+  };
+}
+
+//Start match
+
+async startMatch(matchId) {
+  const match = await matchesRepository.getMatchTiming(matchId);
+  if (!match) throw new AppError('Match not found.', 404);
+
+  //only 'ready' matches can be started
+  if (!['ready', 'waiting'].includes(match.status)) {
+    if (match.status === 'running') {
+      throw new AppError('Match is already running.', 400);
+    }
+    if (match.status === 'paused') {
+      throw new AppError("Match is paused. Use the resume endpoint to continue.", 400);
+    }
+    if (match.status === 'completed') {
+      throw new AppError('Match is already completed.', 400);
+    }
+    throw new AppError(`Cannot start a match with status '${match.status}'.`, 400);
+  }
+
+  //cannot start before scheduled_start time
+  if (match.scheduled_start) {
+    const now       = new Date();
+    const startTime = new Date(match.scheduled_start);
+
+    if (now < startTime) {
+      const diffMinutes = Math.ceil((startTime - now) / (1000 * 60));
+      throw new AppError(
+        `Match is scheduled to start at ${startTime.toISOString()}. ` +
+        `It is still ${diffMinutes} minute(s) away. ` +
+        `Please adjust the scheduled start time if you want to begin earlier.`,
+        400
+      );
+    }
+  }
+
+  const updated = await matchesRepository.startMatch(matchId);
+  if (!updated) throw new AppError('Failed to start match.', 500);
+
+  return {
+    match_id:        String(updated.match_id),
+    status:          updated.status,
+    scheduled_start: updated.scheduled_start,
+    scheduled_end:   updated.scheduled_end,
+    message:         'Match has started successfully.',
+  };
+}
+
+//Pause match
+
+async pauseMatch(matchId) {
+  const match = await matchesRepository.getMatchTiming(matchId);
+  if (!match) throw new AppError('Match not found.', 404);
+
+  //only running matches can be paused
+  if (match.status !== 'running') {
+    if (match.status === 'paused') {
+      throw new AppError('Match is already paused.', 400);
+    }
+    if (match.status === 'completed') {
+      throw new AppError('Cannot pause a completed match.', 400);
+    }
+    throw new AppError(`Cannot pause a match with status '${match.status}'.`, 400);
+  }
+
+  const pausedAt = new Date().toISOString();
+  const updated  = await matchesRepository.pauseMatch(matchId, pausedAt);
+  if (!updated) throw new AppError('Failed to pause match.', 500);
+
+  return {
+    match_id:        String(updated.match_id),
+    status:          updated.status,
+    scheduled_start: updated.scheduled_start,
+    scheduled_end:   updated.scheduled_end,
+    paused_at:       updated.tour_pausedate,
+    message:         'Match has been paused. Press resume and provide a new end time to continue.',
+  };
+}
+
+//Resume match
+
+async resumeMatch(matchId, body) {
+  // 1. Validate new scheduled_end from popup input
+  const { data, errors } = validateResumeDto(body);
+  if (errors) throw new AppError(errors.join(' | '), 400);
+
+  const match = await matchesRepository.getMatchTiming(matchId);
+  if (!match) throw new AppError('Match not found.', 404);
+
+  //only paused matches can be resumed
+  if (match.status !== 'paused') {
+    if (match.status === 'running') {
+      throw new AppError('Match is already running, no need to resume.', 400);
+    }
+    if (match.status === 'completed') {
+      throw new AppError('Cannot resume a completed match.', 400);
+    }
+    throw new AppError(`Cannot resume a match with status '${match.status}'.`, 400);
+  }
+
+  //new end time must be in the future
+  const now    = new Date();
+  const newEnd = new Date(data.scheduled_end);
+  if (newEnd <= now) {
+    throw new AppError(
+      'The new scheduled_end must be a future datetime.',
+      400
+    );
+  }
+
+  //new end must also be after scheduled_start
+  if (match.scheduled_start) {
+    const startTime = new Date(match.scheduled_start);
+    if (newEnd <= startTime) {
+      throw new AppError(
+        'The new scheduled_end must be after the match scheduled_start.',
+        400
+      );
+    }
+  }
+
+  const updated = await matchesRepository.resumeMatch(matchId, data.scheduled_end);
+  if (!updated) throw new AppError('Failed to resume match.', 500);
+
+  return {
+    match_id:        String(updated.match_id),
+    status:          updated.status,
+    scheduled_start: updated.scheduled_start,
+    scheduled_end:   updated.scheduled_end,
+    paused_at:       null,
+    message:         `Match has resumed. New end time: ${updated.scheduled_end}.`,
   };
 }
 

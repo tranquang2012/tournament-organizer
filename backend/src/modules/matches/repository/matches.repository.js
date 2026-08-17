@@ -95,6 +95,55 @@ async getScheduleConflicts(tourId, scheduled_start, scheduled_end, excludeMatchI
   );
   return rows;
 }
+
+async startMatch(matchId, executor = pool) {
+  const { rows } = await executor.query(
+    `UPDATE matches
+     SET status     = 'running',
+         updated_at = NOW()
+     WHERE match_id = $1
+     RETURNING match_id, status, scheduled_start, scheduled_end, tour_id`,
+    [matchId]
+  );
+  return rows[0] || null;
+}
+
+async pauseMatch(matchId, pausedAt, executor = pool) {
+  const { rows } = await executor.query(
+    `UPDATE matches
+     SET status          = 'paused',
+         tour_pausedate  = $1,
+         updated_at      = NOW()
+     WHERE match_id = $2
+     RETURNING match_id, status, scheduled_start, scheduled_end, tour_pausedate`,
+    [pausedAt, matchId]
+  );
+  return rows[0] || null;
+}
+
+async resumeMatch(matchId, newScheduledEnd, executor = pool) {
+  const { rows } = await executor.query(
+    `UPDATE matches
+     SET status          = 'running',
+         scheduled_end   = $1,
+         tour_pausedate  = NULL,
+         updated_at      = NOW()
+     WHERE match_id = $2
+     RETURNING match_id, status, scheduled_start, scheduled_end, tour_pausedate`,
+    [newScheduledEnd, matchId]
+  );
+  return rows[0] || null;
+}
+
+async getMatchTiming(matchId, executor = pool) {
+  const { rows } = await executor.query(
+    `SELECT match_id, tour_id, status, scheduled_start, scheduled_end, tour_pausedate
+     FROM matches
+     WHERE match_id = $1`,
+    [matchId]
+  );
+  return rows[0] || null;
+}
 }
 
 module.exports = new MatchesRepository();
