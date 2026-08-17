@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTableCells, faSitemap, faFilter, faTrophy, faCalendarDays, faBolt, faClock, faCheck } from '@fortawesome/free-solid-svg-icons';
 import MatchCard from './MatchCard';
 import BracketViewPlaceholder from './BracketViewPlaceholder';
-import { getTournamentBracket } from '../../services/TournamentService';
+import { getTournamentMatches } from '../../services/TournamentService';
 
 // Mock images if tournament data is incomplete
 import imgFootball from '../../assets/sportImages/football.jpg';
@@ -25,7 +25,7 @@ const EliminationMatchTemplate = ({ tournament }) => {
     const fetchMatches = async () => {
       try {
         setIsLoading(true);
-        const data = await getTournamentBracket(tournament.tour_id);
+        const data = await getTournamentMatches(tournament.tour_id);
         
         const mapped = (data || []).map(m => {
           let status = 'Upcoming';

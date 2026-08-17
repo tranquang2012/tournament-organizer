@@ -55,7 +55,7 @@ class BracketService {
     }
   }
 
-  async getBracket(tourId) {
+  async getMatches(tourId) {
     const matches = await bracketRepository.getMatchesByTournament(tourId);
 
     return matches.map(m => {
@@ -108,7 +108,7 @@ class BracketService {
     });
   }
 
-  async getBrackets(tourId) {
+  async getStages(tourId) {
     const tournament = await bracketRepository.getTournamentFormat(tourId);
     if (!tournament) throw new AppError('Tournament not found.', 404);
 
@@ -121,7 +121,7 @@ class BracketService {
       await bracketHybridService.ensureHybridStageTwoGenerated(tourId);
     }
 
-    const matches = await this.getBracket(tourId);
+    const matches = await this.getMatches(tourId);
 
     const grouped = {};
     for (const match of matches) {

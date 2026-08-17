@@ -4,6 +4,9 @@ const ctrl = require('./controller/matches.controller');
 const auth = require('../../shared/middleware/authenticateSupabaseUser');
 const requireAdminUser = require('../../shared/middleware/requireAdminUser');
 
+// Public route to get all scheduled matches for calendar
+router.get('/calendar', ctrl.getScheduledMatches.bind(ctrl));
+
 // Public route to view match details
 router.get('/:matchId', ctrl.getMatch.bind(ctrl));
 

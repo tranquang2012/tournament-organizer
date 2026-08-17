@@ -320,13 +320,13 @@ export const getPublicTournamentById = async (tournamentId) => {
   return response?.data || null;
 };
 
-export const getTournamentBracket = async (tournamentId) => {
-  const response = await axios.get(`/api/tournaments/${tournamentId}/bracket`);
+export const getTournamentMatches = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/matches`);
   return response?.data || [];
 };
 
-export const getTournamentBrackets = async (tournamentId) => {
-  const response = await axios.get(`/api/tournaments/${tournamentId}/brackets`);
+export const getTournamentStages = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/stages`);
   return response?.data || [];
 };
 

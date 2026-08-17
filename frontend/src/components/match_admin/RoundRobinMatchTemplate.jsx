@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTableCells, faRankingStar, faFilter, faTrophy, faCalendarDays, faBolt, faClock, faCheck } from '@fortawesome/free-solid-svg-icons';
 import MatchCard from './MatchCard';
 import GroupStandingsTable from './GroupStandingsTable';
-import { getTournamentBracket, getTournamentRankings } from '../../services/TournamentService';
+import { getTournamentMatches, getTournamentRankings } from '../../services/TournamentService';
 
 import imgFootball from '../../assets/sportImages/football.jpg';
 
@@ -26,7 +26,7 @@ const RoundRobinMatchTemplate = ({ tournament }) => {
       try {
         setIsLoading(true);
         const [bracketData, rankData] = await Promise.all([
-          getTournamentBracket(tournament.tour_id),
+          getTournamentMatches(tournament.tour_id),
           getTournamentRankings(tournament.tour_id)
         ]);
 

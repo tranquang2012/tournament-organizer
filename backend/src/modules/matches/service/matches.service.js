@@ -174,6 +174,30 @@ class MatchesService {
   };
 }
 
+  async getScheduledMatches() {
+    const rows = await matchesRepository.getScheduledMatches();
+    return rows.map(m => {
+      const c1 = m.c1_name || 'TBD';
+      const c2 = m.c2_name || 'TBD';
+
+      return {
+        match_id: String(m.match_id),
+        tour_id: String(m.tour_id),
+        tour_name: m.tour_name,
+        round: m.round,
+        stage: m.stage,
+        group_name: m.group_name,
+        status: m.status,
+        title: `${c1} vs ${c2}`,
+        matchLabel: `Round ${m.round}`,
+        scheduled_start: m.scheduled_start,
+        scheduled_end: m.scheduled_end,
+        competitor1: m.c1_name || null,
+        competitor2: m.c2_name || null,
+      };
+    });
+  }
+
   async _propagateCompetitor(client, matchId, oldCompId, newCompId, pathType) {
     const nextRefs = await matchesRepository.getNextMatchRef(matchId, client);
     if (!nextRefs) return;
