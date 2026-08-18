@@ -12,12 +12,13 @@ const TABS = [
   { id: 'standings', label: 'Group Standings', icon: faRankingStar },
 ];
 
-const RoundRobinMatchTemplate = ({ tournament }) => {
+const RoundRobinMatchTemplate = ({ tournament, stage }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [statusFilter, setStatusFilter] = useState('All Status');
+  const [groupFilter, setGroupFilter] = useState('All Groups');
   const [roundFilter, setRoundFilter] = useState('All Rounds');
   const [matches, setMatches] = useState([]);
-  const [standings, setStandings] = useState([]);
+  const [standingsGroups, setStandingsGroups] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -30,7 +31,9 @@ const RoundRobinMatchTemplate = ({ tournament }) => {
           getTournamentRankings(tournament.tour_id)
         ]);
 
-        const mappedMatches = (bracketData || []).map(m => {
+        const sourceMatches = (bracketData || []).filter(m => !stage || m.stage === stage);
+
+        const mappedMatches = sourceMatches.map(m => {
           let status = 'Upcoming';
           if (m.status === 'completed' || m.status === 'resolved' || m.status === 'bye') status = 'Completed';
           else if (m.status === 'running') status = 'Live';
@@ -56,10 +59,14 @@ const RoundRobinMatchTemplate = ({ tournament }) => {
             endTime = `${String(ed.getHours()).padStart(2, '0')}:${String(ed.getMinutes()).padStart(2, '0')}`;
           }
 
+          const groupName = m.group_name && m.group_name !== 'Group' ? m.group_name : null;
+
           return {
             id: m.match_id,
             status,
-            round: m.group_name && m.group_name !== 'Group' ? `${m.group_name} - R${m.round}` : `Round ${m.round}`,
+            groupName,
+            roundNumber: m.round,
+            round: groupName ? `${groupName} - R${m.round}` : `Round ${m.round}`,
             team1: { id: m.competitor1_id, name: comp1?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'), logo: comp1?.comp_logo, score: result1?.score || 0, winner: m.winning_competitor_id === m.competitor1_id },
             team2: { id: m.competitor2_id, name: comp2?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'), logo: comp2?.comp_logo, score: result2?.score || 0, winner: m.winning_competitor_id === m.competitor2_id },
             startTime,
@@ -69,18 +76,25 @@ const RoundRobinMatchTemplate = ({ tournament }) => {
         });
         setMatches(mappedMatches);
 
-        const mappedStandings = (rankData?.groups?.[0]?.rankings || []).map((r, idx) => {
-          const played = (r.wins || 0) + (r.losses || 0);
-          return {
-            rank: idx + 1,
-            team: { name: r.comp_name, logo: r.comp_logo },
-            played,
-            wins: r.wins || 0,
-            losses: r.losses || 0,
-            winRate: played > 0 ? `${Math.round((r.wins / played) * 100)}%` : '0%',
-          };
-        });
-        setStandings(mappedStandings);
+        const rankingGroups = stage && rankData?.stages
+          ? (rankData.stages.find(s => s.stage === stage)?.groups || rankData.groups || [])
+          : (rankData?.groups || []);
+
+        const mappedGroups = rankingGroups.map((group) => ({
+          groupName: group.group_name || 'Group',
+          standings: (group.rankings || []).map((r, idx) => {
+            const played = (r.wins || 0) + (r.losses || 0) + (r.draws || 0);
+            return {
+              rank: r.rank || idx + 1,
+              team: { name: r.comp_name, logo: r.comp_logo },
+              played,
+              wins: r.wins || 0,
+              losses: r.losses || 0,
+              winRate: played > 0 ? `${Math.round((r.wins / played) * 100)}%` : '0%',
+            };
+          }),
+        }));
+        setStandingsGroups(mappedGroups);
 
       } catch (err) {
         console.error('Failed to fetch round robin data:', err);
@@ -89,7 +103,7 @@ const RoundRobinMatchTemplate = ({ tournament }) => {
       }
     };
     if (tournament?.tour_id) fetchData();
-  }, [tournament, refreshTrigger]);
+  }, [tournament, refreshTrigger, stage]);
 
   const handleMatchUpdate = () => {
     setRefreshTrigger(prev => prev + 1);
@@ -113,13 +127,19 @@ const RoundRobinMatchTemplate = ({ tournament }) => {
   const filteredMatches = useMemo(() => {
     return matches.filter(m => {
       const matchStatus = statusFilter === 'All Status' || m.status === statusFilter;
-      const matchRound = roundFilter === 'All Rounds' || m.round === roundFilter;
-      return matchStatus && matchRound;
+      const matchGroup = groupFilter === 'All Groups' || m.groupName === groupFilter;
+      const matchRound = roundFilter === 'All Rounds' || `Round ${m.roundNumber}` === roundFilter;
+      return matchStatus && matchGroup && matchRound;
     });
-  }, [matches, statusFilter, roundFilter]);
+  }, [matches, statusFilter, groupFilter, roundFilter]);
 
-  // Unique rounds for dropdown
-  const uniqueRounds = ['All Rounds', ...new Set(matches.map(m => m.round))];
+  const uniqueGroups = ['All Groups', ...[...new Set(matches.map(m => m.groupName).filter(Boolean))].sort()];
+  const uniqueRounds = ['All Rounds', ...[...new Set(matches.map(m => m.roundNumber).filter((n) => n != null))]
+    .sort((a, b) => Number(a) - Number(b))
+    .map((n) => `Round ${n}`)];
+  const visibleStandingsGroups = standingsGroups.filter((group) => (
+    groupFilter === 'All Groups' || group.groupName === groupFilter
+  ));
   
   // Format dates
   const formatDate = (dateStr) => {
@@ -261,8 +281,8 @@ const RoundRobinMatchTemplate = ({ tournament }) => {
         <div className="animate-[fadeIn_0.2s_ease-out]">
           
           {/* 3. Filter Bar */}
-          <div className="flex items-center justify-between bg-white rounded-xl border border-slate-200 p-3 mb-4 shadow-sm">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between bg-white rounded-xl border border-slate-200 p-3 mb-4 shadow-sm gap-3 flex-wrap">
+            <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2 text-slate-500 font-semibold text-sm px-2">
                 <FontAwesomeIcon icon={faFilter} />
                 Filter
@@ -278,6 +298,18 @@ const RoundRobinMatchTemplate = ({ tournament }) => {
                 <option value="Upcoming">Upcoming</option>
                 <option value="Completed">Completed</option>
               </select>
+
+              {uniqueGroups.length > 2 && (
+                <select
+                  value={groupFilter}
+                  onChange={(e) => setGroupFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg focus:ring-[#123836] focus:border-[#123836] block px-3 py-2 cursor-pointer outline-none hover:bg-slate-100 transition-colors"
+                >
+                  {uniqueGroups.map(group => (
+                    <option key={group} value={group}>{group}</option>
+                  ))}
+                </select>
+              )}
               
               <select
                 value={roundFilter}
@@ -320,8 +352,23 @@ const RoundRobinMatchTemplate = ({ tournament }) => {
             <div className="flex justify-center items-center min-h-[20vh]">
                <div className="w-8 h-8 border-4 border-slate-200 border-t-[#123836] rounded-full animate-spin" />
             </div>
+          ) : visibleStandingsGroups.length > 0 ? (
+            <div className="flex flex-col gap-6">
+              {visibleStandingsGroups.map((group) => (
+                <GroupStandingsTable
+                  key={group.groupName}
+                  title={standingsGroups.length > 1 ? `${group.groupName} Standings` : 'Group Standings'}
+                  standings={group.standings}
+                  totalRoundRobinMatches={
+                    matches.filter((m) => !group.groupName || m.groupName === group.groupName).length
+                  }
+                />
+              ))}
+            </div>
           ) : (
-            <GroupStandingsTable standings={standings} totalRoundRobinMatches={totalMatches} />
+            <div className="py-12 text-center text-slate-400 font-medium bg-white rounded-xl border border-dashed border-slate-300">
+              No standings available yet.
+            </div>
           )}
         </div>
       )}

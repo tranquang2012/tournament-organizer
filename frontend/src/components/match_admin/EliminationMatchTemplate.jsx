@@ -13,9 +13,10 @@ const TABS = [
   { id: 'bracket', label: 'Bracket View', icon: faSitemap },
 ];
 
-const EliminationMatchTemplate = ({ tournament }) => {
+const EliminationMatchTemplate = ({ tournament, stage }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [statusFilter, setStatusFilter] = useState('All Status');
+  const [groupFilter, setGroupFilter] = useState('All Groups');
   const [roundFilter, setRoundFilter] = useState('All Rounds');
   const [matches, setMatches] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -27,7 +28,9 @@ const EliminationMatchTemplate = ({ tournament }) => {
         setIsLoading(true);
         const data = await getTournamentMatches(tournament.tour_id);
         
-        const mapped = (data || []).map(m => {
+        const sourceMatches = (data || []).filter(m => !stage || m.stage === stage);
+
+        const mapped = sourceMatches.map(m => {
           let status = 'Upcoming';
           if (m.status === 'completed' || m.status === 'resolved' || m.status === 'bye') status = 'Completed';
           else if (m.status === 'running') status = 'Live';
@@ -53,10 +56,14 @@ const EliminationMatchTemplate = ({ tournament }) => {
             endTime = `${String(ed.getHours()).padStart(2, '0')}:${String(ed.getMinutes()).padStart(2, '0')}`;
           }
 
+          const groupName = m.group_name && m.group_name !== 'Group' ? m.group_name : null;
+
           return {
             id: m.match_id,
             status,
-            round: m.group_name && m.group_name !== 'Group' ? `${m.group_name} - R${m.round}` : `Round ${m.round}`,
+            groupName,
+            roundNumber: m.round,
+            round: groupName ? `${groupName} - R${m.round}` : `Round ${m.round}`,
             team1: { id: m.competitor1_id, name: comp1?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'), logo: comp1?.comp_logo, score: result1?.score || 0, winner: m.winning_competitor_id === m.competitor1_id },
             team2: { id: m.competitor2_id, name: comp2?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'), logo: comp2?.comp_logo, score: result2?.score || 0, winner: m.winning_competitor_id === m.competitor2_id },
             startTime,
@@ -72,7 +79,7 @@ const EliminationMatchTemplate = ({ tournament }) => {
       }
     };
     if (tournament?.tour_id) fetchMatches();
-  }, [tournament, refreshTrigger]);
+  }, [tournament, refreshTrigger, stage]);
 
   const handleMatchUpdate = () => {
     setRefreshTrigger(prev => prev + 1);
@@ -96,13 +103,16 @@ const EliminationMatchTemplate = ({ tournament }) => {
   const filteredMatches = useMemo(() => {
     return matches.filter(m => {
       const matchStatus = statusFilter === 'All Status' || m.status === statusFilter;
-      const matchRound = roundFilter === 'All Rounds' || m.round === roundFilter;
-      return matchStatus && matchRound;
+      const matchGroup = groupFilter === 'All Groups' || m.groupName === groupFilter;
+      const matchRound = roundFilter === 'All Rounds' || `Round ${m.roundNumber}` === roundFilter;
+      return matchStatus && matchGroup && matchRound;
     });
-  }, [matches, statusFilter, roundFilter]);
+  }, [matches, statusFilter, groupFilter, roundFilter]);
 
-  // Unique rounds for dropdown
-  const uniqueRounds = ['All Rounds', ...new Set(matches.map(m => m.round))];
+  const uniqueGroups = ['All Groups', ...[...new Set(matches.map(m => m.groupName).filter(Boolean))].sort()];
+  const uniqueRounds = ['All Rounds', ...[...new Set(matches.map(m => m.roundNumber).filter((n) => n != null))]
+    .sort((a, b) => Number(a) - Number(b))
+    .map((n) => `Round ${n}`)];
   
   // Format dates
   const formatDate = (dateStr) => {
@@ -244,8 +254,8 @@ const EliminationMatchTemplate = ({ tournament }) => {
         <div className="animate-[fadeIn_0.2s_ease-out]">
           
           {/* 3. Filter Bar */}
-          <div className="flex items-center justify-between bg-white rounded-xl border border-slate-200 p-3 mb-4 shadow-sm">
-            <div className="flex items-center gap-4">
+          <div className="flex items-center justify-between bg-white rounded-xl border border-slate-200 p-3 mb-4 shadow-sm gap-3 flex-wrap">
+            <div className="flex items-center gap-4 flex-wrap">
               <div className="flex items-center gap-2 text-slate-500 font-semibold text-sm px-2">
                 <FontAwesomeIcon icon={faFilter} />
                 Filter
@@ -261,6 +271,18 @@ const EliminationMatchTemplate = ({ tournament }) => {
                 <option value="Upcoming">Upcoming</option>
                 <option value="Completed">Completed</option>
               </select>
+
+              {uniqueGroups.length > 2 && (
+                <select
+                  value={groupFilter}
+                  onChange={(e) => setGroupFilter(e.target.value)}
+                  className="bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg focus:ring-[#123836] focus:border-[#123836] block px-3 py-2 cursor-pointer outline-none hover:bg-slate-100 transition-colors"
+                >
+                  {uniqueGroups.map(group => (
+                    <option key={group} value={group}>{group}</option>
+                  ))}
+                </select>
+              )}
               
               <select
                 value={roundFilter}

@@ -173,42 +173,64 @@ class BracketRoundScoringService {
     };
   }
 
+  _parseRoundScores(value) {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) {
+        return [];
+      }
+    }
+    return [];
+  }
+
   async getRoundScoringStandings(tourId) {
     const rounds = await bracketRepository.getRoundScoringMatches(tourId);
     if (!rounds.length) throw new AppError('No rounds found. Generate the bracket first.', 404);
 
     const competitors = await bracketRepository.getCompetitorsForSeeding(tourId);
+    const tournament = await bracketRepository.getTournamentFormat(tourId);
     const compMap = Object.fromEntries(competitors.map(c => [c.comp_id, c]));
 
+    const mappedRounds = rounds.map(r => ({
+      match_id: r.match_id,
+      round: r.round,
+      status: r.status,
+      round_scores: this._parseRoundScores(r.round_scores).map(score => ({
+        ...score,
+        comp_name: compMap[score.comp_id]?.comp_name || 'Unknown',
+        comp_logo: compMap[score.comp_id]?.comp_logo || null,
+      })),
+    }));
+
     // Find the latest completed round for current rankings
-    const completed = rounds.filter(r => r.status === 'completed');
+    const completed = mappedRounds.filter(r => r.status === 'completed');
     const latest = completed[completed.length - 1];
 
     let currentStandings = [];
-    if (latest?.round_scores) {
+    if (latest?.round_scores?.length) {
       currentStandings = latest.round_scores.map(r => ({
         rank: r.rank,
         comp_id: r.comp_id,
-        comp_name: compMap[r.comp_id]?.comp_name || 'Unknown',
-        comp_logo: compMap[r.comp_id]?.comp_logo || null,
+        comp_name: r.comp_name,
+        comp_logo: r.comp_logo,
         score: r.score,
         status: r.eliminated ? 'eliminated' : 'active',
       }));
     }
 
     // Current round = first non-completed round
-    const currentRound = rounds.find(r => r.status !== 'completed') || null;
+    const currentRound = mappedRounds.find(r => r.status !== 'completed') || null;
 
     return {
       current_round: currentRound?.round || null,
       completed_rounds: completed.length,
-      total_rounds: rounds.length,
+      total_rounds: mappedRounds.length,
+      advance_per_round: tournament?.advance_per_group || 3,
       standings: currentStandings,
-      rounds: rounds.map(r => ({
-        match_id: r.match_id,
-        round: r.round,
-        status: r.status,
-      })),
+      rounds: mappedRounds,
     };
   }
 

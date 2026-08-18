@@ -55,7 +55,7 @@ const GlobalLeaderboard = ({ participants, rounds }) => {
 
               return (
                 <tr
-                  key={p.rank}
+                  key={p.id || p.rank}
                   className={`
                     border-b border-slate-50 transition-colors duration-150
                     ${idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/40'}

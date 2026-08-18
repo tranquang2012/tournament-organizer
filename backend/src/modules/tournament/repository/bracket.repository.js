@@ -30,7 +30,7 @@ class BracketRepository {
 
   async getCompetitorsForSeeding(tourId, executor = pool) {
     const { rows } = await executor.query(
-      `SELECT comp_id, comp_name FROM competitors WHERE tour_id = $1 ORDER BY comp_name ASC`,
+      `SELECT comp_id, comp_name, comp_logo FROM competitors WHERE tour_id = $1 ORDER BY comp_name ASC`,
       [tourId]
     );
     return rows;

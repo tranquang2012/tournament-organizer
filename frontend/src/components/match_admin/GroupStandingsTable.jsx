@@ -2,7 +2,7 @@ import React from 'react';
 
 const MEDAL_ICONS = ['🥇', '🥈', '🥉'];
 
-const GroupStandingsTable = ({ standings, totalRoundRobinMatches }) => {
+const GroupStandingsTable = ({ standings, totalRoundRobinMatches, title = 'Group Standings' }) => {
   const completedMatches = standings.reduce((sum, s) => sum + s.played, 0) / 2;
 
   return (
@@ -10,7 +10,7 @@ const GroupStandingsTable = ({ standings, totalRoundRobinMatches }) => {
 
       {/* Header */}
       <div className="px-5 pt-5 pb-4 border-b border-slate-100">
-        <h2 className="text-lg font-bold text-slate-800">Group Standings</h2>
+        <h2 className="text-lg font-bold text-slate-800">{title}</h2>
         <p className="text-xs font-medium text-slate-400 mt-0.5">
           {completedMatches}/{totalRoundRobinMatches} matches completed
         </p>

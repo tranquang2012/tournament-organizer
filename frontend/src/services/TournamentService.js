@@ -341,6 +341,16 @@ export const generateBracket = async (tournamentId) => {
   return response?.data || null;
 };
 
+export const submitRoundScores = async (tournamentId, matchId, scores) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.post(
+    `/api/tournaments/${tournamentId}/bracket/rounds/${matchId}/scores`,
+    { scores },
+    authConfig,
+  );
+  return response?.data || null;
+};
+
 // --- STAT TEMPLATES ---
 
 export const getStatTemplates = async (tournamentId) => {
