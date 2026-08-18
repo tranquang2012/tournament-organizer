@@ -5,7 +5,7 @@ const matchesService = require('../src/modules/matches/service/matches.service')
 const bracketService = require('../src/modules/tournament/service/bracket.service');
 const bracketRepository = require('../src/modules/tournament/repository/bracket.repository');
 
-const TOUR_ID = process.env.TEST_TOUR_ID;
+const TOUR_ID = process.env.TEST_TOUR_ID_ROUND_ROBIN;
 
 
 async function sleep(ms) {

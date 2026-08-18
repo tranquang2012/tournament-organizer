@@ -5,14 +5,17 @@ import {
   faChevronLeft,
   faSliders,
   faUsers,
+  faPause,
 } from '@fortawesome/free-solid-svg-icons';
 import { getTournamentById, getParticipants } from '../../services/TournamentService';
 import EditDetailsTab from '../../components/tournament_admin/edit/EditDetailsTab';
 import EditParticipantsTab from '../../components/tournament_admin/edit/EditParticipantsTab';
+import EditActionsTab from '../../components/tournament_admin/edit/EditActionsTab';
 
 const TABS = [
   { key: 'details',      label: 'Tournament Details', icon: faSliders },
   { key: 'participants', label: 'Participants',        icon: faUsers   },
+  { key: 'actions',      label: 'Tournament Actions',  icon: faPause   },
 ];
 
 const mapParticipantsToCompetitors = (participants, teamSize, existingCompetitors = []) => {
@@ -173,6 +176,11 @@ const TournamentEditPage = () => {
           {activeTab === 'participants' && (
             <EditParticipantsTab
               tournamentData={tournament}
+            />
+          )}
+          {activeTab === 'actions' && (
+            <EditActionsTab
+              tournamentId={id}
             />
           )}
         </div>

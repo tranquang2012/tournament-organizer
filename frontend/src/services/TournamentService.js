@@ -328,4 +328,29 @@ export const getTournamentBracket = async (tournamentId) => {
 export const getTournamentBrackets = async (tournamentId) => {
   const response = await axios.get(`/api/tournaments/${tournamentId}/brackets`);
   return response?.data || [];
+};
+
+export const getTournamentRankings = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/rankings`);
+  return response?.data || null;
+};
+
+// --- STAT TEMPLATES ---
+
+export const getStatTemplates = async (tournamentId) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.get(`/api/tournaments/${tournamentId}/stat-templates`, authConfig);
+  return response?.data || [];
+};
+
+export const createStatTemplate = async (tournamentId, payload) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.post(`/api/tournaments/${tournamentId}/stat-templates`, payload, authConfig);
+  return response?.data;
+};
+
+export const deleteStatTemplate = async (tournamentId, templateId) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.delete(`/api/tournaments/${tournamentId}/stat-templates/${templateId}`, authConfig);
+  return response?.data;
 };

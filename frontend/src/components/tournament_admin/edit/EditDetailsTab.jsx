@@ -24,8 +24,8 @@ const DEFAULT_BANNERS = [
 ];
 
 const FORMAT_LABELS = {
-  single_elim: 'Single Elimination',
-  double_elim: 'Double Elimination',
+  single_elimination: 'Single Elimination',
+  double_elimination: 'Double Elimination',
   round_robin: 'Round Robin',
   hybrid: 'Hybrid',
 };
@@ -50,9 +50,12 @@ const EditDetailsTab = ({ tournamentId, initialData }) => {
     banner: null,           
     defaultBanner: DEFAULT_BANNERS.find(b => b.src === initialData?.tour_banner)?.id || null,    
     defaultBannerSrc: initialData?.tour_banner || null, 
+    pauseDays: '',
+    pauseUntilDate: '',
   });
 
   const [bannerMode, setBannerMode] = useState('default');
+  const [pauseMode, setPauseMode] = useState('days');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -245,6 +248,77 @@ const EditDetailsTab = ({ tournamentId, initialData }) => {
               helperText="PNG, JPG or WebP — max 2 MB"
             />
           )}
+        </div>
+
+        {/* Pause Tournament Section */}
+        <div className="md:col-span-2 pt-8 mt-2 border-t border-slate-100">
+          <h3 className="text-base font-bold text-slate-800 mb-1">Pause Tournament</h3>
+          <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-5">
+            <p className="text-sm font-medium text-amber-800 m-0 leading-relaxed">
+              <strong>Note:</strong> Pausing the tournament will automatically shift all scheduled matches to the next available day based on your selected duration.
+            </p>
+          </div>
+          
+          <div className="flex flex-col gap-4">
+            {/* Option Toggle */}
+            <div className="inline-flex rounded-xl border border-slate-200 p-1 bg-slate-50 self-start">
+              <button
+                type="button"
+                onClick={() => setPauseMode('days')}
+                className={`px-5 py-2 rounded-lg text-sm font-semibold border-none cursor-pointer transition-all duration-200 ${
+                  pauseMode === 'days'
+                    ? 'bg-[#123836] text-white shadow-sm'
+                    : 'bg-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                Duration (Days)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPauseMode('date')}
+                className={`px-5 py-2 rounded-lg text-sm font-semibold border-none cursor-pointer transition-all duration-200 ${
+                  pauseMode === 'date'
+                    ? 'bg-[#123836] text-white shadow-sm'
+                    : 'bg-transparent text-slate-500 hover:text-slate-700'
+                }`}
+              >
+                Specific Date
+              </button>
+            </div>
+
+            {/* Input Fields */}
+            <div className="max-w-sm flex flex-col items-start gap-4">
+              {pauseMode === 'days' ? (
+                <div className="w-full">
+                  <InputField
+                    label="Pause Duration (Days)"
+                    type="number"
+                    placeholder="e.g. 7"
+                    value={form.pauseDays}
+                    onChange={update('pauseDays')}
+                    min="1"
+                  />
+                </div>
+              ) : (
+                <div className="w-full">
+                  <InputField
+                    label="Pause Until Date"
+                    type="date"
+                    value={form.pauseUntilDate}
+                    onChange={update('pauseUntilDate')}
+                  />
+                </div>
+              )}
+              
+              <Button
+                type="button"
+                onClick={() => alert('Pause Tournament clicked')}
+                className="bg-amber-500 hover:bg-amber-600 text-white border-none px-6 shadow-sm"
+              >
+                Pause Tournament
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 

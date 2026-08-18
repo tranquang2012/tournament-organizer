@@ -23,7 +23,9 @@ import AdminLayout from './components/layout/AdminLayout.jsx'
 import AdminDashboardPage from './pages/admin/AdminDashboardPage.jsx'
 import TournamentCreatePage from './pages/admin/TournamentCreatePage.jsx'
 import TournamentManagePage from './pages/admin/TournamentManagePage.jsx'
+import TournamentStatTemplatesPage from './pages/admin/TournamentStatTemplatesPage.jsx'
 import TournamentEditPage from './pages/admin/TournamentEditPage.jsx'
+import MatchConfigPage from './pages/admin/MatchConfigPage.jsx'
 import UserManagementPage from './pages/admin/UserManagementPage.jsx'
 import CalendarPage from './pages/public/CalendarPage.jsx'
 
@@ -71,6 +73,8 @@ const router = createBrowserRouter(
         <Route path="tournaments/create" element={<TournamentCreatePage />} />
         <Route path="tournaments/list" element={<TournamentManagePage />} />
         <Route path="tournaments/:id/edit" element={<TournamentEditPage />} />
+        <Route path="tournaments/:id/matches" element={<MatchConfigPage />} />
+        <Route path="tournaments/:id/stat-templates" element={<TournamentStatTemplatesPage />} />
         <Route
           path="accounts"
           element={

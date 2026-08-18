@@ -207,11 +207,11 @@ const TournamentCreatePage = () => {
         return formData.participants?.length > 0;
       }
       if (formData.participantType === 'team') {
-        if (!formData.membersPerTeam || formData.membersPerTeam <= 0) return false;
-        if (formData.teamMode === 'predefine') {
-          return formData.teams?.length > 0;
-        } else {
+        if (formData.teamMode === 'randomize') {
+          if (!formData.membersPerTeam || formData.membersPerTeam <= 0) return false;
           return formData.participants?.length > 0;
+        } else {
+          return formData.teams?.length > 0;
         }
       }
       return false;

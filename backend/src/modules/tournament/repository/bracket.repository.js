@@ -1,6 +1,20 @@
 const pool = require('../../../shared/database/pool');
 
 class BracketRepository {
+  async _bootstrapMatchStats(tourId, matchId, executor) {
+    const templates = await executor.query(
+      `SELECT name, type FROM tournament_stat_templates WHERE tournament_id = $1`,
+      [tourId]
+    );
+    if (templates.rows.length > 0) {
+      const values = templates.rows.map((_, i) => `($1, $${i * 2 + 2}, $${i * 2 + 3})`).join(', ');
+      const flatParams = templates.rows.flatMap(t => [t.name, t.type]);
+      await executor.query(
+        `INSERT INTO match_stats (match_id, name, type) VALUES ${values}`,
+        [matchId, ...flatParams]
+      );
+    }
+  }
 
   async getTournamentFormat(tourId, executor = pool) {
     const { rows } = await executor.query(
@@ -42,7 +56,9 @@ class BracketRepository {
         status
       ]
     );
-    return rows[0].match_id;
+    const matchId = rows[0].match_id;
+    await this._bootstrapMatchStats(tourId, matchId, executor);
+    return matchId;
   }
 
   async updateProgressionReferences(matchId, nextWinnerMatchId, nextLoserMatchId, executor = pool) {
@@ -129,7 +145,9 @@ class BracketRepository {
     RETURNING match_id`,
     [tourId, roundNum, stageName]
   );
-  return rows[0].match_id;
+  const matchId = rows[0].match_id;
+  await this._bootstrapMatchStats(tourId, matchId, executor);
+  return matchId;
 }
 
 async getRoundScoringMatches(tourId, executor = pool) {

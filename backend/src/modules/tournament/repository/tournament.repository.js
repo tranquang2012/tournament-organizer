@@ -40,10 +40,10 @@ class TournamentRepository {
 
       const { rows: tourRows } = await client.query(
         `UPDATE tournament
-         SET sp_id=$1
-         WHERE tour_id=$2 AND (created_by=$3 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $3 AND role IN ('superadmin', 'super_admin')))
+         SET sp_id=$1, participant_type=$2
+         WHERE tour_id=$3 AND (created_by=$4 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $4 AND role IN ('superadmin', 'super_admin')))
          RETURNING *`,
-        [sp_id, tourId, organizerId]
+        [sp_id, participant_type, tourId, organizerId]
       );
       if (!tourRows[0]) throw new Error('Tournament not found or access denied.');
 

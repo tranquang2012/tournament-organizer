@@ -15,7 +15,8 @@ import {
   getParticipants,
   getPublicTournamentById,
   getTournamentBracket,
-  getTournamentBrackets
+  getTournamentBrackets,
+  getTournamentRankings
 } from '../../services/TournamentService';
 
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
@@ -250,6 +251,9 @@ const TournamentPage = () => {
   const [roundScoringData, setRoundScoringData] = useState(null)
   const [loadingRoundScoring, setLoadingRoundScoring] = useState(false)
 
+  const [rankingsData, setRankingsData] = useState(null)
+  const [loadingRankings, setLoadingRankings] = useState(false)
+
   const [selectedTab, setSelectedTab] = useState('standings') // 'standings' or 'matches'
   const [hybridMatchesTab, setHybridMatchesTab] = useState('group') // 'group' or 'elimination'
 
@@ -346,6 +350,10 @@ const TournamentPage = () => {
           const flatMatches = await getTournamentBracket(id);
           setMatches(flatMatches);
         }
+        setLoadingRankings(true);
+        const ranks = await getTournamentRankings(id);
+        setRankingsData(ranks);
+        setLoadingRankings(false);
       } catch (err) {
         console.error('Failed to fetch matches data:', err);
       } finally {
@@ -470,14 +478,17 @@ const TournamentPage = () => {
     tournament.format === 'hybrid' ? tournament.second_stage_format : tournament.format,
     isIndividual
   );
-  const groups = (tournament.format === 'round_robin' || tournament.format === 'hybrid')
-    ? computeGroupStandings(
-      tournament.format === 'hybrid'
-        ? matches.filter(m => !m.stage || m.stage === 'stage_1')
-        : matches,
-      isIndividual
-    )
-    : [];
+  const groups = rankingsData?.groups?.map(g => ({
+    id: g.group_name,
+    name: g.group_name,
+    teams: g.rankings.map(r => ({
+      ...r,
+      name: r.comp_name,
+      logo: r.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo1),
+      win: r.wins,
+      lose: r.losses
+    }))
+  })) || [];
   const groupRecentMatches = tournament.format === 'hybrid'
     ? getMatchesForRecentSection(matches.filter(m => !m.stage || m.stage === 'stage_1'), 'round_robin')
     : [];

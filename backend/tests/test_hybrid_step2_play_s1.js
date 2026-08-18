@@ -4,7 +4,7 @@ const pool = require('../src/shared/database/pool');
 const matchesService = require('../src/modules/matches/service/matches.service');
 const bracketRepository = require('../src/modules/tournament/repository/bracket.repository');
 
-const TOUR_ID = process.env.TEST_TOUR_ID;
+const TOUR_ID = process.env.TEST_TOUR_ID_HYBRID;
 
 async function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
