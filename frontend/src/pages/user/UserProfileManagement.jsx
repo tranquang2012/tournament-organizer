@@ -148,7 +148,7 @@ const UserProfileManagement = () => {
                                             'Mark your favorite tournament to recieve schedule details via email'}
                                 </span>
                             </div>
-                            <div className='mx-4 md:mx-7 p-3 md:p-5 h-[80%]'>
+                            <div className='mx-4 md:mx-7 p-3 md:p-5 h-[80%] overflow-y-auto'>
                                 {sectionChoose === 'profile' ? <AccountManageSetting /> : sectionChoose === 'notification' ? <NotificationSetting /> : <FollowedTournaments />}
                             </div>
                         </div>
