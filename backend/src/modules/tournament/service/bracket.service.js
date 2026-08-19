@@ -138,8 +138,8 @@ class BracketService {
     }));
   }
 
-  async submitRoundScores(tourId, matchId, scores, organizerId) {
-    return bracketRoundScoringService.submitRoundScores(tourId, matchId, scores, organizerId, bracketHybridService);
+  async submitRoundScores(tourId, matchId, scores, organizerId, options = {}) {
+    return bracketRoundScoringService.submitRoundScores(tourId, matchId, scores, organizerId, bracketHybridService, options);
   }
 
   async ensureHybridStageTwoGenerated(tourId) {

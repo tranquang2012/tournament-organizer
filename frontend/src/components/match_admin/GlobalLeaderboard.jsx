@@ -2,11 +2,14 @@ import React from 'react';
 
 const MEDAL_ICONS = ['🥇', '🥈', '🥉'];
 
-const GlobalLeaderboard = ({ participants, rounds }) => {
+const GlobalLeaderboard = ({ participants, rounds, setsPerMatch = 1 }) => {
   const completedRounds = rounds.filter(r => r.status === 'Completed').length;
   const totalRounds = rounds.length;
   const activeCount = participants.filter(p => p.status === 'Active').length;
   const eliminatedCount = participants.filter(p => p.status === 'Eliminated').length;
+  const gameCount = Math.max(1, Number(setsPerMatch) || 1);
+  const showGameColumns = gameCount > 1 && rounds.length === 1;
+  const singleRoundId = rounds[0]?.id;
 
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
@@ -16,7 +19,7 @@ const GlobalLeaderboard = ({ participants, rounds }) => {
         <div>
           <h2 className="text-lg font-bold text-slate-800">Global Leaderboard</h2>
           <p className="text-xs font-medium text-slate-400 mt-0.5">
-            {completedRounds}/{totalRounds} rounds completed - Score (Points)
+            {completedRounds}/{totalRounds} rounds completed - {showGameColumns ? `Sum of ${gameCount} games` : 'Score (Points)'}
           </p>
         </div>
         <div className="flex items-center gap-5">
@@ -39,13 +42,26 @@ const GlobalLeaderboard = ({ participants, rounds }) => {
               <th className="pl-5 pr-2 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider w-10">#</th>
               <th className="px-3 py-3 text-left text-xs font-bold text-slate-400 uppercase tracking-wider">Participant</th>
               <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-24">Status</th>
-              {rounds.map(round => (
-                <th key={round.id} className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-20">
-                  {round.label}
-                </th>
-              ))}
-              <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-16">Best</th>
-              <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-16">Total</th>
+              {showGameColumns ? (
+                <>
+                  {Array.from({ length: gameCount }, (_, index) => (
+                    <th key={`game-${index}`} className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-20">
+                      Game {index + 1}
+                    </th>
+                  ))}
+                  <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-16">Total</th>
+                </>
+              ) : (
+                <>
+                  {rounds.map(round => (
+                    <th key={round.id} className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-20">
+                      {round.label}
+                    </th>
+                  ))}
+                  <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-16">Best</th>
+                  <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-16">Total</th>
+                </>
+              )}
             </tr>
           </thead>
           <tbody>
@@ -94,22 +110,36 @@ const GlobalLeaderboard = ({ participants, rounds }) => {
                   </td>
 
                   {/* Round scores */}
-                  {rounds.map(round => {
-                    const score = p.rounds[round.id];
-                    return (
-                      <td key={round.id} className="px-3 py-3.5 text-center font-semibold text-slate-600">
-                        {score != null ? score : (
-                          <span className="text-slate-300">-</span>
-                        )}
-                      </td>
-                    );
-                  })}
-
-                  {/* Best */}
-                  <td className="px-3 py-3.5 text-center font-bold text-slate-700">{p.best}</td>
-
-                  {/* Total */}
-                  <td className="px-3 py-3.5 text-center font-bold text-slate-800">{p.total}</td>
+                  {showGameColumns ? (
+                    <>
+                      {Array.from({ length: gameCount }, (_, index) => {
+                        const score = p.sets?.[singleRoundId]?.[index];
+                        return (
+                          <td key={`${p.id}-game-${index}`} className="px-3 py-3.5 text-center font-semibold text-slate-600">
+                            {score != null ? score : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-3.5 text-center font-bold text-slate-800">{p.total}</td>
+                    </>
+                  ) : (
+                    <>
+                      {rounds.map(round => {
+                        const score = p.rounds[round.id];
+                        return (
+                          <td key={round.id} className="px-3 py-3.5 text-center font-semibold text-slate-600">
+                            {score != null ? score : (
+                              <span className="text-slate-300">-</span>
+                            )}
+                          </td>
+                        );
+                      })}
+                      <td className="px-3 py-3.5 text-center font-bold text-slate-700">{p.best}</td>
+                      <td className="px-3 py-3.5 text-center font-bold text-slate-800">{p.total}</td>
+                    </>
+                  )}
                 </tr>
               );
             })}

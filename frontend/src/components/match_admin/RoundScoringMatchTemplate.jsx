@@ -33,6 +33,7 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
   const [error, setError] = useState(null);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [statsRound, setStatsRound] = useState(null);
+  const [setsPerMatch, setSetsPerMatch] = useState(Math.max(1, Number(tournament?.sets_per_match) || 1));
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,6 +53,10 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
         ]);
 
         const standings = extractStandingsPayload(stagesPayload);
+        const nextSetsPerMatch = Math.max(
+          1,
+          Number(standings?.sets_per_match) || Number(tournament?.sets_per_match) || 1
+        );
         const mappedRounds = (standings?.rounds || []).map((round) => ({
           id: String(round.match_id),
           matchId: round.match_id,
@@ -63,6 +68,7 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
         }));
 
         const scoreLookup = {};
+        const setsLookup = {};
         const latestCompleted = [...mappedRounds]
           .filter((round) => round.rawStatus === 'completed')
           .sort((a, b) => a.roundNumber - b.roundNumber)
@@ -72,7 +78,9 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
           (round.roundScores || []).forEach((entry) => {
             if (!entry?.comp_id) return;
             if (!scoreLookup[entry.comp_id]) scoreLookup[entry.comp_id] = {};
+            if (!setsLookup[entry.comp_id]) setsLookup[entry.comp_id] = {};
             scoreLookup[entry.comp_id][round.id] = entry.score;
+            setsLookup[entry.comp_id][round.id] = Array.isArray(entry.sets) ? entry.sets : null;
           });
         });
 
@@ -83,9 +91,11 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
 
         const mappedParticipants = (participantData || []).map((participant, index) => {
           const roundScores = {};
+          const roundSets = {};
           mappedRounds.forEach((round) => {
             const score = scoreLookup[participant.id]?.[round.id];
             roundScores[round.id] = score != null ? score : null;
+            roundSets[round.id] = setsLookup[participant.id]?.[round.id] || null;
           });
 
           const numericScores = Object.values(roundScores).filter((score) => score != null);
@@ -100,6 +110,7 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
             logo: participant.logo,
             status,
             rounds: roundScores,
+            sets: roundSets,
             best: numericScores.length ? Math.max(...numericScores) : 0,
             total: numericScores.reduce((sum, score) => sum + Number(score), 0),
           };
@@ -115,6 +126,7 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
 
         setRounds(mappedRounds);
         setParticipants(mappedParticipants);
+        setSetsPerMatch(nextSetsPerMatch);
       } catch (err) {
         console.error('Failed to fetch round scoring data:', err);
         setError(err.response?.data?.error?.message || err.message || 'Failed to load round scoring data');
@@ -130,10 +142,25 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
     setIsSubmitting(true);
     setError(null);
     try {
-      await submitRoundScores(tournament.tour_id, round.matchId, scores);
+      await submitRoundScores(tournament.tour_id, round.matchId, scores, { finalize: true });
       setRefreshTrigger((prev) => prev + 1);
     } catch (err) {
       const message = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to submit scores';
+      setError(message);
+      throw err;
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleSaveScores = async (round, scores) => {
+    setIsSubmitting(true);
+    setError(null);
+    try {
+      await submitRoundScores(tournament.tour_id, round.matchId, scores, { finalize: false });
+      setRefreshTrigger((prev) => prev + 1);
+    } catch (err) {
+      const message = err.response?.data?.error?.message || err.response?.data?.message || err.message || 'Failed to save scores';
       setError(message);
       throw err;
     } finally {
@@ -296,7 +323,7 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
         <>
           {activeTab === 'dashboard' && (
             <div className="animate-[fadeIn_0.2s_ease-out]">
-              <GlobalLeaderboard participants={participants} rounds={rounds} />
+              <GlobalLeaderboard participants={participants} rounds={rounds} setsPerMatch={setsPerMatch} />
             </div>
           )}
 
@@ -306,8 +333,10 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
                 participants={participants}
                 rounds={rounds}
                 onSubmit={handleSubmitScores}
+                onSave={handleSaveScores}
                 isSubmitting={isSubmitting}
                 onOpenStats={setStatsRound}
+                setsPerMatch={setsPerMatch}
               />
             </div>
           )}

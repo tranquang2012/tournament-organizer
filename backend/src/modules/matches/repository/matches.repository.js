@@ -11,7 +11,8 @@ class MatchesRepository {
         m.round_scores,
         c1.comp_name as c1_name, c1.comp_logo as c1_logo, c1.comp_size as c1_size,
         c2.comp_name as c2_name, c2.comp_logo as c2_logo, c2.comp_size as c2_size,
-        t.tour_format, t.participant_type, t.tour_name, t.tour_banner
+        t.tour_format, t.participant_type, t.tour_name, t.tour_banner,
+        t.sets_per_match, t.first_stage_format, t.second_stage_format
       FROM matches m
       LEFT JOIN competitors c1 ON m.competitor1_id = c1.comp_id
       LEFT JOIN competitors c2 ON m.competitor2_id = c2.comp_id

@@ -1,12 +1,90 @@
 const pool = require('../../../shared/database/pool');
 const AppError = require('../../../shared/errors/AppError');
 const bracketRepository = require('../repository/bracket.repository');
+const { getSportRules } = require('../config/sportRules.config');
 
 class BracketRoundScoringService {
+  _normalizeScoreEntries(scores, setsPerMatch, { draft = false } = {}) {
+    const expected = Math.max(1, Number(setsPerMatch) || 1);
+
+    return scores.map((entry) => {
+      if (!entry?.comp_id) {
+        throw new AppError('Each score entry must include comp_id.', 400);
+      }
+
+      const parseSetValue = (value, index) => {
+        if (value === null || value === undefined || value === '') {
+          if (draft) return null;
+          throw new AppError(
+            expected > 1
+              ? `Game ${index + 1} score for competitor ${entry.comp_id} must be a non-negative number.`
+              : `Score for competitor ${entry.comp_id} must be a non-negative number.`,
+            400
+          );
+        }
+
+        const numeric = Number(value);
+        if (!Number.isFinite(numeric) || numeric < 0) {
+          throw new AppError(
+            expected > 1
+              ? `Game ${index + 1} score for competitor ${entry.comp_id} must be a non-negative number.`
+              : `Score for competitor ${entry.comp_id} must be a non-negative number.`,
+            400
+          );
+        }
+        return numeric;
+      };
+
+      if (Array.isArray(entry.sets)) {
+        if (!draft && entry.sets.length !== expected) {
+          throw new AppError(`Each competitor must have ${expected} game score(s).`, 400);
+        }
+        if (entry.sets.length > expected) {
+          throw new AppError(`Each competitor can have at most ${expected} game score(s).`, 400);
+        }
+
+        const sets = Array.from({ length: expected }, (_, index) => parseSetValue(entry.sets[index], index));
+        const filled = sets.filter((value) => value != null);
+
+        return {
+          comp_id: entry.comp_id,
+          sets,
+          score: filled.length ? filled.reduce((sum, value) => sum + value, 0) : null,
+        };
+      }
+
+      if (draft && (entry.score === null || entry.score === undefined || entry.score === '')) {
+        if (expected !== 1) {
+          throw new AppError(`Each competitor must include ${expected} game scores in sets.`, 400);
+        }
+        return { comp_id: entry.comp_id, sets: [null], score: null };
+      }
+
+      const numericScore = parseSetValue(entry.score, 0);
+      if (expected !== 1) {
+        throw new AppError(`Each competitor must include ${expected} game scores in sets.`, 400);
+      }
+
+      return {
+        comp_id: entry.comp_id,
+        sets: [numericScore],
+        score: numericScore,
+      };
+    });
+  }
+
   async generateRoundScoringBracket(tourId, tournament) {
     const competitors = await bracketRepository.getCompetitorsForSeeding(tourId);
     if (competitors.length < 2) {
       throw new AppError('At least 2 competitors are required.', 400);
+    }
+
+    const sportRules = getSportRules(tournament.sp_id);
+    if (sportRules?.lobby_size && competitors.length !== sportRules.lobby_size) {
+      throw new AppError(
+        `${sportRules.sport_name} requires exactly ${sportRules.lobby_size} players for one lobby. This tournament has ${competitors.length}.`,
+        400
+      );
     }
 
     const advancePerRound = tournament.advance_per_group || 3;
@@ -51,7 +129,7 @@ class BracketRoundScoringService {
     }
   }
 
-  async submitRoundScores(tourId, matchId, scores, organizerId, bracketHybridService) {
+  async submitRoundScores(tourId, matchId, scores, organizerId, bracketHybridService, { finalize = true } = {}) {
     const match = await bracketRepository.getRoundScoringMatch(matchId, tourId);
     if (!match) throw new AppError('Round match not found in this tournament.', 404);
     if (match.created_by !== organizerId) throw new AppError('Access denied.', 403);
@@ -60,24 +138,45 @@ class BracketRoundScoringService {
       throw new AppError('This round is not open yet. Complete the previous round first.', 400);
     }
 
-    // Validate all submitted comp_ids belong to this tournament
     const { rows: validComps } = await pool.query(
       `SELECT comp_id FROM competitors WHERE tour_id = $1`,
       [tourId]
     );
-    const validIdSet = new Set(validComps.map(c => c.comp_id));
+    const validIdSet = new Set(validComps.map(c => String(c.comp_id)));
+    const normalizedScores = this._normalizeScoreEntries(scores, match.sets_per_match || 1, { draft: !finalize });
 
-    for (const s of scores) {
-      if (!validIdSet.has(s.comp_id)) {
+    for (const s of normalizedScores) {
+      if (!validIdSet.has(String(s.comp_id))) {
         throw new AppError(`Competitor ${s.comp_id} does not belong to this tournament.`, 400);
-      }
-      if (typeof s.score !== 'number' || s.score < 0) {
-        throw new AppError(`Score for competitor ${s.comp_id} must be a non-negative number.`, 400);
       }
     }
 
+    if (!finalize) {
+      const hasAnyScore = normalizedScores.some((entry) => (
+        Array.isArray(entry.sets) && entry.sets.some((value) => value != null)
+      ));
+      if (!hasAnyScore) {
+        throw new AppError('Enter at least one game score before saving.', 400);
+      }
+
+      const draftScores = normalizedScores.map((entry) => ({
+        comp_id: entry.comp_id,
+        sets: entry.sets,
+        score: entry.score,
+      }));
+
+      await bracketRepository.saveRoundScoresDraft(matchId, draftScores);
+
+      return {
+        round: match.round,
+        saved: true,
+        finalized: false,
+        scores: draftScores,
+      };
+    }
+
     // Rank: highest score = rank 1
-    const ranked = [...scores]
+    const ranked = [...normalizedScores]
       .sort((a, b) => b.score - a.score)
       .map((s, i) => ({ ...s, rank: i + 1 }));
 
@@ -102,6 +201,7 @@ class BracketRoundScoringService {
 
     const roundScores = ranked.map(r => ({
       comp_id: r.comp_id,
+      sets: r.sets,
       score: r.score,
       rank: r.rank,
       advanced: r.rank <= effectiveAdvance,
@@ -150,6 +250,7 @@ class BracketRoundScoringService {
       comp_id: r.comp_id,
       comp_name: compMap[r.comp_id]?.comp_name || 'Unknown',
       comp_logo: compMap[r.comp_id]?.comp_logo || null,
+      sets: r.sets,
       score: r.score,
       advanced: r.rank <= effectiveAdvance,
       eliminated: r.rank > effectiveAdvance,
@@ -216,6 +317,7 @@ class BracketRoundScoringService {
         comp_id: r.comp_id,
         comp_name: r.comp_name,
         comp_logo: r.comp_logo,
+        sets: Array.isArray(r.sets) ? r.sets : null,
         score: r.score,
         status: r.eliminated ? 'eliminated' : 'active',
       }));
@@ -229,6 +331,7 @@ class BracketRoundScoringService {
       completed_rounds: completed.length,
       total_rounds: mappedRounds.length,
       advance_per_round: tournament?.advance_per_group || 3,
+      sets_per_match: tournament?.sets_per_match || 1,
       standings: currentStandings,
       rounds: mappedRounds,
     };
