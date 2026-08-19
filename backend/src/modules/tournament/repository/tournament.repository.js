@@ -487,6 +487,44 @@ class TournamentRepository {
 
    return { updated: true, competitor: rows[0] };
   }
+  async pauseTournament(tourId, pauseDate, organizerId, executor = pool) {
+  const { rows } = await executor.query(
+    `UPDATE tournament
+     SET tour_status     = 'paused',
+         tour_pausedate  = $1
+     WHERE tour_id = $2
+       AND created_by = $3
+       AND tour_status = 'published'
+     RETURNING *`,
+    [pauseDate, tourId, organizerId]
+  );
+  return rows[0] || null;
+}
+
+async resumeTournament(tourId, newEndDate, organizerId, executor = pool) {
+  const { rows } = await executor.query(
+    `UPDATE tournament
+     SET tour_status    = 'published',
+         tour_enddate   = $1,
+         tour_pausedate = NULL
+     WHERE tour_id = $2
+       AND created_by = $3
+       AND tour_status = 'paused'
+     RETURNING *`,
+    [newEndDate, tourId, organizerId]
+  );
+  return rows[0] || null;
+}
+
+async getTournamentTiming(tourId, organizerId, executor = pool) {
+  const { rows } = await executor.query(
+    `SELECT tour_id, tour_status, tour_startdate, tour_enddate, tour_pausedate, created_by
+     FROM tournament
+     WHERE tour_id = $1 AND created_by = $2`,
+    [tourId, organizerId]
+  );
+  return rows[0] || null;
+}
 }
 
 module.exports = new TournamentRepository();

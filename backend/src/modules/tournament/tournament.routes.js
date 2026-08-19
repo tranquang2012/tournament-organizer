@@ -59,4 +59,8 @@ router.get('/:id/stat-templates', statTemplateCtrl.getTemplates.bind(statTemplat
 router.post('/:id/stat-templates', statTemplateCtrl.createTemplate.bind(statTemplateCtrl));
 router.delete('/:id/stat-templates/:templateId', statTemplateCtrl.deleteTemplate.bind(statTemplateCtrl));
 
+// Pause / Resume tournament
+router.patch('/:id/pause',   ctrl.pauseTournament.bind(ctrl));
+router.patch('/:id/resume',  ctrl.resumeTournament.bind(ctrl));
+
 module.exports = router;
