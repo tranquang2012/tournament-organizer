@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faTrophy,
@@ -11,13 +11,7 @@ import {
 import DashboardStatCard from '../../components/dashboard/DashboardStatCard';
 import DashboardBarChart from '../../components/dashboard/DashboardBarChart';
 import DashboardDoughnutChart from '../../components/dashboard/DashboardDoughnutChart';
-
-import {
-  mockDashboardStats,
-  mockTournamentsBySport,
-  mockTournamentsByFormat,
-  mockRecentTournaments,
-} from '../../components/dashboard/mockDashboardData';
+import { getDashboardStats } from '../../services/DashboardService';
 
 const STATUS_COLORS = {
   Active: { bg: 'bg-emerald-50', text: 'text-emerald-700', dot: 'bg-emerald-500', border: 'border-emerald-100', bar: '#22c55e' },
@@ -25,8 +19,73 @@ const STATUS_COLORS = {
   Completed: { bg: 'bg-blue-50', text: 'text-blue-700', dot: 'bg-blue-500', border: 'border-blue-100', bar: '#3b82f6' },
 };
 
+const SPORT_COLORS = ['#22c55e', '#f97316', '#06b6d4', '#eab308', '#ef4444', '#ec4899', '#8b5cf6', '#14b8a6', '#f43f5e', '#a855f7'];
+const FORMAT_COLORS = ['#f59e0b', '#3b82f6', '#22c55e', '#8b5cf6', '#ec4899', '#06b6d4'];
+
 const AdminDashboardPage = () => {
-  const stats = mockDashboardStats;
+  const [stats, setStats] = useState(null);
+  const [tournamentsBySport, setTournamentsBySport] = useState([]);
+  const [tournamentsByFormat, setTournamentsByFormat] = useState([]);
+  const [recentTournaments, setRecentTournaments] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const data = await getDashboardStats();
+        setStats(data);
+        
+        setTournamentsBySport((data.tournamentsBySport || []).map((item, i) => ({
+          ...item,
+          color: SPORT_COLORS[i % SPORT_COLORS.length],
+        })));
+        
+        setTournamentsByFormat((data.tournamentsByFormat || []).map((item, i) => ({
+          ...item,
+          color: FORMAT_COLORS[i % FORMAT_COLORS.length],
+        })));
+        
+        setRecentTournaments(data.recentTournaments || []);
+      } catch (err) {
+        console.error('Failed to fetch dashboard stats:', err);
+        setError('Failed to load dashboard data. Please try again.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-3 border-slate-200 border-t-[#123836] rounded-full animate-spin" />
+          <p className="text-sm font-medium text-slate-400">Loading dashboard…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <p className="text-sm font-medium text-red-500 mb-2">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="text-sm font-semibold text-[#123836] hover:underline"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!stats) return null;
 
   const statusBreakdown = [
     { label: 'Active', value: stats.activeTournaments, color: STATUS_COLORS.Active.bar },
@@ -90,11 +149,11 @@ const AdminDashboardPage = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
           <DashboardBarChart
             title="Tournaments by Sport"
-            data={mockTournamentsBySport}
+            data={tournamentsBySport}
           />
           <DashboardDoughnutChart
             title="Tournaments by Format"
-            data={mockTournamentsByFormat}
+            data={tournamentsByFormat}
           />
         </div>
 
@@ -147,7 +206,7 @@ const AdminDashboardPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {mockRecentTournaments.map((t, idx) => {
+                {recentTournaments.map((t, idx) => {
                   const sc = STATUS_COLORS[t.status] || STATUS_COLORS.Upcoming;
                   const formatDate = (dateStr) => {
                     const d = new Date(dateStr);

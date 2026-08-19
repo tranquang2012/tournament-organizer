@@ -24,6 +24,13 @@ class MatchesController {
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
+
+  async getScheduledMatches(req, res, next) {
+    try {
+      const data = await service.getScheduledMatches();
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
 }
 
 module.exports = new MatchesController();

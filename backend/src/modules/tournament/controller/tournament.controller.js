@@ -126,16 +126,16 @@ class TournamentController {
     } catch (err) { next(err); }
   }
 
-  async getBracket(req, res, next) {
+  async getMatches(req, res, next) {
     try {
-      const data = await bracketService.getBracket(req.params.id);
+      const data = await bracketService.getMatches(req.params.id);
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
 
-  async getBrackets(req, res, next) {
+  async getStages(req, res, next) {
     try {
-      const data = await bracketService.getBrackets(req.params.id);
+      const data = await bracketService.getStages(req.params.id);
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }

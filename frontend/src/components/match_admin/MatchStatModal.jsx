@@ -18,6 +18,7 @@ const MatchStatModal = ({ matchId, team1, team2, onClose }) => {
   const [isAdding, setIsAdding] = useState(false);
   const [newName, setNewName] = useState('');
   const [newType, setNewType] = useState('INTEGER');
+  const [newCompId, setNewCompId] = useState('');
   const [addingError, setAddingError] = useState(null);
 
   // Modal State
@@ -49,19 +50,28 @@ const MatchStatModal = ({ matchId, team1, team2, onClose }) => {
     if (!newName.trim()) return;
     try {
       setAddingError(null);
-      await createMatchStat(matchId, { name: newName.trim(), type: newType });
+      const payload = { name: newName.trim(), type: newType };
+      if (newCompId) payload.comp_id = newCompId;
+      await createMatchStat(matchId, payload);
       setNewName('');
       setNewType('INTEGER');
+      setNewCompId('');
       setIsAdding(false);
       await loadStatsAndTemplates();
     } catch (err) {
-      setAddingError(err.response?.data?.message || 'Failed to add stat.');
+      setAddingError(err.response?.data?.message || err.message || 'Failed to add stat.');
     }
   };
 
   const handleAddGlobalStat = async (template) => {
     try {
-      await createMatchStat(matchId, { name: template.name, type: template.type });
+      // For global stats with two teams, create one stat per team
+      if (team1?.id && team2?.id) {
+        await createMatchStat(matchId, { name: template.name, type: template.type, comp_id: team1.id });
+        await createMatchStat(matchId, { name: template.name, type: template.type, comp_id: team2.id });
+      } else {
+        await createMatchStat(matchId, { name: template.name, type: template.type });
+      }
       await loadStatsAndTemplates();
     } catch (err) {
       setError('Failed to add global stat.');
@@ -129,6 +139,23 @@ const MatchStatModal = ({ matchId, team1, team2, onClose }) => {
     );
   };
 
+  const getCompName = (compId) => {
+    if (!compId) return null;
+    if (compId === team1?.id) return team1.name;
+    if (compId === team2?.id) return team2.name;
+    return null;
+  };
+
+  // Group stats by name for paired display
+  const groupedStats = (() => {
+    const groups = {};
+    stats.forEach(stat => {
+      if (!groups[stat.name]) groups[stat.name] = [];
+      groups[stat.name].push(stat);
+    });
+    return groups;
+  })();
+
   const missingTemplates = templates.filter(t => !stats.find(s => s.name === t.name));
 
   return (
@@ -154,24 +181,31 @@ const MatchStatModal = ({ matchId, team1, team2, onClose }) => {
               <div className="text-center py-10">Loading...</div>
             ) : (
               <div className="space-y-4">
-                {stats.length === 0 ? (
+                {Object.keys(groupedStats).length === 0 ? (
                   <div className="text-center py-10 text-slate-400 text-sm border-2 border-dashed border-slate-200 rounded-xl">
                     No stats tracked for this match yet.
                   </div>
                 ) : (
                   <div className="grid gap-3">
-                    {stats.map(stat => (
-                      <div key={stat.id} className="flex items-center justify-between p-3 border border-slate-200 rounded-xl hover:border-slate-300">
-                        <div>
-                          <div className="font-semibold text-slate-800">{stat.name}</div>
-                          <div className="text-xs text-slate-400">{stat.type}</div>
+                    {Object.entries(groupedStats).map(([statName, statGroup]) => (
+                      <div key={statName} className="border border-slate-200 rounded-xl overflow-hidden">
+                        <div className="px-3 py-2 bg-slate-50 border-b border-slate-200">
+                          <span className="font-semibold text-slate-800 text-sm">{statName}</span>
+                          <span className="text-xs text-slate-400 ml-2">{statGroup[0].type}</span>
                         </div>
-                        <div className="flex items-center gap-4">
-                          {renderStatValueControl(stat)}
-                          <button onClick={() => handleDeleteClick(stat.id)} className="text-slate-300 hover:text-red-500 p-2">
-                            <FontAwesomeIcon icon={faTrash} className="text-sm" />
-                          </button>
-                        </div>
+                        {statGroup.map(stat => (
+                          <div key={stat.id} className="flex items-center justify-between px-3 py-2 hover:bg-slate-50">
+                            <div className="text-sm text-slate-600 min-w-[100px]">
+                              {getCompName(stat.comp_id) || <span className="text-slate-400 italic">Match-level</span>}
+                            </div>
+                            <div className="flex items-center gap-4">
+                              {renderStatValueControl(stat)}
+                              <button onClick={() => handleDeleteClick(stat.id)} className="text-slate-300 hover:text-red-500 p-2">
+                                <FontAwesomeIcon icon={faTrash} className="text-sm" />
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     ))}
                   </div>
@@ -186,7 +220,7 @@ const MatchStatModal = ({ matchId, team1, team2, onClose }) => {
                 {missingTemplates.length > 0 && (
                   <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100">
                     <h3 className="text-sm font-bold text-slate-700 mb-2">Available Global Stats</h3>
-                    <p className="text-xs text-slate-500 mb-3">These stats are defined for the tournament but not yet tracked in this match.</p>
+                    <p className="text-xs text-slate-500 mb-3">These stats are defined for the tournament but not yet tracked in this match. Adding will create one stat per team.</p>
                     <div className="flex flex-wrap gap-2">
                       {missingTemplates.map(t => (
                         <button 
@@ -206,28 +240,41 @@ const MatchStatModal = ({ matchId, team1, team2, onClose }) => {
                   <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
                     <h3 className="text-sm font-bold text-slate-700 mb-3">Add Custom Stat</h3>
                     {addingError && <div className="mb-3 text-red-600 text-xs">{addingError}</div>}
-                    <form onSubmit={handleAddStat} className="flex gap-3">
-                      <input 
-                        type="text" 
-                        value={newName} 
-                        onChange={e => setNewName(e.target.value)} 
-                        placeholder="Stat Name" 
-                        className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none" 
-                        required 
-                      />
-                      <select 
-                        value={newType} 
-                        onChange={e => setNewType(e.target.value)}
-                        className="w-32 px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none"
-                      >
-                        <option value="INTEGER">Integer</option>
-                        <option value="PERCENTAGE">Percentage</option>
-                        <option value="TEXT">Text</option>
-                        <option value="DURATION">Duration</option>
-                        <option value="BOOLEAN">Boolean</option>
-                      </select>
-                      <Button type="submit" className="text-sm px-4">Add</Button>
-                      <Button type="button" variant="secondary" className="text-sm" onClick={() => setIsAdding(false)}>Cancel</Button>
+                    <form onSubmit={handleAddStat} className="flex flex-col gap-3">
+                      <div className="flex gap-3">
+                        <input 
+                          type="text" 
+                          value={newName} 
+                          onChange={e => setNewName(e.target.value)} 
+                          placeholder="Stat Name" 
+                          className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none" 
+                          required 
+                        />
+                        <select 
+                          value={newType} 
+                          onChange={e => setNewType(e.target.value)}
+                          className="w-32 px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none"
+                        >
+                          <option value="INTEGER">Integer</option>
+                          <option value="PERCENTAGE">Percentage</option>
+                          <option value="TEXT">Text</option>
+                          <option value="DURATION">Duration</option>
+                          <option value="BOOLEAN">Boolean</option>
+                        </select>
+                      </div>
+                      <div className="flex gap-3 items-center">
+                        <select
+                          value={newCompId}
+                          onChange={e => setNewCompId(e.target.value)}
+                          className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none"
+                        >
+                          <option value="">Match-level (no team)</option>
+                          {team1?.id && <option value={team1.id}>{team1.name}</option>}
+                          {team2?.id && <option value={team2.id}>{team2.name}</option>}
+                        </select>
+                        <Button type="submit" className="text-sm px-4">Add</Button>
+                        <Button type="button" variant="secondary" className="text-sm" onClick={() => setIsAdding(false)}>Cancel</Button>
+                      </div>
                     </form>
                   </div>
                 ) : (

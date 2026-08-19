@@ -8,11 +8,14 @@ class MatchesRepository {
         m.match_id, m.tour_id, m.round, m.stage, m.group_name, m.status, m.scheduled_start, m.scheduled_end,
         m.competitor1_id, m.competitor2_id, m.score1, m.score2,
         m.winning_competitor_id, m.is_draw, m.next_winner_match_id, m.next_loser_match_id,
+        m.round_scores,
         c1.comp_name as c1_name, c1.comp_logo as c1_logo, c1.comp_size as c1_size,
-        c2.comp_name as c2_name, c2.comp_logo as c2_logo, c2.comp_size as c2_size
+        c2.comp_name as c2_name, c2.comp_logo as c2_logo, c2.comp_size as c2_size,
+        t.tour_format, t.participant_type, t.tour_name, t.tour_banner
       FROM matches m
       LEFT JOIN competitors c1 ON m.competitor1_id = c1.comp_id
       LEFT JOIN competitors c2 ON m.competitor2_id = c2.comp_id
+      LEFT JOIN tournament t ON m.tour_id = t.tour_id
       WHERE m.match_id = $1`,
       [matchId]
     );
@@ -92,6 +95,36 @@ async getScheduleConflicts(tourId, scheduled_start, scheduled_end, excludeMatchI
   );
   return rows;
 }
+
+  async getScheduledMatches(executor = pool) {
+    const { rows } = await executor.query(
+      `SELECT 
+        m.match_id,
+        m.tour_id,
+        m.round,
+        m.stage,
+        m.group_name,
+        m.status,
+        m.scheduled_start,
+        m.scheduled_end,
+        m.score1,
+        m.score2,
+        m.winning_competitor_id,
+        m.is_draw,
+        t.tour_name,
+        c1.comp_name as c1_name,
+        c2.comp_name as c2_name
+      FROM matches m
+      JOIN tournament t ON m.tour_id = t.tour_id
+      LEFT JOIN competitors c1 ON m.competitor1_id = c1.comp_id
+      LEFT JOIN competitors c2 ON m.competitor2_id = c2.comp_id
+      WHERE m.scheduled_start IS NOT NULL
+        AND m.scheduled_end IS NOT NULL
+        AND t.tour_status <> 'draft'
+      ORDER BY m.scheduled_start ASC`
+    );
+    return rows;
+  }
 }
 
 module.exports = new MatchesRepository();

@@ -6,6 +6,11 @@ const getAuthConfig = async () => {
   return withAuthHeader(token);
 };
 
+export const getMatch = async (matchId) => {
+  const response = await axiosInstance.get(`/api/matches/${matchId}`);
+  return response.data;
+};
+
 export const scheduleMatch = async (matchId, scheduledStart, scheduledEnd) => {
   const token = await getAccessToken();
   const authConfig = withAuthHeader(token);

@@ -14,8 +14,8 @@ import TournamentBracket from '../../components/tournament_public/TournamentBrac
 import {
   getParticipants,
   getPublicTournamentById,
-  getTournamentBracket,
-  getTournamentBrackets,
+  getTournamentMatches,
+  getTournamentStages,
   getTournamentRankings
 } from '../../services/TournamentService';
 
@@ -343,11 +343,11 @@ const TournamentPage = () => {
         setLoadingMatches(true);
         if (tournament.format === 'round_scoring') {
           setLoadingRoundScoring(true);
-          const standings = await getTournamentBrackets(id);
+          const standings = await getTournamentStages(id);
           setRoundScoringData(standings);
           setLoadingRoundScoring(false);
         } else {
-          const flatMatches = await getTournamentBracket(id);
+          const flatMatches = await getTournamentMatches(id);
           setMatches(flatMatches);
         }
         setLoadingRankings(true);

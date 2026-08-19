@@ -98,8 +98,12 @@ const MatchCard = ({ match, onUpdate }) => {
         return;
       }
       setIsUpdating(true);
-      const startIso = new Date(`${scheduleDate}T${scheduleStart}`).toISOString();
-      const endIso = new Date(`${scheduleDate}T${scheduleEnd}`).toISOString();
+      const [sYear, sMonth, sDay] = scheduleDate.split('-');
+      const [sHour, sMin] = scheduleStart.split(':');
+      const startIso = new Date(sYear, sMonth - 1, sDay, sHour, sMin).toISOString();
+
+      const [eHour, eMin] = scheduleEnd.split(':');
+      const endIso = new Date(sYear, sMonth - 1, sDay, eHour, eMin).toISOString();
       const res = await scheduleMatch(id, startIso, endIso);
       const warning = res?.data?.conflict_warning;
       if (warning) {
