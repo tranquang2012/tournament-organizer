@@ -31,6 +31,14 @@ class MatchesController {
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
+
+  async getPublicMatchesBySport(req, res, next) {
+    try {
+      const { sportId } = req.query;
+      const data = await service.getPublicMatchesBySport(sportId);
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
 }
 
 module.exports = new MatchesController();

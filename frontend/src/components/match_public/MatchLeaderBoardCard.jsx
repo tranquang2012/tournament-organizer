@@ -48,14 +48,14 @@ const MatchLeaderBoardCard = ({ match }) => {
     return (
         <div className='w-full flex flex-col gap-3'>
             <span className='text-[18px] md:text-[25px] font-semibold text-[#123836] hover:underline cursor-pointer hover:opacity-70'
-                onClick={() => navigate(`/tournaments`)}
+                onClick={() => match.tourId && navigate(`/tournaments/${match.tourId}`)}
             >
                 {match.tournamentName}
             </span>
-            <span className='text-[12px] md:text-[17px] font-normal'>Match {match.matchNumber} - {match.round} Match</span>
+            <span className='text-[12px] md:text-[17px] font-normal'>{match.matchLabel || `Match ${match.matchNumber} - ${match.round} Match`}</span>
             <div className='relative flex flex-col w-full h-[300px] md:h-[300px] border border-[#d9d9d9] cursor-pointer 
                 rounded-lg shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-[#123836]'
-                onClick={() => navigate(`./matches/${match.matchNumber}`)}
+                onClick={() => match.matchId && navigate(`/matches/${match.matchId}`)}
             >
                 <div className='w-full h-[15%] flex items-center gap-2 bg-[#123836] text-white px-3 rounded-tl-lg rounded-tr-lg'>
                     <span className='text-[10px] md:text-[15px] pr-3 border-r border-white'>Date: {match.date}</span>

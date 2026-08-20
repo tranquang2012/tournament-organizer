@@ -174,6 +174,127 @@ class MatchesService {
   };
 }
 
+  _assignMatchLabels(matches, format) {
+    const sorted = [...matches].sort((a, b) => {
+      if (a.round !== b.round) return a.round - b.round;
+      return String(a.match_id).localeCompare(String(b.match_id));
+    });
+
+    let wbCount = 0;
+    let lbCount = 0;
+    let singleCount = 0;
+    const labels = {};
+
+    sorted.forEach((m) => {
+      const gName = m.group_name || '';
+      let matchName = '';
+      if (format === 'double_elimination') {
+        if (gName === 'Grand Final') {
+          matchName = 'Grand Final';
+        } else if (gName === 'Lower Bracket') {
+          lbCount++;
+          matchName = `LB Match ${lbCount}`;
+        } else {
+          wbCount++;
+          matchName = `WB Match ${wbCount}`;
+        }
+      } else if (format === 'single_elimination') {
+        if (gName === 'Consolation Final') {
+          matchName = 'Consolation Final';
+        } else {
+          singleCount++;
+          matchName = `Match ${singleCount}`;
+        }
+      } else {
+        singleCount++;
+        matchName = `Match ${singleCount}`;
+      }
+      labels[String(m.match_id)] = matchName;
+    });
+
+    return labels;
+  }
+
+  _buildMatchLabelsById(allMatches) {
+    const byTour = new Map();
+    allMatches.forEach((m) => {
+      const tourId = String(m.tour_id);
+      if (!byTour.has(tourId)) byTour.set(tourId, []);
+      byTour.get(tourId).push(m);
+    });
+
+    const labels = {};
+    byTour.forEach((matches) => {
+      const meta = matches[0] || {};
+      const tourFormat = meta.tour_format;
+      if (tourFormat === 'hybrid') {
+        const stage1 = matches.filter((m) => !m.stage || m.stage === 'stage_1');
+        const stage2 = matches.filter((m) => m.stage === 'stage_2');
+        Object.assign(labels, this._assignMatchLabels(stage1, meta.first_stage_format || 'round_robin'));
+        Object.assign(labels, this._assignMatchLabels(stage2, meta.second_stage_format || 'single_elimination'));
+      } else {
+        Object.assign(labels, this._assignMatchLabels(matches, tourFormat));
+      }
+    });
+    return labels;
+  }
+
+  _parseRoundScores(value) {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  async getPublicMatchesBySport(sportId) {
+    if (!sportId) {
+      throw new AppError('sportId is required.', 400);
+    }
+
+    const rows = await matchesRepository.getPublicMatchesBySport(sportId);
+
+    const tourIds = [...new Set(rows.map((r) => r.tour_id).filter(Boolean))];
+    const labelSources = await matchesRepository.getMatchLabelSourcesByTourIds(tourIds);
+    const matchLabels = this._buildMatchLabelsById(labelSources);
+
+    const compMap = {};
+
+    rows.forEach((row) => {
+      if (row.competitor1_id) {
+        compMap[row.competitor1_id] = { comp_name: row.c1_name, comp_logo: row.c1_logo };
+      }
+      if (row.competitor2_id) {
+        compMap[row.competitor2_id] = { comp_name: row.c2_name, comp_logo: row.c2_logo };
+      }
+    });
+
+    const mappedRows = rows.map((row) => {
+      const mapped = this._mapMatchResponse(row);
+      mapped.match_label = matchLabels[String(row.match_id)] || null;
+      const roundScores = this._parseRoundScores(row.round_scores);
+
+      if (roundScores.length) {
+        mapped.round_scores = roundScores
+          .map((score) => ({
+            ...score,
+            comp_name: score.comp_name || compMap[score.comp_id]?.comp_name || 'Unknown',
+            comp_logo: score.comp_logo || compMap[score.comp_id]?.comp_logo || null,
+          }))
+          .sort((a, b) => (a.rank || 999) - (b.rank || 999));
+      }
+
+      return mapped;
+    });
+
+    return mappedRows;
+  }
+
   async getScheduledMatches() {
     const rows = await matchesRepository.getScheduledMatches();
     return rows.map(m => {

@@ -50,14 +50,14 @@ const MatchScoreCard = ({ match }) => {
     return (
         <div className='w-full flex flex-col gap-3'>
             <span className='text-[18px] md:text-[25px] font-semibold text-[#123836] hover:underline cursor-pointer hover:opacity-70'
-                onClick={() => navigate(`/tournaments`)}
+                onClick={() => match.tourId && navigate(`/tournaments/${match.tourId}`)}
             >
                 {match.tournamentName}
             </span>
-            <span className='text-[12px] md:text-[17px] font-normal'>Match {match.matchNumber} - {match.round} Match</span>
+            <span className='text-[12px] md:text-[17px] font-normal'>{match.matchLabel || `Match ${match.matchNumber} - ${match.round} Match`}</span>
             <div className='relative flex w-full h-[150px] md:h-[230px] border border-[#d9d9d9] cursor-pointer 
                 rounded-lg shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-[#123836]'
-                onClick={() => navigate(`./matches/${match.matchNumber}`)}
+                onClick={() => match.matchId && navigate(`/matches/${match.matchId}`)}
             >
                 <div className='flex flex-col w-[50%] mt-1'>
                     <span className='text-[10px] md:text-[15px] h-[10%] pl-1'>Date: {match.date}</span>
