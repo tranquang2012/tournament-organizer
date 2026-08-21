@@ -262,15 +262,19 @@ class MatchesService {
     const tourIds = [...new Set(rows.map((r) => r.tour_id).filter(Boolean))];
     const labelSources = await matchesRepository.getMatchLabelSourcesByTourIds(tourIds);
     const matchLabels = this._buildMatchLabelsById(labelSources);
+    const competitors = await matchesRepository.getCompetitorsByTourIds(tourIds);
 
     const compMap = {};
+    competitors.forEach((c) => {
+      compMap[String(c.comp_id)] = { comp_name: c.comp_name, comp_logo: c.comp_logo };
+    });
 
     rows.forEach((row) => {
       if (row.competitor1_id) {
-        compMap[row.competitor1_id] = { comp_name: row.c1_name, comp_logo: row.c1_logo };
+        compMap[String(row.competitor1_id)] = { comp_name: row.c1_name, comp_logo: row.c1_logo };
       }
       if (row.competitor2_id) {
-        compMap[row.competitor2_id] = { comp_name: row.c2_name, comp_logo: row.c2_logo };
+        compMap[String(row.competitor2_id)] = { comp_name: row.c2_name, comp_logo: row.c2_logo };
       }
     });
 
@@ -283,8 +287,8 @@ class MatchesService {
         mapped.round_scores = roundScores
           .map((score) => ({
             ...score,
-            comp_name: score.comp_name || compMap[score.comp_id]?.comp_name || 'Unknown',
-            comp_logo: score.comp_logo || compMap[score.comp_id]?.comp_logo || null,
+            comp_name: score.comp_name || compMap[String(score.comp_id)]?.comp_name || 'Unknown',
+            comp_logo: score.comp_logo || compMap[String(score.comp_id)]?.comp_logo || null,
           }))
           .sort((a, b) => (a.rank || 999) - (b.rank || 999));
       }

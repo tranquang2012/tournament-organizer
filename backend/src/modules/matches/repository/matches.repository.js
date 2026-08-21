@@ -137,6 +137,17 @@ async getScheduleConflicts(tourId, scheduled_start, scheduled_end, excludeMatchI
     return rows;
   }
 
+  async getCompetitorsByTourIds(tourIds, executor = pool) {
+    if (!tourIds.length) return [];
+    const { rows } = await executor.query(
+      `SELECT tour_id, comp_id, comp_name, comp_logo
+       FROM competitors
+       WHERE tour_id = ANY($1::uuid[])`,
+      [tourIds]
+    );
+    return rows;
+  }
+
   async getScheduledMatches(executor = pool) {
     const { rows } = await executor.query(
       `SELECT 

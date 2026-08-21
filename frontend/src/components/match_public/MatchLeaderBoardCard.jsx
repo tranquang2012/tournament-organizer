@@ -45,6 +45,9 @@ const MatchLeaderBoardCard = ({ match }) => {
         return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}'`;
     };
 
+    const visibleParticipants = (match.participants || []).slice(0, 5);
+    const hasMoreParticipants = (match.participants || []).length > 5;
+
     return (
         <div className='w-full flex flex-col gap-3'>
             <span className='text-[18px] md:text-[25px] font-semibold text-[#123836] hover:underline cursor-pointer hover:opacity-70'
@@ -53,14 +56,14 @@ const MatchLeaderBoardCard = ({ match }) => {
                 {match.tournamentName}
             </span>
             <span className='text-[12px] md:text-[17px] font-normal'>{match.matchLabel || `Match ${match.matchNumber} - ${match.round} Match`}</span>
-            <div className='relative flex flex-col w-full h-[300px] md:h-[300px] border border-[#d9d9d9] cursor-pointer 
+            <div className='relative flex flex-col w-full border border-[#d9d9d9] cursor-pointer
                 rounded-lg shadow-md transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-[#123836]'
                 onClick={() => match.matchId && navigate(`/matches/${match.matchId}`)}
             >
-                <div className='w-full h-[15%] flex items-center gap-2 bg-[#123836] text-white px-3 rounded-tl-lg rounded-tr-lg'>
+                <div className='w-full h-[44px] shrink-0 flex items-center gap-2 bg-[#123836] text-white px-3 rounded-tl-lg rounded-tr-lg'>
                     <span className='text-[10px] md:text-[15px] pr-3 border-r border-white'>Date: {match.date}</span>
                     <span className='text-[10px] md:text-[15px]'>Time: {match.time}</span>
-                    <span className='text-[20px] h-[20%] text-right flex items-center ml-auto'>
+                    <span className='text-[20px] text-right flex items-center ml-auto'>
                         {isCompleted ? (
                             <FontAwesomeIcon icon={faCircle} className='text-[15px] text-green-400 mr-1' />
                         ) : isPausing ? (
@@ -73,9 +76,9 @@ const MatchLeaderBoardCard = ({ match }) => {
                         </span>
                     </span>
                 </div>
-                <div className='flex flex-col w-full h-[80%] p-3 gap-2'>
-                    {match.participants.map((participant, index) => (
-                        <div key={index} className={`h-[20%] text-[13px] md:text-[17px] flex items-center gap-3 border rounded-md px-3
+                <div className='flex flex-col w-full p-3 gap-2'>
+                    {visibleParticipants.map((participant, index) => (
+                        <div key={index} className={`h-10 shrink-0 text-[13px] md:text-[17px] flex items-center gap-3 border rounded-md px-3
                             ${isCompleted && index >= 3
                             ? 'bg-gray-100 border-gray-200 text-gray-400 hover:bg-gray-100'
                             : 'border-gray-300 hover:bg-[#f0f0f0]'}`}
@@ -92,12 +95,14 @@ const MatchLeaderBoardCard = ({ match }) => {
                                 )}
                             </div>
                             <img src={logo1} className={`h-4 w-4 md:h-6 md:w-6 object-contain rounded-full ${isCompleted && index >= 3 ? 'opacity-40' : ''}`} />
-                            <span className={`font-semibold ${isCompleted && index >= 3 ? 'text-gray-400' : ''}`}>{participant.name}</span>
+                            <span className={`font-semibold truncate ${isCompleted && index >= 3 ? 'text-gray-400' : ''}`}>{participant.name}</span>
                             <span className={`font-semibold ml-auto ${isCompleted && index >= 3 ? 'text-gray-400' : ''}`}>{participant.score} pts</span>
                         </div>
                     ))}
                 </div>
-                <span className='text-gray-500 text-[13px] md:text-[15px] text-center hover:text-[16px] hover:text-[#123836] cursor-pointer pt-1'>View more participants</span>
+                {hasMoreParticipants && (
+                    <span className='shrink-0 text-gray-500 text-[13px] md:text-[15px] text-center hover:text-[#123836] cursor-pointer pb-2'>View more participants</span>
+                )}
             </div>
         </div>
     )
