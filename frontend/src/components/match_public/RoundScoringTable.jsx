@@ -16,13 +16,17 @@ const RoundScoringTable = ({ match }) => {
             {/* Header */}
             <div className='flex items-center justify-between mb-3'>
                 <div className='flex items-center gap-2'>
-                    {!isCompleted ? (
+                    {isCompleted ? (
                         <span className='flex items-center gap-1 text-green-500 font-semibold text-[17px]'>
                             <span className='w-2 h-2 rounded-full bg-green-500 inline-block'></span> Finished
                         </span>
-                    ) : (
+                    ) : isOngoing ? (
                         <span className='flex items-center gap-1 text-red-500 font-semibold text-[17px]'>
                             <span className='w-2 h-2 rounded-full bg-red-500 inline-block animate-pulse'></span> Live
+                        </span>
+                    ) : (
+                        <span className='flex items-center gap-1 text-slate-500 font-semibold text-[17px]'>
+                            <span className='w-2 h-2 rounded-full bg-slate-400 inline-block'></span> Upcoming
                         </span>
                     )}
                 </div>
@@ -46,7 +50,7 @@ const RoundScoringTable = ({ match }) => {
                     </thead>
                     <tbody>
                         {match.participants.map((p, i) => {
-                            const total = p.scores.reduce((a, b) => a + b, 0)
+                            const total = p.scores.reduce((sum, value) => sum + (Number(value) || 0), 0)
                             return (
                                 <tr key={i} className='border-t border-gray-100 hover:bg-gray-50 transition-colors'>
                                     <td className='px-4 py-3 font-medium text-gray-800 flex items-center gap-2'>
@@ -54,7 +58,7 @@ const RoundScoringTable = ({ match }) => {
                                         {rankBadge(p.rank) && <span>{rankBadge(p.rank)}</span>}
                                     </td>
                                     {p.scores.map((s, j) => (
-                                        <td key={j} className='text-center px-3 py-3 text-gray-700'>{!s ? '--' : s}</td>
+                                        <td key={j} className='text-center px-3 py-3 text-gray-700'>{s == null ? '--' : s}</td>
                                     ))}
                                     <td className='text-center px-3 py-3 font-bold text-red-500'>{total}</td>
                                 </tr>

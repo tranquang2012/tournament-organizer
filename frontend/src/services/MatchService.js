@@ -11,6 +11,11 @@ export const getMatch = async (matchId) => {
   return response.data;
 };
 
+export const getPublicMatchesBySport = async (sportId) => {
+  const response = await axiosInstance.get(`/api/matches/public?sportId=${sportId}`);
+  return response.data || [];
+};
+
 export const scheduleMatch = async (matchId, scheduledStart, scheduledEnd) => {
   const token = await getAccessToken();
   const authConfig = withAuthHeader(token);

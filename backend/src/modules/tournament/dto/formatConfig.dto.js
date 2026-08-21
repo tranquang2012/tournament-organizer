@@ -44,6 +44,20 @@ const normalizeHybridStructure = (body, errors) => {
   return { group_count: groupCount, advance_per_group: advancePerGroup };
 };
 
+const parseSetsPerMatch = (body, errors) => {
+  const parsed = toPositiveInt(
+    body.sets_per_match ?? body.setsPerMatch,
+    'sets_per_match',
+    errors,
+    { defaultValue: 1 }
+  );
+  if (parsed != null && parsed > 20) {
+    errors.push('sets_per_match must be 20 or fewer.');
+    return 1;
+  }
+  return parsed || 1;
+};
+
 function validateFormatConfigDto(body, sp_id) {
   const errors = [];
   const { tour_format, group_count, advance_per_group } = body;
@@ -72,6 +86,8 @@ function validateFormatConfigDto(body, sp_id) {
     return { data: null, errors };
   }
 
+  const setsPerMatch = parseSetsPerMatch(body, errors);
+
   if (tour_format === 'hybrid') {
     const hybridConfig = normalizeHybridStructure(body, errors);
 
@@ -95,7 +111,8 @@ function validateFormatConfigDto(body, sp_id) {
         group_count: hybridConfig.group_count,
         advance_per_group: hybridConfig.advance_per_group,
         first_stage_format: firstStageFormat,
-        second_stage_format: secondStageFormat
+        second_stage_format: secondStageFormat,
+        sets_per_match: setsPerMatch,
       }
     };
   }
@@ -116,6 +133,7 @@ function validateFormatConfigDto(body, sp_id) {
       tour_format,
       group_count: validGroupCount,
       advance_per_group: validAdvancePerGroup,
+      sets_per_match: tour_format === 'round_scoring' ? setsPerMatch : 1,
     }
   };
 }

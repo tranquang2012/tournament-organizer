@@ -71,6 +71,15 @@ function validateSportParticipantsDto(body) {
           }
         }
       });
+
+      if (rules.lobby_size) {
+        const count = participants.length;
+        if (count !== rules.lobby_size) {
+          errors.push(
+            `${rules.sport_name} requires exactly ${rules.lobby_size} players for one lobby. You currently have ${count}.`
+          );
+        }
+      }
     }
   }
 

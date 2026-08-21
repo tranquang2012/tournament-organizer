@@ -557,6 +557,7 @@ model tournament {
   first_stage_format        String?                     @db.VarChar(50)
   second_stage_format       String?                     @db.VarChar(50)
   participant_type          String?
+  sets_per_match            Int                         @default(1) @db.SmallInt
   competitors               competitors[]
   matches                   matches[]
   sport                     sport?                      @relation(fields: [sp_id], references: [sport_id], onDelete: NoAction, onUpdate: NoAction)

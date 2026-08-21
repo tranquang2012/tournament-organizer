@@ -114,15 +114,65 @@ const buildTeamMatchData = (match, stats, participants) => {
   };
 };
 
-const buildRoundScoringData = (match, stats) => {
-  const roundScores = match.round_scores || [];
+const parseRoundScores = (value) => {
+  if (Array.isArray(value)) return value;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+};
 
-  // Build rounds list and participant scores from round_scores JSON
-  const participantList = roundScores.map(r => ({
-    name: match.competitors?.find(c => c.comp_id === r.comp_id)?.comp_name || r.comp_id,
-    rank: r.rank || null,
-    scores: [r.score ?? 0],
-  }));
+const isRoundScoringMatch = (match) => (
+  match.tour_format === 'round_scoring'
+  || match.stage === 'round_scoring'
+  || (match.stage === 'stage_1' && match.first_stage_format === 'round_scoring')
+  || (match.stage === 'stage_2' && match.second_stage_format === 'round_scoring')
+);
+
+const buildRoundScoringData = (match, stats, participants = []) => {
+  const roundScores = parseRoundScores(match.round_scores);
+  const nameById = Object.fromEntries((participants || []).map((p) => [p.id, p.name]));
+
+  const maxSetsFromScores = roundScores.reduce((max, row) => {
+    const length = Array.isArray(row.sets) ? row.sets.length : 0;
+    return Math.max(max, length);
+  }, 0);
+  const gameCount = Math.max(1, Number(match.sets_per_match) || maxSetsFromScores || 1);
+
+  const participantList = [...roundScores]
+    .sort((a, b) => (a.rank || 999) - (b.rank || 999))
+    .map((row) => {
+      const storedSets = Array.isArray(row.sets) ? row.sets : null;
+      const scores = Array.from({ length: gameCount }, (_, index) => {
+        if (storedSets && storedSets[index] != null && storedSets[index] !== '') {
+          const numeric = Number(storedSets[index]);
+          return Number.isFinite(numeric) ? numeric : null;
+        }
+        if (!storedSets && gameCount === 1 && row.score != null) {
+          const numeric = Number(row.score);
+          return Number.isFinite(numeric) ? numeric : null;
+        }
+        return null;
+      });
+
+      return {
+        name: nameById[row.comp_id]
+          || match.competitors?.find((c) => c.comp_id === row.comp_id)?.comp_name
+          || row.comp_name
+          || 'Unknown',
+        rank: row.rank || null,
+        scores,
+      };
+    });
+
+  const rounds = gameCount > 1
+    ? Array.from({ length: gameCount }, (_, index) => `Game ${index + 1}`)
+    : [`Round ${match.round}`];
 
   // Compute aggregate stats
   const allScores = roundScores.map(r => r.score ?? 0);
@@ -147,7 +197,7 @@ const buildRoundScoringData = (match, stats) => {
     time: formatScheduledTime(match.scheduled_start),
     competitionType: 'individual_scoring',
     status: match.status === 'running' ? 'ongoing' : match.status,
-    rounds: [`Round ${match.round}`],
+    rounds,
     participants: participantList,
     stats: statRows,
   };
@@ -173,15 +223,20 @@ const MatchesPage = () => {
 
         if (match.tour_banner) setBannerUrl(match.tour_banner);
 
-        const roundScoring = match.tour_format === 'round_scoring'
-          || match.stage === 'round_scoring';
+        const roundScoring = isRoundScoringMatch(match);
         const isTeam = match.participant_type === 'team' && !roundScoring;
 
         setIsTeamMode(isTeam);
         setIsRoundScoring(roundScoring);
 
         if (roundScoring) {
-          setMatchData(buildRoundScoringData(match, stats));
+          let scoringParticipants = [];
+          if (match.tour_id) {
+            try {
+              scoringParticipants = await getParticipants(match.tour_id);
+            } catch { /* names are optional */ }
+          }
+          setMatchData(buildRoundScoringData(match, stats, scoringParticipants));
         } else {
           // Fetch participants for team member lists
           let participants = [];

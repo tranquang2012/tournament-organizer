@@ -19,7 +19,8 @@ class BracketRepository {
   async getTournamentFormat(tourId, executor = pool) {
     const { rows } = await executor.query(
       `SELECT t.tour_id, t.tour_format, t.group_count, t.advance_per_group,
-              t.tour_round, t.created_by, s.sport_format, t.first_stage_format, t.second_stage_format
+              t.tour_round, t.created_by, t.sp_id, s.sport_format, t.first_stage_format, t.second_stage_format,
+              t.sets_per_match
        FROM tournament t
        LEFT JOIN sport s ON t.sp_id = s.sport_id
        WHERE t.tour_id = $1`,
@@ -30,7 +31,7 @@ class BracketRepository {
 
   async getCompetitorsForSeeding(tourId, executor = pool) {
     const { rows } = await executor.query(
-      `SELECT comp_id, comp_name FROM competitors WHERE tour_id = $1 ORDER BY comp_name ASC`,
+      `SELECT comp_id, comp_name, comp_logo FROM competitors WHERE tour_id = $1 ORDER BY comp_name ASC`,
       [tourId]
     );
     return rows;
@@ -175,7 +176,7 @@ async getRoundScoringMatchesByStage(tourId, stageName, executor = pool) {
 async getRoundScoringMatch(matchId, tourId, executor = pool) {
   const { rows } = await executor.query(
     `SELECT m.match_id, m.round, m.stage, m.status, m.round_scores,
-            t.created_by, t.advance_per_group, t.tour_round,
+            t.created_by, t.advance_per_group, t.tour_round, t.sets_per_match,
             t.tour_format, t.group_count, s.sport_format, t.first_stage_format, t.second_stage_format
      FROM matches m
      JOIN tournament t ON t.tour_id = m.tour_id
@@ -186,6 +187,19 @@ async getRoundScoringMatch(matchId, tourId, executor = pool) {
     [matchId, tourId]
   );
   return rows[0] || null;
+}
+
+async saveRoundScoresDraft(matchId, roundScores, executor = pool) {
+  await executor.query(
+    `UPDATE matches
+     SET round_scores = $1,
+         status = CASE WHEN status = 'ready' THEN 'running' ELSE status END,
+         updated_at = NOW()
+     WHERE match_id = $2
+       AND status <> 'completed'
+       AND status <> 'locked'`,
+    [JSON.stringify(roundScores), matchId]
+  );
 }
 
 async submitRoundScores(matchId, roundScores, survivorIds, executor = pool) {

@@ -7,7 +7,7 @@ import { getStatTemplates } from '../../services/TournamentService';
 import Button from '../common/Button';
 import ConfirmationModal from '../common/ConfirmationModal';
 
-const MatchStatModal = ({ matchId, team1, team2, onClose }) => {
+const MatchStatModal = ({ matchId, team1, team2, participants = [], subtitle, onClose }) => {
   const { id: tournamentId } = useParams();
   const [stats, setStats] = useState([]);
   const [templates, setTemplates] = useState([]);
@@ -63,10 +63,14 @@ const MatchStatModal = ({ matchId, team1, team2, onClose }) => {
     }
   };
 
+  const competitorOptions = participants.length
+    ? participants
+    : [team1, team2].filter((team) => team?.id);
+
   const handleAddGlobalStat = async (template) => {
     try {
       // For global stats with two teams, create one stat per team
-      if (team1?.id && team2?.id) {
+      if (team1?.id && team2?.id && participants.length === 0) {
         await createMatchStat(matchId, { name: template.name, type: template.type, comp_id: team1.id });
         await createMatchStat(matchId, { name: template.name, type: template.type, comp_id: team2.id });
       } else {
@@ -141,6 +145,8 @@ const MatchStatModal = ({ matchId, team1, team2, onClose }) => {
 
   const getCompName = (compId) => {
     if (!compId) return null;
+    const fromParticipants = competitorOptions.find((comp) => comp.id === compId);
+    if (fromParticipants) return fromParticipants.name;
     if (compId === team1?.id) return team1.name;
     if (compId === team2?.id) return team2.name;
     return null;
@@ -167,7 +173,10 @@ const MatchStatModal = ({ matchId, team1, team2, onClose }) => {
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
             <div>
               <h2 className="text-lg font-bold text-slate-800">Match Statistics</h2>
-              <p className="text-sm text-slate-500">{team1.name} vs {team2.name}</p>
+              <p className="text-sm text-slate-500">
+                {subtitle
+                  || (team1?.name && team2?.name ? `${team1.name} vs ${team2.name}` : 'Round statistics')}
+              </p>
             </div>
             <button onClick={onClose} className="w-8 h-8 rounded hover:bg-slate-100 text-slate-400">
               <FontAwesomeIcon icon={faXmark} />
@@ -220,7 +229,11 @@ const MatchStatModal = ({ matchId, team1, team2, onClose }) => {
                 {missingTemplates.length > 0 && (
                   <div className="p-4 bg-blue-50/50 rounded-xl border border-blue-100">
                     <h3 className="text-sm font-bold text-slate-700 mb-2">Available Global Stats</h3>
-                    <p className="text-xs text-slate-500 mb-3">These stats are defined for the tournament but not yet tracked in this match. Adding will create one stat per team.</p>
+                    <p className="text-xs text-slate-500 mb-3">
+                      {team1?.id && team2?.id && participants.length === 0
+                        ? 'These stats are defined for the tournament but not yet tracked in this match. Adding will create one stat per team.'
+                        : 'These stats are defined for the tournament but not yet tracked in this round. Adding will create a match-level stat.'}
+                    </p>
                     <div className="flex flex-wrap gap-2">
                       {missingTemplates.map(t => (
                         <button 
@@ -268,9 +281,10 @@ const MatchStatModal = ({ matchId, team1, team2, onClose }) => {
                           onChange={e => setNewCompId(e.target.value)}
                           className="flex-1 px-3 py-2 rounded-lg border border-slate-300 text-sm outline-none"
                         >
-                          <option value="">Match-level (no team)</option>
-                          {team1?.id && <option value={team1.id}>{team1.name}</option>}
-                          {team2?.id && <option value={team2.id}>{team2.name}</option>}
+                          <option value="">Match-level (no participant)</option>
+                          {competitorOptions.map((comp) => (
+                            <option key={comp.id} value={comp.id}>{comp.name}</option>
+                          ))}
                         </select>
                         <Button type="submit" className="text-sm px-4">Add</Button>
                         <Button type="button" variant="secondary" className="text-sm" onClick={() => setIsAdding(false)}>Cancel</Button>

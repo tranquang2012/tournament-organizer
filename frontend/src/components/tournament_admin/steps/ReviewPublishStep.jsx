@@ -116,6 +116,9 @@ const ReviewPublishStep = ({ data, onGoToStep, onPublish, publishing }) => {
               <Row label="Round 2 Format" value={FORMAT_LABELS[data.hybridSecondRound] || '—'} />
             </>
           )}
+          {(data.format === 'round_scoring' || data.hybridSecondRound === 'round_scoring' || Number(data.setsPerMatch) > 1) && (
+            <Row label="Games per match" value={data.setsPerMatch || 1} />
+          )}
         </Section>
       </div>
 

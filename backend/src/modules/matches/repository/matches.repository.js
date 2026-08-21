@@ -11,7 +11,8 @@ class MatchesRepository {
         m.round_scores,
         c1.comp_name as c1_name, c1.comp_logo as c1_logo, c1.comp_size as c1_size,
         c2.comp_name as c2_name, c2.comp_logo as c2_logo, c2.comp_size as c2_size,
-        t.tour_format, t.participant_type, t.tour_name, t.tour_banner
+        t.tour_format, t.participant_type, t.tour_name, t.tour_banner,
+        t.sets_per_match, t.first_stage_format, t.second_stage_format
       FROM matches m
       LEFT JOIN competitors c1 ON m.competitor1_id = c1.comp_id
       LEFT JOIN competitors c2 ON m.competitor2_id = c2.comp_id
@@ -95,6 +96,46 @@ async getScheduleConflicts(tourId, scheduled_start, scheduled_end, excludeMatchI
   );
   return rows;
 }
+
+  async getPublicMatchesBySport(sportId, executor = pool) {
+    const { rows } = await executor.query(
+      `SELECT
+        m.match_id, m.tour_id, m.round, m.stage, m.group_name, m.status,
+        m.scheduled_start, m.scheduled_end, m.updated_at,
+        m.competitor1_id, m.competitor2_id, m.score1, m.score2,
+        m.winning_competitor_id, m.is_draw, m.round_scores,
+        c1.comp_name as c1_name, c1.comp_logo as c1_logo, c1.comp_size as c1_size,
+        c2.comp_name as c2_name, c2.comp_logo as c2_logo, c2.comp_size as c2_size,
+        t.tour_format, t.participant_type, t.tour_name, t.tour_banner,
+        t.sets_per_match, t.first_stage_format, t.second_stage_format
+      FROM matches m
+      JOIN tournament t ON m.tour_id = t.tour_id
+      LEFT JOIN competitors c1 ON m.competitor1_id = c1.comp_id
+      LEFT JOIN competitors c2 ON m.competitor2_id = c2.comp_id
+      WHERE t.sp_id = $1
+        AND COALESCE(t.tour_status, 'draft') <> 'draft'
+        AND m.status IN ('running', 'completed', 'resolved')
+      ORDER BY
+        CASE WHEN m.status = 'running' THEN 0 ELSE 1 END,
+        COALESCE(m.updated_at, m.scheduled_start) DESC NULLS LAST
+      LIMIT 8`,
+      [sportId]
+    );
+    return rows;
+  }
+
+  async getMatchLabelSourcesByTourIds(tourIds, executor = pool) {
+    if (!tourIds.length) return [];
+    const { rows } = await executor.query(
+      `SELECT m.match_id, m.tour_id, m.round, m.stage, m.group_name,
+              t.tour_format, t.first_stage_format, t.second_stage_format
+       FROM matches m
+       JOIN tournament t ON m.tour_id = t.tour_id
+       WHERE m.tour_id = ANY($1::uuid[])`,
+      [tourIds]
+    );
+    return rows;
+  }
 
   async getScheduledMatches(executor = pool) {
     const { rows } = await executor.query(

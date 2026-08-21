@@ -7,6 +7,9 @@ const requireAdminUser = require('../../shared/middleware/requireAdminUser');
 // Public route to get all scheduled matches for calendar
 router.get('/calendar', ctrl.getScheduledMatches.bind(ctrl));
 
+// Public route to get recent matches for a sport
+router.get('/public', ctrl.getPublicMatchesBySport.bind(ctrl));
+
 // Public route to view match details
 router.get('/:matchId', ctrl.getMatch.bind(ctrl));
 

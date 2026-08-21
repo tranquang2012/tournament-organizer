@@ -63,6 +63,13 @@ const FormatConfigStep = ({ data, onChange, currentSportConfig }) => {
     return true;
   };
 
+  const isScoringSport = currentSportConfig
+    ? checkSupported(currentSportConfig.format, 'round_scoring') && !checkSupported(currentSportConfig.format, 'round_robin')
+    : false;
+  const showGamesPerMatch =
+    data.format === 'round_scoring' ||
+    (data.format === 'hybrid' && (data.hybridSecondRound === 'round_scoring' || isScoringSport));
+
   return (
     <div className="animate-[fadeIn_0.3s_ease-out]">
       <div className="mb-6">
@@ -240,6 +247,25 @@ const FormatConfigStep = ({ data, onChange, currentSportConfig }) => {
               })}
             </div>
           </div>
+        </div>
+      )}
+
+      {showGamesPerMatch && (
+        <div className="mt-2 bg-white rounded-2xl border border-slate-200 p-6">
+          <div className="max-w-sm">
+            <InputField
+              label="Games per match"
+              type="number"
+              placeholder="e.g. 3"
+              value={data.setsPerMatch ?? '1'}
+              onChange={update('setsPerMatch')}
+              min="1"
+              max="20"
+            />
+          </div>
+          <p className="text-xs text-slate-400 mt-2 m-0">
+            How many games are played in one scoring session. Rankings use the sum of all games.
+          </p>
         </div>
       )}
     </div>

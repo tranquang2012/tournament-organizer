@@ -17,6 +17,7 @@ import {
   publishTournament,
   discardTournamentDraft,
   buildRandomizedTeamParticipants,
+  getSportRules,
 } from '../../services/TournamentService';
 import { getAccessToken } from '../../services/AuthService';
 import { getAllSports } from '../../services/SportService';
@@ -53,6 +54,7 @@ const INITIAL_DATA = {
   hybridGroups: '',
   hybridAdvancing: '',
   hybridSecondRound: '',
+  setsPerMatch: '1',
 };
 
 const getErrorMessage = (error) => (
@@ -69,11 +71,16 @@ const TournamentCreatePage = () => {
   const [isDirty, setIsDirty] = useState(false);
   const [discarding, setDiscarding] = useState(false);
   const [sportsConfig, setSportsConfig] = useState([]);
+  const [sportRules, setSportRules] = useState({});
   const [showBalanceWarning, setShowBalanceWarning] = useState(false);
 
   const currentSportConfig = sportsConfig.find(
     (s) => s.name.toLowerCase() === formData.sport?.toLowerCase()
   );
+  const currentSportRules = Object.values(sportRules).find(
+    (rule) => rule.sport_name?.toLowerCase() === formData.sport?.toLowerCase()
+  );
+  const lobbySize = currentSportRules?.lobby_size || null;
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
@@ -111,8 +118,9 @@ const TournamentCreatePage = () => {
 
     const fetchSports = async () => {
       try {
-        const res = await getAllSports();
+        const [res, rules] = await Promise.all([getAllSports(), getSportRules()]);
         setSportsConfig(res.data || res || []);
+        setSportRules(rules || {});
       } catch (err) {
         console.error('Failed to fetch sports config:', err);
       }
@@ -203,6 +211,10 @@ const TournamentCreatePage = () => {
     }
     if (idx === 1) {
       if (!formData.sport) return false;
+      const participantCount = formData.participantType === 'team'
+        ? (formData.teamMode === 'predefine' ? (formData.teams || []).length : (formData.participants || []).length)
+        : (formData.participants || []).length;
+      if (lobbySize && participantCount !== lobbySize) return false;
       if (formData.participantType === 'individual') {
         return formData.participants?.length > 0;
       }
@@ -310,6 +322,19 @@ const TournamentCreatePage = () => {
         // Set calculated numberOfTeams on the form data
         formData.numberOfTeams = playerPoolCount / membersPerTeam;
       }
+
+      if (lobbySize) {
+        const participantCount = formData.participantType === 'team'
+          ? (formData.teamMode === 'predefine' ? (formData.teams || []).length : (formData.participants || []).length)
+          : (formData.participants || []).length;
+        if (participantCount !== lobbySize) {
+          setToast({
+            message: `${formData.sport} requires exactly ${lobbySize} players for one lobby. You currently have ${participantCount}.`,
+            type: 'error',
+          });
+          return false;
+        }
+      }
     }
 
     if (currentStep === 2) {
@@ -324,6 +349,20 @@ const TournamentCreatePage = () => {
         }
         if (!formData.hybridSecondRound) {
           setToast({ message: 'Please select a format for the second round', type: 'error' });
+          return false;
+        }
+      }
+
+      const sportFormat = String(currentSportConfig?.format || '').toLowerCase();
+      const isScoringSport = sportFormat.includes('scoring') && !sportFormat.includes('versus');
+      const usesGamesPerMatch =
+        formData.format === 'round_scoring' ||
+        formData.hybridSecondRound === 'round_scoring' ||
+        (formData.format === 'hybrid' && isScoringSport);
+      if (usesGamesPerMatch) {
+        const setsPerMatch = Number(formData.setsPerMatch || 1);
+        if (!Number.isInteger(setsPerMatch) || setsPerMatch < 1 || setsPerMatch > 20) {
+          setToast({ message: 'Games per match must be a whole number between 1 and 20', type: 'error' });
           return false;
         }
       }
@@ -417,7 +456,7 @@ const TournamentCreatePage = () => {
       case 0:
         return <GeneralDetailsStep data={formData} onChange={updateStep1} />;
       case 1:
-        return <SportParticipantsStep data={formData} onChange={updateStep2} currentSportConfig={currentSportConfig} />;
+        return <SportParticipantsStep data={formData} onChange={updateStep2} currentSportConfig={currentSportConfig ? { ...currentSportConfig, lobby_size: lobbySize } : currentSportConfig} />;
       case 2:
         return <FormatConfigStep data={formData} onChange={updateStep3} currentSportConfig={currentSportConfig} />;
       case 3:
