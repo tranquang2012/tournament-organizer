@@ -207,7 +207,7 @@ async resumeAndShiftAllMatchesByTournament(tourId, daysPaused, executor = pool) 
     const { rows } = await executor.query(
       `SELECT
         m.match_id, m.tour_id, m.round, m.stage, m.group_name, m.status,
-        m.scheduled_start, m.scheduled_end, m.updated_at,
+        m.scheduled_start, m.scheduled_end, m.tour_pausedate, m.updated_at,
         m.competitor1_id, m.competitor2_id, m.score1, m.score2,
         m.winning_competitor_id, m.is_draw, m.round_scores,
         c1.comp_name as c1_name, c1.comp_logo as c1_logo, c1.comp_size as c1_size,
@@ -220,9 +220,9 @@ async resumeAndShiftAllMatchesByTournament(tourId, daysPaused, executor = pool) 
       LEFT JOIN competitors c2 ON m.competitor2_id = c2.comp_id
       WHERE t.sp_id = $1
         AND COALESCE(t.tour_status, 'draft') <> 'draft'
-        AND m.status IN ('running', 'completed', 'resolved')
+        AND m.status IN ('running', 'paused', 'completed', 'resolved')
       ORDER BY
-        CASE WHEN m.status = 'running' THEN 0 ELSE 1 END,
+        CASE WHEN m.status IN ('running', 'paused') THEN 0 ELSE 1 END,
         COALESCE(m.updated_at, m.scheduled_start) DESC NULLS LAST
       LIMIT 5`,
       [sportId]

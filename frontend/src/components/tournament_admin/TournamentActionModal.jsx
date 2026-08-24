@@ -45,10 +45,7 @@ const TournamentActionModal = ({ tournament, onClose, onDeleted }) => {
 
   /* Dismiss on Escape */
   useEffect(() => {
-    if (!tournament) {
-      setConfirmDelete(false);
-      return;
-    }
+    if (!tournament) return;
     const handler = (e) => {
       if (e.key === 'Escape' && !deleting) {
         if (confirmDelete) setConfirmDelete(false);
@@ -65,6 +62,7 @@ const TournamentActionModal = ({ tournament, onClose, onDeleted }) => {
 
   const badgeColors = {
     Active:    { bg: 'bg-[#dcfce7]', text: 'text-[#166534]', dot: 'bg-[#22c55e]' },
+    Paused:    { bg: 'bg-[#fef3c7]', text: 'text-[#92400e]', dot: 'bg-[#f59e0b]' },
     Upcoming:  { bg: 'bg-[#f1f5f9]', text: 'text-[#475569]', dot: 'bg-[#94a3b8]' },
     Completed: { bg: 'bg-[#dbeafe]', text: 'text-[#1e3a8a]', dot: 'bg-[#3b82f6]' },
   };

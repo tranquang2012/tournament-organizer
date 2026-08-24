@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircle } from '@fortawesome/free-solid-svg-icons';
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
 
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
@@ -12,21 +12,20 @@ import third from '../../assets/RankingIcon/3rd.png'
 const MatchLeaderBoardCard = ({ match }) => {
     const isCompleted = match.status === 'completed';
     const isOngoing = match.status === 'ongoing';
-    const isPausing = match.status === 'pausing';
+    const isPausing = match.status === 'pausing' || match.status === 'paused';
     const navigate = useNavigate();
 
     const [elapsedSeconds, setElapsedSeconds] = useState(0);
+    const pausedElapsedSeconds = (() => {
+        if (!isPausing || !match.startTime || !match.pausedTime) return 0;
+        const start = new Date(match.startTime).getTime();
+        const pausedAt = new Date(match.pausedTime).getTime();
+        const diff = Math.floor((pausedAt - start) / 1000);
+        return Number.isFinite(diff) && diff > 0 ? diff : 0;
+    })();
 
     useEffect(() => {
-        if (!match.startTime) return;
-        if (isPausing) {
-            const start = new Date(match.startTime).getTime();
-            const pausedAt = new Date(match.pausedTime).getTime();
-            const diff = Math.floor((pausedAt - start) / 1000);
-            setElapsedSeconds(diff > 0 ? diff : 0);
-            return;
-        }
-        if (!isOngoing) return;
+        if (!match.startTime || !isOngoing) return;
 
         const updateElapsed = () => {
             const start = new Date(match.startTime).getTime();
@@ -34,10 +33,13 @@ const MatchLeaderBoardCard = ({ match }) => {
             setElapsedSeconds(diff > 0 ? diff : 0);
         };
 
-        updateElapsed();
+        const timeout = setTimeout(updateElapsed, 0);
         const interval = setInterval(updateElapsed, 1000);
-        return () => clearInterval(interval);
-    }, [isOngoing, isPausing, match.startTime, match.pausedTime]);
+        return () => {
+            clearTimeout(timeout);
+            clearInterval(interval);
+        };
+    }, [isOngoing, match.startTime]);
 
     const formatTime = (totalSeconds) => {
         const mins = Math.floor(totalSeconds / 60);
@@ -72,7 +74,7 @@ const MatchLeaderBoardCard = ({ match }) => {
                             <FontAwesomeIcon icon={faCircle} className='text-[15px] text-red-500 mr-1 animate-pulse' />
                         )}
                         <span className='text-[10px] md:text-[13px] md:text-[16px]'>
-                            {isCompleted ? 'Finished' : isPausing ? 'Pausing' : formatTime(elapsedSeconds)}
+                            {isCompleted ? 'Finished' : isPausing ? (match.status === 'paused' ? 'Paused' : 'Pausing') : formatTime(isPausing ? pausedElapsedSeconds : elapsedSeconds)}
                         </span>
                     </span>
                 </div>

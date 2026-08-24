@@ -495,7 +495,7 @@ class TournamentRepository {
          tour_pausedate  = $1
      WHERE tour_id = $2
        AND created_by = $3
-       AND tour_status = 'published'
+       AND tour_status = 'ongoing'
      RETURNING *`,
     [pauseDate, tourId, organizerId]
   );
@@ -505,7 +505,7 @@ class TournamentRepository {
 async resumeTournament(tourId, newEndDate, organizerId, executor = pool) {
   const { rows } = await executor.query(
     `UPDATE tournament
-     SET tour_status    = 'published',
+     SET tour_status    = 'ongoing',
          tour_enddate   = $1,
          tour_pausedate = NULL
      WHERE tour_id = $2

@@ -277,6 +277,26 @@ export const publishTournament = async (tournamentId) => {
   return axios.patch(`/api/tournaments/${tournamentId}/publish`, {}, authConfig);
 };
 
+export const pauseTournament = async (tournamentId, pauseDate) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.patch(
+    `/api/tournaments/${tournamentId}/pause`,
+    { pause_date: pauseDate },
+    authConfig,
+  );
+  return response?.data?.data ?? response?.data;
+};
+
+export const resumeTournament = async (tournamentId, resumeDate) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.patch(
+    `/api/tournaments/${tournamentId}/resume`,
+    { resume_date: resumeDate },
+    authConfig,
+  );
+  return response?.data?.data ?? response?.data;
+};
+
 export const getTournaments = async () => {
   const authConfig = await withTournamentAuth();
   const response = await axios.get('/api/tournaments', authConfig);

@@ -88,6 +88,7 @@ const buildTeamMatchData = (match, stats, participants) => {
     time: formatScheduledTime(match.scheduled_start),
     competitionType: 'team',
     status: match.status === 'running' ? 'ongoing' : match.status,
+    pausedTime: match.tour_pausedate || null,
     team1: c1?.comp_name || 'TBD',
     team2: c2?.comp_name || 'TBD',
     score1: r1?.score ?? 0,
@@ -197,6 +198,7 @@ const buildRoundScoringData = (match, stats, participants = []) => {
     time: formatScheduledTime(match.scheduled_start),
     competitionType: 'individual_scoring',
     status: match.status === 'running' ? 'ongoing' : match.status,
+    pausedTime: match.tour_pausedate || null,
     rounds,
     participants: participantList,
     stats: statRows,
@@ -286,7 +288,7 @@ const MatchesPage = () => {
                 {matchData.date && <><FontAwesomeIcon icon={faCalendarDays} /> {matchData.date} </>}
                 {matchData.time && <><FontAwesomeIcon icon={faClock} /> {matchData.time}</>}
               </span>
-              {matchData.status === 'ongoing' || matchData.status === 'running' || matchData.status === 'pausing' ? (
+              {matchData.status === 'ongoing' || matchData.status === 'running' || matchData.status === 'pausing' || matchData.status === 'paused' ? (
                 <button className='font-semibold text-red-500 border border-gray-300 rounded-[10px] p-1 shadow-sm cursor-pointer 
                 transition-transform duration-300 ease-in-out hover:scale-105 hover:border-gray-500'>Live now!</button>
               ) : (

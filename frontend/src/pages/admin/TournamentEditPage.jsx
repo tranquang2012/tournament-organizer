@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -65,18 +65,26 @@ const TournamentEditPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const loadTournament = useCallback(async () => {
+    const [tourData, participantData] = await Promise.all([
+      getTournamentById(id),
+      getParticipants(id),
+    ]);
+    if (!tourData) throw new Error('Tournament not found');
+    tourData.competitors = mapParticipantsToCompetitors(
+      participantData,
+      tourData.team_size,
+      tourData.competitors,
+    );
+    setTournament(tourData);
+    return tourData;
+  }, [id]);
+
   useEffect(() => {
     const fetch = async () => {
       try {
         setLoading(true);
-        const [tourData, participantData] = await Promise.all([
-          getTournamentById(id),
-          getParticipants(id)
-        ]);
-        if (!tourData) throw new Error('Tournament not found');
-        
-        tourData.competitors = mapParticipantsToCompetitors(participantData, tourData.team_size, tourData.competitors);
-        setTournament(tourData);
+        await loadTournament();
       } catch (err) {
         console.error(err);
         setError(err.message || 'Failed to load tournament');
@@ -85,7 +93,7 @@ const TournamentEditPage = () => {
       }
     };
     fetch();
-  }, [id]);
+  }, [loadTournament]);
 
   /*  Loading state  */
   if (loading) {
@@ -180,7 +188,16 @@ const TournamentEditPage = () => {
           )}
           {activeTab === 'actions' && (
             <EditActionsTab
+              key={[
+                id,
+                tournament?.tour_status,
+                tournament?.tour_pausedate,
+                tournament?.tour_startdate,
+                tournament?.tour_enddate,
+              ].join('-')}
               tournamentId={id}
+              tournament={tournament}
+              onTournamentRefresh={loadTournament}
             />
           )}
         </div>

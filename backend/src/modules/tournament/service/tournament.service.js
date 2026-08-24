@@ -1,11 +1,27 @@
 const repo = require('../repository/tournament.repository');
 const AppError = require('../../../shared/errors/AppError');
+const pool = require('../../../shared/database/pool');
 const { validateCreateTournamentDto }    = require('../dto/createTournament.dto');
 const { validateSportParticipantsDto }   = require('../dto/sportParticipants.dto');
 const { validateFormatConfigDto }        = require('../dto/formatConfig.dto');
 const { validateUpdateCompetitorDto } = require('../dto/updateComp.dto');
 const { validatePauseDto, validateResumeDto } = require('../dto/pauseTournament.dto');
 const matchesRepository = require('../../matches/repository/matches.repository');
+
+const MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+const toUtcCalendarDate = (value) => {
+  if (value instanceof Date) {
+    return new Date(Date.UTC(value.getFullYear(), value.getMonth(), value.getDate()));
+  }
+
+  const [year, month, day] = String(value).slice(0, 10).split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day));
+};
+
+const toDateOnlyString = (value) => (
+  toUtcCalendarDate(value).toISOString().slice(0, 10)
+);
 
 const SUPPORTED_BANNER_TYPES = new Map([
   ["image/jpeg", "jpg"],
@@ -218,21 +234,21 @@ class TournamentService {
   const tournament = await repo.getTournamentTiming(tourId, organizerId);
   if (!tournament) throw new AppError('Tournament not found or access denied.', 404);
 
-  //only published tournaments can be paused
+  //only ongoing tournaments can be paused
   if (tournament.tour_status === 'paused') {
     throw new AppError('Tournament is already paused.', 400);
   }
-  if (tournament.tour_status !== 'published') {
+  if (tournament.tour_status !== 'ongoing') {
     throw new AppError(
-      `Only published tournaments can be paused. Current status: '${tournament.tour_status}'.`,
+      `Only ongoing tournaments can be paused. Current status: '${tournament.tour_status}'.`,
       400
     );
   }
 
   //pause_date must be within the tournament window
-  const pauseDate = new Date(data.pause_date);
-  const startDate = new Date(tournament.tour_startdate);
-  const endDate   = new Date(tournament.tour_enddate);
+  const pauseDate = toUtcCalendarDate(data.pause_date);
+  const startDate = toUtcCalendarDate(tournament.tour_startdate);
+  const endDate   = toUtcCalendarDate(tournament.tour_enddate);
 
   if (pauseDate < startDate) {
     throw new AppError(
@@ -288,7 +304,7 @@ class TournamentService {
       scheduled_end:   m.scheduled_end,
       paused_at:       m.tour_pausedate,
     })),
-    message: `Tournament paused on ${pauseDate.toDateString()}. ${pausedMatches.length} match(es) also paused.`,
+    message: `Tournament paused on ${data.pause_date}. ${pausedMatches.length} match(es) also paused.`,
   };
 }
 
@@ -302,7 +318,7 @@ async resumeTournament(tourId, body, organizerId) {
   if (!tournament) throw new AppError('Tournament not found or access denied.', 404);
 
   //only paused tournaments can be resumed
-  if (tournament.tour_status === 'published') {
+  if (tournament.tour_status === 'ongoing') {
     throw new AppError('Tournament is already running, no need to resume.', 400);
   }
   if (tournament.tour_status !== 'paused') {
@@ -313,9 +329,9 @@ async resumeTournament(tourId, body, organizerId) {
   }
 
   //resume_date must be after pause_date
-  const resumeDate = new Date(data.resume_date);
-  const pauseDate  = new Date(tournament.tour_pausedate);
-  const endDate    = new Date(tournament.tour_enddate);
+  const resumeDate = toUtcCalendarDate(data.resume_date);
+  const pauseDate  = toUtcCalendarDate(tournament.tour_pausedate);
+  const endDate    = toUtcCalendarDate(tournament.tour_enddate);
 
   if (resumeDate <= pauseDate) {
     throw new AppError(
@@ -326,9 +342,9 @@ async resumeTournament(tourId, body, organizerId) {
 
   //Calculate days paused and new tournament end date
 
-  const MS_PER_DAY = 1000 * 60 * 60 * 24;
-  const daysPaused = Math.ceil((resumeDate - pauseDate) / MS_PER_DAY);
+  const daysPaused = (resumeDate - pauseDate) / MS_PER_DAY;
   const newEndDate = new Date(endDate.getTime() + daysPaused * MS_PER_DAY);
+  const newEndDateString = newEndDate.toISOString().slice(0, 10);
 
   //Resume tournament + shift all match schedules in one transaction
   const client = await pool.connect();
@@ -339,7 +355,12 @@ async resumeTournament(tourId, body, organizerId) {
     await client.query('BEGIN');
 
     //Resume tournament with new end date
-    updated = await repo.resumeTournament(tourId, newEndDate.toISOString(), organizerId, client);
+    updated = await repo.resumeTournament(
+      tourId,
+      newEndDateString,
+      organizerId,
+      client
+    );
     if (!updated) throw new AppError('Failed to resume tournament.', 500);
 
     //Resume all paused matches + shift their scheduled_start and scheduled_end forward
@@ -361,7 +382,7 @@ async resumeTournament(tourId, body, organizerId) {
     tour_id:               updated.tour_id,
     tour_status:           updated.tour_status,
     tour_startdate:        updated.tour_startdate,
-    original_enddate:      endDate.toISOString(),
+    original_enddate:      toDateOnlyString(endDate),
     new_enddate:           updated.tour_enddate,
     tour_pausedate:        null,
     days_paused:           daysPaused,
@@ -372,7 +393,7 @@ async resumeTournament(tourId, body, organizerId) {
       scheduled_start: m.scheduled_start,
       scheduled_end:   m.scheduled_end,
     })),
-    message: `Tournament resumed. End date extended by ${daysPaused} day(s) from ${endDate.toDateString()} to ${newEndDate.toDateString()}. ${resumedMatches.length} match(es) rescheduled.`,
+    message: `Tournament resumed. End date extended by ${daysPaused} day(s) from ${toDateOnlyString(endDate)} to ${newEndDateString}. ${resumedMatches.length} match(es) rescheduled.`,
   };
 }
 
