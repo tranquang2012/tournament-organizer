@@ -24,10 +24,17 @@ class MatchesController {
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
-   async startMatch(req, res, next) {
+  async startMatch(req, res, next) {
     try {
       const { matchId } = req.params;
       const data = await service.startMatch(matchId);
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
+
+  async getScheduledMatches(req, res, next) {
+    try {
+      const data = await service.getScheduledMatches();
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
@@ -44,6 +51,14 @@ class MatchesController {
     try {
       const { matchId } = req.params;
       const data = await service.resumeMatch(matchId, req.body);
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
+
+  async getPublicMatchesBySport(req, res, next) {
+    try {
+      const { sportId } = req.query;
+      const data = await service.getPublicMatchesBySport(sportId);
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }

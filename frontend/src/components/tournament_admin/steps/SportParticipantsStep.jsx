@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faPlus,
   faTrash,
   faUsers,
   faUser,
@@ -9,7 +8,6 @@ import {
   faListOl,
   faChevronDown,
   faChevronUp,
-  faCloudArrowUp,
   faXmark,
   faImage,
   faFileArrowUp,
@@ -288,11 +286,23 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
             )
           })}
           </div>
-          <p className="text-xs text-slate-400 italic m-0">
-            {currentSportConfig && currentSportConfig.types 
-              ? `* ${currentSportConfig.name} supports ${(Array.isArray(currentSportConfig.types) ? currentSportConfig.types : [currentSportConfig.types]).map(t => t.toLowerCase()).join(' and ')} play.`
-              : '* Options are restricted based on your chosen sport.'}
-          </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs text-slate-400 italic m-0">
+              {currentSportConfig && currentSportConfig.types 
+                ? `* ${currentSportConfig.name} supports ${(Array.isArray(currentSportConfig.types) ? currentSportConfig.types : [currentSportConfig.types]).map(t => t.toLowerCase()).join(' and ')} play.`
+                : '* Options are restricted based on your chosen sport.'}
+            </p>
+            {currentSportConfig?.lobby_size ? (
+              <p className={`text-xs m-0 ${
+                (data.participants || []).length === currentSportConfig.lobby_size
+                  ? 'text-emerald-600'
+                  : 'text-amber-600'
+              }`}>
+                {currentSportConfig.name} needs exactly {currentSportConfig.lobby_size} players for one lobby.
+                {' '}You currently have {(data.participants || []).length}.
+              </p>
+            ) : null}
+          </div>
         </div>
 
         {/*  INDIVIDUAL MODE  */}

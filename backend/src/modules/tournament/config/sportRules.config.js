@@ -74,6 +74,7 @@ const SPORT_RULES = {
     sport_name:        'Teamfight Tactics',
     participant_types: ['individual'],
     formats:           ROUND_SCORING_ONLY,
+    lobby_size:        8,
   },
   12: {
     sport_name:        'Programming',

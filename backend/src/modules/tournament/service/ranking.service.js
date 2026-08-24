@@ -517,6 +517,7 @@ const buildScoreRankings = (competitors, matches) => {
         comp_logo: competitor.comp_logo || null,
         comp_size: competitor.comp_size ?? null,
         score: numericScore,
+        sets: Array.isArray(score.sets) ? score.sets.map(toNumber) : null,
         status: score.eliminated ? 'eliminated' : score.advanced ? 'advanced' : 'active',
         advanced: Boolean(score.advanced),
         eliminated: Boolean(score.eliminated),

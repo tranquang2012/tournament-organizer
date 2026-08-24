@@ -13,76 +13,87 @@ import InputField from '../../components/common/InputField'
 //import endpoints
 import { getSportInformation } from '../../services/SportService'
 import { getPublicTournaments } from '../../services/TournamentService'
+import { getPublicMatchesBySport } from '../../services/MatchService'
+import { listFavorites } from '../../services/FavoriteService'
+import { useAuth } from '../../hooks/useAuth'
+import { mapPublicTournamentToCard } from '../../utils/tournamentCardMapper'
 
+const formatScheduledDate = (isoStr) => {
+  if (!isoStr) return 'TBD';
+  const d = new Date(isoStr);
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${d.getFullYear()}`;
+};
 
-const matchItems = [
-  {
-    tournamentName: 'Tournament Football 1', matchNumber: '11', round: 'Group A', date: '08/02/2027', time: '03:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 3, score2: 5, status: 'ongoing',
-    startTime: new Date(Date.now()).toISOString()
-  },
-  {
-    tournamentName: 'Tournament Football 1', matchNumber: '10', round: 'Group A', date: '07/02/2027', time: '01:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 2, score2: 1, status: 'ongoing',
-    startTime: '2026-06-11T02:00:34.572Z', pausedTime: new Date().toISOString()
-  },
-  { tournamentName: 'Tournament Football 2', matchNumber: '5', round: 'Group B', date: '06/02/2027', time: '05:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 0, score2: 2, status: 'completed' },
-  { tournamentName: 'Tournament Football 3', matchNumber: '5', round: 'Semi-Final', date: '06/02/2027', time: '06:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 3, score2: 2, status: 'completed', },
-  { tournamentName: 'Tournament Football 3', matchNumber: '5', round: 'Semi-Final', date: '06/02/2027', time: '06:00PM', team1: 'FOXY', team2: 'KIMETSU', score1: 3, score2: 2, status: 'completed', },
-];
+const formatScheduledTime = (isoStr) => {
+  if (!isoStr) return 'TBD';
+  const d = new Date(isoStr);
+  return d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+};
 
-const matchItemsLeaderBoard = [
-  {
-    tournamentName: 'Tournament Running Summer 2027', matchNumber: '5', round: 'Semi-Final',
-    date: '06/02/2027', time: '06:00PM', status: 'ongoing',
-    startTime: new Date(Date.now()).toISOString(),
-    participants: [
-      { name: 'FOXY', score: 10 },
-      { name: 'KIMETSU', score: 8 },
-      { name: 'GOKU', score: 6 },
-      { name: 'NARUTO', score: 4 },
-      { name: 'Eztoccoun', score: 3 },
-    ]
-  },
-  {
-    tournamentName: 'Tournament Running Summer 2027', matchNumber: '7', round: 'Semi-Final',
-    date: '06/02/2027', time: '06:00PM', status: 'pausing',
-    startTime: '2026-06-11T02:00:34.572Z', pausedTime: new Date().toISOString(),
-    participants: [
-      { name: 'FOXY', score: 10 },
-      { name: 'KIMETSU', score: 8 },
-      { name: 'GOKU', score: 6 },
-      { name: 'NARUTO', score: 4 },
-      { name: 'Eztoccoun', score: 3 },
-    ]
-  },
-  {
-    tournamentName: 'Tournament Running Spring 2027', matchNumber: '9', round: 'Semi-Final',
-    date: '06/02/2027', time: '06:00PM', status: 'completed',
-    participants: [
-      { name: 'FOXY', score: 10 },
-      { name: 'KIMETSU', score: 8 },
-      { name: 'GOKU', score: 6 },
-      { name: 'NARUTO', score: 4 },
-      { name: 'Eztoccoun', score: 3 },
-    ]
-  },
-  {
-    tournamentName: 'Tournament Running Spring 2027', matchNumber: '9', round: 'Semi-Final',
-    date: '06/02/2027', time: '06:00PM', status: 'completed',
-    participants: [
-      { name: 'FOXY', score: 10 },
-      { name: 'KIMETSU', score: 8 },
-      { name: 'GOKU', score: 6 },
-      { name: 'NARUTO', score: 4 },
-      { name: 'Eztoccoun', score: 3 },
-    ]
-  },
-];
+const isRoundScoringMatch = (match) => (
+  match.tour_format === 'round_scoring'
+  || match.stage === 'round_scoring'
+  || (match.stage === 'stage_1' && match.first_stage_format === 'round_scoring')
+  || (match.stage === 'stage_2' && match.second_stage_format === 'round_scoring')
+);
+
+const mapCardStatus = (status) => {
+  if (status === 'running') return 'ongoing';
+  if (status === 'resolved') return 'completed';
+  return status;
+};
+
+const mapVersusMatch = (match) => {
+  const c1 = match.competitors?.[0];
+  const c2 = match.competitors?.[1];
+  const r1 = match.results?.[0];
+  const r2 = match.results?.[1];
+
+  return {
+    matchId: match.match_id,
+    tourId: match.tour_id,
+    tournamentName: match.tour_name || '',
+    matchNumber: match.round,
+    matchLabel: match.match_label || null,
+    round: match.group_name || match.stage || '',
+    date: formatScheduledDate(match.scheduled_start),
+    time: formatScheduledTime(match.scheduled_start),
+    team1: c1?.comp_name || 'TBD',
+    team2: c2?.comp_name || 'TBD',
+    score1: r1?.score ?? 0,
+    score2: r2?.score ?? 0,
+    status: mapCardStatus(match.status),
+    startTime: match.scheduled_start,
+    isRoundScoring: false,
+  };
+};
+
+const mapRoundScoringMatch = (match) => ({
+  matchId: match.match_id,
+  tourId: match.tour_id,
+  tournamentName: match.tour_name || '',
+  matchNumber: match.round,
+  matchLabel: match.match_label || null,
+  round: match.group_name || match.stage || '',
+  date: formatScheduledDate(match.scheduled_start),
+  time: formatScheduledTime(match.scheduled_start),
+  status: mapCardStatus(match.status),
+  startTime: match.scheduled_start,
+  isRoundScoring: true,
+  participants: (match.round_scores || []).map((row) => ({
+    name: row.comp_name || 'Unknown',
+    score: row.score ?? 0,
+  })),
+});
 
 const SportsPage = () => {
   const { id } = useParams()
+  const { isLogin } = useAuth()
 
   const [sportInfo, setSportInfo] = useState(null);
   const [tournaments, setTournaments] = useState([]);
+  const [matches, setMatches] = useState([]);
+  const [favoriteIds, setFavoriteIds] = useState(new Set());
   const [imageLoaded, setImageLoaded] = useState(false);
   const [isOpenOngoing, setIsOpenOngoing] = useState(true);
   const [isOpenUpcoming, setIsOpenUpcoming] = useState(true);
@@ -156,46 +167,7 @@ const SportsPage = () => {
     const fetchTournaments = async () => {
       try {
         const res = await getPublicTournaments(id);
-        const mapped = (res.data || res || []).map((t) => {
-          const formatDate = (dateStr) => {
-            if (!dateStr) return 'TBD';
-            const date = new Date(dateStr);
-            if (isNaN(date.getTime())) return 'TBD';
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            return `${day}/${month}/${year}`;
-          };
-
-          const now = new Date();
-          now.setHours(0, 0, 0, 0);
-          const start = t.tour_startdate ? new Date(t.tour_startdate) : null;
-          if (start) start.setHours(0, 0, 0, 0);
-          const end = t.tour_enddate ? new Date(t.tour_enddate) : null;
-          if (end) end.setHours(23, 59, 59, 999);
-
-          let status = 'Upcoming';
-          if (t.tour_status === 'completed') {
-            status = 'Ended';
-          } else if (start && start > now) {
-            status = 'Upcoming';
-          } else if (end && end < now) {
-            status = 'Ended';
-          } else if (start && (!end || end >= now)) {
-            status = 'Ongoing';
-          }
-
-          return {
-            id: t.tour_id,
-            name: t.tour_name,
-            startDate: formatDate(t.tour_startdate),
-            endDate: formatDate(t.tour_enddate),
-            status,
-            image: t.tour_banner || t.sport_banner,
-            location: t.tour_locat,
-            description: t.tour_descrip
-          };
-        });
+        const mapped = (res.data || res || []).map(mapPublicTournamentToCard);
         setTournaments(mapped);
       } catch (err) {
         console.error('Failed to fetch public tournaments:', err);
@@ -203,6 +175,58 @@ const SportsPage = () => {
     };
     if (id) {
       fetchTournaments();
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (!isLogin || !id) {
+      setFavoriteIds(new Set());
+      return;
+    }
+
+    const fetchFavorites = async () => {
+      try {
+        const favorites = await listFavorites();
+        const ids = new Set(
+          favorites.map((favorite) => favorite.tournament?.tour_id).filter(Boolean),
+        );
+        setFavoriteIds(ids);
+      } catch (err) {
+        console.error('Failed to fetch favorites:', err);
+      }
+    };
+
+    fetchFavorites();
+  }, [isLogin, id]);
+
+  const handleFavoriteChange = (tournamentId, isFavorite) => {
+    setFavoriteIds((prev) => {
+      const next = new Set(prev);
+      if (isFavorite) {
+        next.add(tournamentId);
+      } else {
+        next.delete(tournamentId);
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    const fetchMatches = async () => {
+      try {
+        const res = await getPublicMatchesBySport(id);
+        const rows = res.data || res || [];
+        const mapped = rows.map((match) => (
+          isRoundScoringMatch(match) ? mapRoundScoringMatch(match) : mapVersusMatch(match)
+        ));
+        setMatches(mapped);
+      } catch (err) {
+        console.error('Failed to fetch recent matches:', err);
+        setMatches([]);
+      }
+    };
+    if (id) {
+      fetchMatches();
     }
   }, [id]);
 
@@ -227,14 +251,16 @@ const SportsPage = () => {
       </div>
       <div className='flex flex-col md:flex-row px-[5%] md:px-[10%] py-5'>
         <div className='flex flex-col gap-10 w-full md:pr-5 md:w-[60%] md:border-r border-[#d9d9d9]'>
-          {sportInfo?.data?.format === 'versus' ? (
-            matchItems.map((match, index) => (
-              <MatchScoreCard key={index} match={match} />
+          {matches.length > 0 ? (
+            matches.map((match) => (
+              match.isRoundScoring ? (
+                <MatchLeaderBoardCard key={match.matchId} match={match} />
+              ) : (
+                <MatchScoreCard key={match.matchId} match={match} />
+              )
             ))
           ) : (
-            matchItemsLeaderBoard.map((match, index) => (
-              <MatchLeaderBoardCard key={index} match={match} />
-            ))
+            <span className='text-[14px] text-gray-400'>No recent matches.</span>
           )}
         </div>
         <div className='flex flex-col w-full md:w-[40%] md:ml-5 gap-3'>
@@ -269,8 +295,13 @@ const SportsPage = () => {
           </div>
           <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpenOngoing ? 'max-h-[600px] mb-3' : 'max-h-0'}`}>
             <div className='flex flex-col gap-5 max-h-[510px] overflow-y-auto pr-1'>
-              {filteredOngoing.length > 0 ? filteredOngoing.map((tournament, index) => (
-                <TournamentCard key={index} tournament={tournament} />
+              {filteredOngoing.length > 0 ? filteredOngoing.map((tournament) => (
+                <TournamentCard
+                  key={tournament.id}
+                  tournament={tournament}
+                  isFavorite={favoriteIds.has(tournament.id)}
+                  onFavoriteChange={handleFavoriteChange}
+                />
               )) : (
                 <span className='text-[14px] text-gray-400'>No tournaments found</span>
               )}
@@ -282,8 +313,13 @@ const SportsPage = () => {
           </div>
           <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpenUpcoming ? 'max-h-[600px] mb-3' : 'max-h-0'}`}>
             <div className='flex flex-col gap-5 max-h-[510px] overflow-y-auto pr-1'>
-              {filteredUpcoming.length > 0 ? filteredUpcoming.map((tournament, index) => (
-                <TournamentCard key={index} tournament={tournament} />
+              {filteredUpcoming.length > 0 ? filteredUpcoming.map((tournament) => (
+                <TournamentCard
+                  key={tournament.id}
+                  tournament={tournament}
+                  isFavorite={favoriteIds.has(tournament.id)}
+                  onFavoriteChange={handleFavoriteChange}
+                />
               )) : (
                 <span className='text-[14px] text-gray-400'>No tournaments found</span>
               )}
@@ -295,8 +331,13 @@ const SportsPage = () => {
           </div>
           <div className={`overflow-hidden transition-all duration-300 ease-in-out ${isOpenCompleted ? 'max-h-[600px] mb-3' : 'max-h-0'}`}>
             <div className='flex flex-col gap-5 max-h-[510px] overflow-y-auto pr-1'>
-              {filteredCompleted.length > 0 ? filteredCompleted.map((tournament, index) => (
-                <TournamentCard key={index} tournament={tournament} />
+              {filteredCompleted.length > 0 ? filteredCompleted.map((tournament) => (
+                <TournamentCard
+                  key={tournament.id}
+                  tournament={tournament}
+                  isFavorite={favoriteIds.has(tournament.id)}
+                  onFavoriteChange={handleFavoriteChange}
+                />
               )) : (
                 <span className='text-[14px] text-gray-400'>No tournaments found</span>
               )}

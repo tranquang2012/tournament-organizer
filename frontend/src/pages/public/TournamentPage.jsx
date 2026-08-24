@@ -9,13 +9,14 @@ import TeamCard from '../../components/tournament_public/TeamCard';
 import MatchCard from '../../components/tournament_public/MatchCard';
 import ParticipantTable from '../../components/tournament_public/ParticipantTable';
 import TournamentBracket from '../../components/tournament_public/TournamentBracket';
+import FavoriteStarButton from '../../components/tournament_public/FavoriteStarButton';
 
 //import API
 import {
   getParticipants,
   getPublicTournamentById,
-  getTournamentBracket,
-  getTournamentBrackets,
+  getTournamentMatches,
+  getTournamentStages,
   getTournamentRankings
 } from '../../services/TournamentService';
 
@@ -343,11 +344,11 @@ const TournamentPage = () => {
         setLoadingMatches(true);
         if (tournament.format === 'round_scoring') {
           setLoadingRoundScoring(true);
-          const standings = await getTournamentBrackets(id);
+          const standings = await getTournamentStages(id);
           setRoundScoringData(standings);
           setLoadingRoundScoring(false);
         } else {
-          const flatMatches = await getTournamentBracket(id);
+          const flatMatches = await getTournamentMatches(id);
           setMatches(flatMatches);
         }
         setLoadingRankings(true);
@@ -509,7 +510,13 @@ const TournamentPage = () => {
         />
       </div>
       <div className='flex flex-col bg-[#d9d9d9]/50 px-[5%] md:px-[10%] py-[1%] w-full gap-4 md:gap-7 '>
-        <div className='text-[#123836] text-[25px] md:text-[36px] font-semibold'>{tournament.name}</div>
+        <div className='flex items-center gap-3'>
+          <div className='text-[#123836] text-[25px] md:text-[36px] font-semibold'>{tournament.name}</div>
+          <FavoriteStarButton
+            tournamentId={tournament.id}
+            iconClassName='text-[22px] md:text-[30px]'
+          />
+        </div>
         <span className='text-[13px] md:text-[18px]'>{tournament.description}</span>
         <div className='flex gap-3 md:gap-20'>
           <div className='flex gap-1 items-center'>
@@ -730,13 +737,18 @@ const TournamentPage = () => {
             roundScoringData && roundScoringData.rounds && roundScoringData.rounds.length > 0 ? (
               <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
                 {roundScoringData.rounds.map((round) => (
-                  <div key={round.match_id} className='flex items-center justify-between p-4 border border-[#123836]/20 rounded-lg shadow-sm bg-white'>
+                  <button
+                    key={round.match_id}
+                    type="button"
+                    onClick={() => navigate(`/matches/${round.match_id}`)}
+                    className='flex items-center justify-between p-4 border border-[#123836]/20 rounded-lg shadow-sm bg-white text-left cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-[#123836]'
+                  >
                     <span className='font-semibold text-[#123836] text-[16px] md:text-[20px]'>Round {round.round}</span>
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${round.status === 'completed' ? 'bg-green-100 text-green-800' :
                         round.status === 'running' ? 'bg-blue-100 text-blue-800' :
                           round.status === 'ready' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
                       }`}>{round.status}</span>
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (
@@ -784,7 +796,26 @@ const TournamentPage = () => {
               <div className="w-8 h-8 border-4 border-slate-200 border-t-[#123836] rounded-full animate-spin" />
             </div>
           ) : tournament.format === 'round_scoring' ? (
-            <div className='text-[14px] text-gray-400'>Matches list is represented as rounds for this format. See the Matches tab for round progress.</div>
+            roundScoringData?.rounds?.length > 0 ? (
+              <div className='flex flex-col gap-3'>
+                {roundScoringData.rounds.slice(0, 8).map((round) => (
+                  <button
+                    key={round.match_id}
+                    type="button"
+                    onClick={() => navigate(`/matches/${round.match_id}`)}
+                    className='flex items-center justify-between p-4 border border-[#123836]/20 rounded-lg shadow-sm bg-white text-left cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-[#123836]'
+                  >
+                    <span className='font-semibold text-[#123836] text-[16px] md:text-[20px]'>Round {round.round}</span>
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${round.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        round.status === 'running' ? 'bg-blue-100 text-blue-800' :
+                          round.status === 'ready' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
+                      }`}>{round.status}</span>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <span className='text-[14px] text-gray-400'>No recent matches.</span>
+            )
           ) : recentMatchesList.length > 0 ? (
             <div className='grid grid-cols-2 md:grid-cols-2 gap-10 items-start'>
               {recentMatchesList.slice(0, 8).map((match) => (

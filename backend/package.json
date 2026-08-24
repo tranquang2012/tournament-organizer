@@ -6,7 +6,8 @@
   "scripts": {
     "test": "node --test tests/*.unit.test.js",
     "dev": "nodemon index.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "reminders:run": "node scripts/process-email-reminders.js"
   },
   "keywords": [],
   "author": "",
@@ -19,6 +20,7 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "nodemailer": "^9.0.5",
     "pg": "^8.20.0"
   },
   "devDependencies": {

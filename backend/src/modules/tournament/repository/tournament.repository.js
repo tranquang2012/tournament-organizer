@@ -112,13 +112,14 @@ class TournamentRepository {
   //Step 3
 
   async updateFormat(tourId, data, organizerId) {
-    const { tour_format, group_count, advance_per_group, first_stage_format, second_stage_format } = data;
+    const { tour_format, group_count, advance_per_group, first_stage_format, second_stage_format, sets_per_match } = data;
     const { rows } = await pool.query(
       `UPDATE tournament
-       SET tour_format=$1, group_count=$2, advance_per_group=$3, first_stage_format=$6, second_stage_format=$7
+       SET tour_format=$1, group_count=$2, advance_per_group=$3, first_stage_format=$6, second_stage_format=$7,
+           sets_per_match=$8
        WHERE tour_id=$4 AND (created_by=$5 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $5 AND role IN ('superadmin', 'super_admin')))
        RETURNING *`,
-      [tour_format, group_count, advance_per_group, tourId, organizerId, first_stage_format, second_stage_format]
+      [tour_format, group_count, advance_per_group, tourId, organizerId, first_stage_format, second_stage_format, sets_per_match || 1]
     );
     return rows[0] || null;
   }

@@ -12,6 +12,9 @@ const errorHandler = require("./src/shared/middleware/errorHandler");
 const tournamentRoutes = require('./src/modules/tournament/tournament.routes');
 const sportRoutes = require("./src/modules/sport/sport.routes");
 const matchesRoutes = require("./src/modules/matches/matches.routes");
+const adminRoutes = require('./src/modules/admin/admin.routes');
+const favoriteRoutes = require('./src/modules/favorites/favorite.routes');
+const { startReminderScheduler } = require('./src/modules/favorites/service/reminderScheduler');
 
 app.get("/", (req, res) => {
   res.send("Backend running");
@@ -21,6 +24,8 @@ app.use("/api/users", userRoutes);
 app.use('/api/tournaments', tournamentRoutes);
 app.use("/api/sports", sportRoutes);
 app.use("/api/matches", matchesRoutes);
+app.use('/api/admin', adminRoutes);
+app.use('/api/favorites', favoriteRoutes);
 
 app.use(errorHandler);
 
@@ -28,4 +33,9 @@ const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  try {
+    startReminderScheduler();
+  } catch (error) {
+    console.error('Tournament email reminder scheduler could not start:', error.message);
+  }
 });

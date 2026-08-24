@@ -557,10 +557,12 @@ model tournament {
   first_stage_format        String?                     @db.VarChar(50)
   second_stage_format       String?                     @db.VarChar(50)
   participant_type          String?
+  sets_per_match            Int                         @default(1) @db.SmallInt
   competitors               competitors[]
   matches                   matches[]
   sport                     sport?                      @relation(fields: [sp_id], references: [sport_id], onDelete: NoAction, onUpdate: NoAction)
   tournament_stat_templates tournament_stat_templates[]
+  tournament_favorites      tournament_favorites[]
 
   @@schema("public")
 }
@@ -576,7 +578,29 @@ model user_roles {
   provider   Json?
   is_disable Boolean? @default(false)
   users      users    @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "user_roles_user_id_fkey")
+  tournament_favorites tournament_favorites[]
 
+  @@schema("public")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model tournament_favorites {
+  favorite_id                        String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                            String      @db.Uuid
+  tour_id                            String      @db.Uuid
+  created_at                         DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at                         DateTime    @default(now()) @db.Timestamptz(6)
+  reminder_claimed_for_startdate     DateTime?   @db.Date
+  reminder_claimed_at                DateTime?   @db.Timestamptz(6)
+  reminder_sent_for_startdate        DateTime?   @db.Date
+  reminder_sent_at                   DateTime?   @db.Timestamptz(6)
+  tournament                         tournament  @relation(fields: [tour_id], references: [tour_id], onDelete: Cascade, onUpdate: NoAction, map: "tournament_favorites_tour_id_fkey")
+  user_roles                         user_roles  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "tournament_favorites_user_id_fkey")
+
+  @@unique([user_id, tour_id], map: "tournament_favorites_user_tournament_key")
+  @@index([user_id], map: "tournament_favorites_user_id_idx")
+  @@index([tour_id], map: "tournament_favorites_tour_id_idx")
+  @@index([reminder_sent_for_startdate, reminder_claimed_at], map: "tournament_favorites_reminder_lookup_idx")
   @@schema("public")
 }
 

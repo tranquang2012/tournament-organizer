@@ -11,12 +11,21 @@ const EXPERIENCE_MAP = {
 
 let cachedSportRules = null;
 
-const getSportRules = async () => {
+export const getSportRules = async () => {
   if (cachedSportRules) return cachedSportRules;
 
   const response = await axios.get('/api/tournaments/sport-rules');
   cachedSportRules = response.data || {};
   return cachedSportRules;
+};
+
+export const getLobbySizeForSportName = async (sportName) => {
+  if (!sportName) return null;
+  const rules = await getSportRules();
+  const match = Object.values(rules).find(
+    (rule) => rule.sport_name?.toLowerCase() === sportName.toLowerCase()
+  );
+  return match?.lobby_size || null;
 };
 
 const normalizeExperience = (experience) => EXPERIENCE_MAP[experience] || 'Beginner';
@@ -218,6 +227,7 @@ const buildFormatConfigPayload = (data) => ({
   group_count: data.format === 'hybrid' ? Number(data.hybridGroups) : undefined,
   advance_per_group: data.format === 'hybrid' ? Number(data.hybridAdvancing) : undefined,
   second_stage_format: data.format === 'hybrid' ? data.hybridSecondRound : undefined,
+  sets_per_match: Number(data.setsPerMatch) || 1,
 });
 
 const withTournamentAuth = async () => {
@@ -320,13 +330,13 @@ export const getPublicTournamentById = async (tournamentId) => {
   return response?.data || null;
 };
 
-export const getTournamentBracket = async (tournamentId) => {
-  const response = await axios.get(`/api/tournaments/${tournamentId}/bracket`);
+export const getTournamentMatches = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/matches`);
   return response?.data || [];
 };
 
-export const getTournamentBrackets = async (tournamentId) => {
-  const response = await axios.get(`/api/tournaments/${tournamentId}/brackets`);
+export const getTournamentStages = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/stages`);
   return response?.data || [];
 };
 
@@ -338,6 +348,16 @@ export const getTournamentRankings = async (tournamentId) => {
 export const generateBracket = async (tournamentId) => {
   const authConfig = await withTournamentAuth();
   const response = await axios.post(`/api/tournaments/${tournamentId}/generate-bracket`, {}, authConfig);
+  return response?.data || null;
+};
+
+export const submitRoundScores = async (tournamentId, matchId, scores, { finalize = true } = {}) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.post(
+    `/api/tournaments/${tournamentId}/bracket/rounds/${matchId}/scores`,
+    { scores, finalize },
+    authConfig,
+  );
   return response?.data || null;
 };
 
@@ -359,4 +379,4 @@ export const deleteStatTemplate = async (tournamentId, templateId) => {
   const authConfig = await withTournamentAuth();
   const response = await axios.delete(`/api/tournaments/${tournamentId}/stat-templates/${templateId}`, authConfig);
   return response?.data;
-};
+};

@@ -140,16 +140,16 @@ async resumeTournament(req, res, next) {
     } catch (err) { next(err); }
   }
 
-  async getBracket(req, res, next) {
+  async getMatches(req, res, next) {
     try {
-      const data = await bracketService.getBracket(req.params.id);
+      const data = await bracketService.getMatches(req.params.id);
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
 
-  async getBrackets(req, res, next) {
+  async getStages(req, res, next) {
     try {
-      const data = await bracketService.getBrackets(req.params.id);
+      const data = await bracketService.getStages(req.params.id);
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
@@ -167,12 +167,12 @@ async resumeTournament(req, res, next) {
   async submitRoundScores(req, res, next) {
   try {
     const { id: tourId, matchId } = req.params;
-    const { scores } = req.body;
+    const { scores, finalize } = req.body;
 
     if (!Array.isArray(scores) || scores.length === 0) {
       return res.status(400).json({
         success: false,
-        message: 'scores must be a non-empty array of { comp_id, score }.',
+        message: 'scores must be a non-empty array of { comp_id, score } or { comp_id, sets }.',
       });
     }
 
@@ -180,7 +180,8 @@ async resumeTournament(req, res, next) {
       tourId,
       matchId,
       scores,
-      req.auth.userId
+      req.auth.userId,
+      { finalize: finalize !== false }
     );
 
     res.status(200).json({ success: true, data });
