@@ -97,6 +97,20 @@ class TournamentController {
     }
   }
 
+  async pauseTournament(req, res, next) {
+  try {
+    const data = await service.pauseTournament(req.params.id, req.body, req.auth.userId);
+    res.status(200).json({ success: true, data });
+  } catch (err) { next(err); }
+}
+
+async resumeTournament(req, res, next) {
+  try {
+    const data = await service.resumeTournament(req.params.id, req.body, req.auth.userId);
+    res.status(200).json({ success: true, data });
+  } catch (err) { next(err); }
+}
+
   async updateMember(req, res, next) {
     try {
       const data = await service.updateMember(req.params.memId, req.body, req.auth.userId);

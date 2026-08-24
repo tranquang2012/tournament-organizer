@@ -24,10 +24,33 @@ class MatchesController {
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }
+  async startMatch(req, res, next) {
+    try {
+      const { matchId } = req.params;
+      const data = await service.startMatch(matchId);
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
 
   async getScheduledMatches(req, res, next) {
     try {
       const data = await service.getScheduledMatches();
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
+
+  async pauseMatch(req, res, next) {
+    try {
+      const { matchId } = req.params;
+      const data = await service.pauseMatch(matchId);
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
+
+  async resumeMatch(req, res, next) {
+    try {
+      const { matchId } = req.params;
+      const data = await service.resumeMatch(matchId, req.body);
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }

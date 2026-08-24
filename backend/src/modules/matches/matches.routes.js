@@ -31,4 +31,9 @@ router.post('/:id/stats', auth, requireAdminUser, statCtrl.createStat.bind(statC
 router.patch('/:id/stats/:statId', auth, requireAdminUser, statCtrl.updateStat.bind(statCtrl));
 router.delete('/:id/stats/:statId', auth, requireAdminUser, statCtrl.deleteStat.bind(statCtrl));
 
+// Start, Pause, Resume match
+router.patch('/:matchId/start',    auth, requireAdminUser, ctrl.startMatch.bind(ctrl));
+router.patch('/:matchId/pause',    auth, requireAdminUser, ctrl.pauseMatch.bind(ctrl));
+router.patch('/:matchId/resume',   auth, requireAdminUser, ctrl.resumeMatch.bind(ctrl));
+
 module.exports = router;
