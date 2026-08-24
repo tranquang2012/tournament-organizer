@@ -257,7 +257,7 @@ async pauseMatch(matchId) {
 //Resume match
 
 async resumeMatch(matchId, body) {
-  // 1. Validate new scheduled_end from popup input
+  //Validate new scheduled_end from popup input
   const { data, errors } = validateResumeDto(body);
   if (errors) throw new AppError(errors.join(' | '), 400);
 
@@ -279,10 +279,7 @@ async resumeMatch(matchId, body) {
   const now    = new Date();
   const newEnd = new Date(data.scheduled_end);
   if (newEnd <= now) {
-    throw new AppError(
-      'The new scheduled_end must be a future datetime.',
-      400
-    );
+    throw new AppError('The new scheduled_end must be a future datetime.', 400);
   }
 
   //new end must also be after scheduled_start
@@ -296,16 +293,61 @@ async resumeMatch(matchId, body) {
     }
   }
 
-  const updated = await matchesRepository.resumeMatch(matchId, data.scheduled_end);
-  if (!updated) throw new AppError('Failed to resume match.', 500);
+  //Calculate how many days the match was paused
+
+  let daysPaused = 0;
+  let originalScheduledEnd = match.scheduled_end;
+
+  if (match.tour_pausedate && match.scheduled_end) {
+    const pausedAt      = new Date(match.tour_pausedate);
+    const MS_PER_DAY    = 1000 * 60 * 60 * 24;
+    daysPaused = Math.ceil((newEnd - pausedAt) / MS_PER_DAY);
+    if (daysPaused < 0) daysPaused = 0;
+  }
+
+  const client = await pool.connect();
+  let updated;
+
+  try {
+    await client.query('BEGIN');
+
+    //Save new scheduled_end + clear pause + set status back to running
+    updated = await matchesRepository.resumeMatch(matchId, data.scheduled_end, client);
+    if (!updated) throw new AppError('Failed to resume match.', 500);
+
+    //Push scheduled_start forward by daysPaused days if pause lasted at least 1 day
+    if (daysPaused > 0 && match.scheduled_start) {
+      await client.query(
+        `UPDATE matches
+         SET scheduled_start = scheduled_start + ($1 || ' days')::INTERVAL,
+             updated_at      = NOW()
+         WHERE match_id = $2`,
+        [daysPaused, matchId]
+      );
+    }
+
+    await client.query('COMMIT');
+  } catch (err) {
+    await client.query('ROLLBACK');
+    throw err;
+  } finally {
+    client.release();
+  }
+
+  //Fetch the final state so the response reflects both start and end changes
+  const final = await matchesRepository.getMatchTiming(matchId);
 
   return {
-    match_id:        String(updated.match_id),
-    status:          updated.status,
-    scheduled_start: updated.scheduled_start,
-    scheduled_end:   updated.scheduled_end,
-    paused_at:       null,
-    message:         `Match has resumed. New end time: ${updated.scheduled_end}.`,
+    match_id:              String(matchId),
+    status:                updated.status,
+    original_scheduled_end: originalScheduledEnd,
+    scheduled_start:       final.scheduled_start,
+    scheduled_end:         final.scheduled_end,
+    paused_at:             null,
+    days_paused:           daysPaused,
+    message:               daysPaused > 0
+      ? `Match has resumed. Schedule shifted forward by ${daysPaused} day(s). New end time: ${updated.scheduled_end}.`
+      : `Match has resumed. New end time: ${updated.scheduled_end}.`,
   };
 }
 
