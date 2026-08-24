@@ -64,7 +64,7 @@ const MatchScoreCard = ({ match }) => {
                     <span className='text-[10px] md:text-[15px] h-[10%] pl-1'>Date: {match.date}</span>
                     <span className='text-[10px] md:text-[15px] h-[10%] pl-1'>Time: {match.time}</span>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team1Losing ? 'opacity-40' : ''}`}>
-                        <img src={logo1} alt='logoteam1' className='w-10 h-10 md:h-15 md:w-15 object-contain' />
+                        <img src={match.team1Logo || logo1} alt={match.team1} className='w-10 h-10 md:h-15 md:w-15 object-contain' />
                         <span className='text-[10px] md:text-[15px] font-black uppercase'>{match.team1}</span>
                     </div>
                 </div>
@@ -82,7 +82,7 @@ const MatchScoreCard = ({ match }) => {
                         </span>
                     </div>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team2Losing ? 'opacity-40' : ''}`}>
-                        <img src={logo2} alt='logoteam2' className='w-10 h-10 md:h-15 md:w-15 object-contain' />
+                        <img src={match.team2Logo || logo2} alt={match.team2} className='w-10 h-10 md:h-15 md:w-15 object-contain' />
                         <span className='text-[10px] md:text-[15px] font-black uppercase'>{match.team2}</span>
                     </div>
                 </div>

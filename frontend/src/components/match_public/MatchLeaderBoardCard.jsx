@@ -96,7 +96,11 @@ const MatchLeaderBoardCard = ({ match }) => {
                                     <span className='font-medium text-gray-600'>{index + 1}</span>
                                 )}
                             </div>
-                            <img src={logo1} className={`h-4 w-4 md:h-6 md:w-6 object-contain rounded-full ${isCompleted && index >= 3 ? 'opacity-40' : ''}`} />
+                            <img
+                                src={participant.logo || logo1}
+                                alt={participant.name}
+                                className={`h-4 w-4 md:h-6 md:w-6 object-contain ${isCompleted && index >= 3 ? 'opacity-40' : ''}`}
+                            />
                             <span className={`font-semibold truncate ${isCompleted && index >= 3 ? 'text-gray-400' : ''}`}>{participant.name}</span>
                             <span className={`font-semibold ml-auto ${isCompleted && index >= 3 ? 'text-gray-400' : ''}`}>{participant.score} pts</span>
                         </div>

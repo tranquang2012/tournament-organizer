@@ -18,6 +18,20 @@ import { listFavorites } from '../../services/FavoriteService'
 import { useAuth } from '../../hooks/useAuth'
 import { mapPublicTournamentToCard } from '../../utils/tournamentCardMapper'
 
+import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
+import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
+import playerLogo from '../../assets/playerLogo.png'
+
+const isIndividualMatch = (match) => (
+  match.participant_type === 'individual'
+  || match.competitors?.some((c) => c.comp_size === 1)
+);
+
+const resolveCompetitorLogo = (competitor, isIndividual, teamDefault) => (
+  competitor?.comp_logo
+  || ((isIndividual || competitor?.comp_size === 1) ? playerLogo : teamDefault)
+);
+
 const formatScheduledDate = (isoStr) => {
   if (!isoStr) return 'TBD';
   const d = new Date(isoStr);
@@ -48,6 +62,7 @@ const mapVersusMatch = (match) => {
   const c2 = match.competitors?.[1];
   const r1 = match.results?.[0];
   const r2 = match.results?.[1];
+  const isIndividual = isIndividualMatch(match);
 
   return {
     matchId: match.match_id,
@@ -60,6 +75,10 @@ const mapVersusMatch = (match) => {
     time: formatScheduledTime(match.scheduled_start),
     team1: c1?.comp_name || 'TBD',
     team2: c2?.comp_name || 'TBD',
+    team1Logo: resolveCompetitorLogo(c1, isIndividual, logo1),
+    team2Logo: resolveCompetitorLogo(c2, isIndividual, logo2),
+    team1IsPlayer: isIndividual || c1?.comp_size === 1,
+    team2IsPlayer: isIndividual || c2?.comp_size === 1,
     score1: r1?.score ?? 0,
     score2: r2?.score ?? 0,
     status: mapCardStatus(match.status),
@@ -68,23 +87,29 @@ const mapVersusMatch = (match) => {
   };
 };
 
-const mapRoundScoringMatch = (match) => ({
-  matchId: match.match_id,
-  tourId: match.tour_id,
-  tournamentName: match.tour_name || '',
-  matchNumber: match.round,
-  matchLabel: match.match_label || null,
-  round: match.group_name || match.stage || '',
-  date: formatScheduledDate(match.scheduled_start),
-  time: formatScheduledTime(match.scheduled_start),
-  status: mapCardStatus(match.status),
-  startTime: match.scheduled_start,
-  isRoundScoring: true,
-  participants: (match.round_scores || []).map((row) => ({
-    name: row.comp_name || 'Unknown',
-    score: row.score ?? 0,
-  })),
-});
+const mapRoundScoringMatch = (match) => {
+  const isIndividual = isIndividualMatch(match);
+
+  return {
+    matchId: match.match_id,
+    tourId: match.tour_id,
+    tournamentName: match.tour_name || '',
+    matchNumber: match.round,
+    matchLabel: match.match_label || null,
+    round: match.group_name || match.stage || '',
+    date: formatScheduledDate(match.scheduled_start),
+    time: formatScheduledTime(match.scheduled_start),
+    status: mapCardStatus(match.status),
+    startTime: match.scheduled_start,
+    isRoundScoring: true,
+    isIndividual,
+    participants: (match.round_scores || []).map((row) => ({
+      name: row.comp_name || 'Unknown',
+      score: row.score ?? 0,
+      logo: row.comp_logo || (isIndividual ? playerLogo : logo1),
+    })),
+  };
+};
 
 const SportsPage = () => {
   const { id } = useParams()
