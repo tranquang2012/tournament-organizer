@@ -118,7 +118,7 @@ async getScheduleConflicts(tourId, scheduled_start, scheduled_end, excludeMatchI
       ORDER BY
         CASE WHEN m.status = 'running' THEN 0 ELSE 1 END,
         COALESCE(m.updated_at, m.scheduled_start) DESC NULLS LAST
-      LIMIT 8`,
+      LIMIT 5`,
       [sportId]
     );
     return rows;

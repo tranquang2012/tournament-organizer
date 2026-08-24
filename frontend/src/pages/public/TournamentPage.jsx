@@ -9,6 +9,7 @@ import TeamCard from '../../components/tournament_public/TeamCard';
 import MatchCard from '../../components/tournament_public/MatchCard';
 import ParticipantTable from '../../components/tournament_public/ParticipantTable';
 import TournamentBracket from '../../components/tournament_public/TournamentBracket';
+import FavoriteStarButton from '../../components/tournament_public/FavoriteStarButton';
 
 //import API
 import {
@@ -509,7 +510,13 @@ const TournamentPage = () => {
         />
       </div>
       <div className='flex flex-col bg-[#d9d9d9]/50 px-[5%] md:px-[10%] py-[1%] w-full gap-4 md:gap-7 '>
-        <div className='text-[#123836] text-[25px] md:text-[36px] font-semibold'>{tournament.name}</div>
+        <div className='flex items-center gap-3'>
+          <div className='text-[#123836] text-[25px] md:text-[36px] font-semibold'>{tournament.name}</div>
+          <FavoriteStarButton
+            tournamentId={tournament.id}
+            iconClassName='text-[22px] md:text-[30px]'
+          />
+        </div>
         <span className='text-[13px] md:text-[18px]'>{tournament.description}</span>
         <div className='flex gap-3 md:gap-20'>
           <div className='flex gap-1 items-center'>
