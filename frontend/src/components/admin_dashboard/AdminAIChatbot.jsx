@@ -320,9 +320,9 @@ const AdminAIChatbot = () => {
                       : '16px 16px 16px 4px',
                   background:
                     msg.role === 'user'
-                      ? 'linear-gradient(135deg, #123836 0%, #1a4a47 100%)'
+                      ? 'linear-gradient(135deg, #2dd4a8 0%, #22c59c 100%)'
                       : '#ffffff',
-                  color: msg.role === 'user' ? '#e0f5f0' : '#2d3748',
+                  color: msg.role === 'user' ? '#0a2e2b' : '#2d3748',
                   border:
                     msg.role === 'user'
                       ? 'none'
@@ -466,9 +466,6 @@ const AdminAIChatbot = () => {
               <FontAwesomeIcon icon={faPaperPlane} className="text-xs" />
             </button>
           </div>
-          <p className="text-[10px] text-[#a0aab4] mt-2 text-center tracking-wide">
-            AI responses are simulated • Real integration coming soon
-          </p>
         </div>
       </div>
 
