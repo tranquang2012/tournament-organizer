@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import AdminSidebar from './AdminSidebar'
+import AdminAIChatbot from '../admin_dashboard/AdminAIChatbot'
 
 const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(false)
@@ -15,6 +16,7 @@ const AdminLayout = () => {
       >
         <Outlet />
       </main>
+      <AdminAIChatbot />
     </div>
   )
 }
