@@ -9,7 +9,7 @@ import MatchDetailCard from '../../components/match_public/MatchDetailCard';
 import RoundScoringTable from '../../components/match_public/RoundScoringTable';
 
 import { getMatch, getMatchStats } from '../../services/MatchService';
-import { getParticipants } from '../../services/TournamentService';
+import { getParticipants, getSportRules } from '../../services/TournamentService';
 
 const formatScheduledDate = (isoStr) => {
   if (!isoStr) return null;
@@ -213,17 +213,20 @@ const MatchesPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
   const [bannerUrl, setBannerUrl] = useState(banner)
+  const [scoreMode, setScoreMode] = useState('points')
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [match, stats] = await Promise.all([
+        const [match, stats, rules] = await Promise.all([
           getMatch(id),
           getMatchStats(id),
+          getSportRules(),
         ]);
 
         if (match.tour_banner) setBannerUrl(match.tour_banner);
+        setScoreMode(rules?.[match.sp_id]?.score_mode || 'points');
 
         const roundScoring = isRoundScoringMatch(match);
         const isTeam = match.participant_type === 'team' && !roundScoring;
@@ -300,7 +303,7 @@ const MatchesPage = () => {
           <div className='flex items-center justify-center'>
             <div className='w-[70%] pt-15'>
               {isRoundScoring
-                ? <RoundScoringTable match={matchData} />
+                ? <RoundScoringTable match={matchData} scoreMode={scoreMode} />
                 : <MatchDetailCard match={matchData} />
               }
             </div>

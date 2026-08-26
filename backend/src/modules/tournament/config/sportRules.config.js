@@ -42,11 +42,13 @@ const SPORT_RULES = {
     sport_name:        'Running',
     participant_types: ['individual'],
     formats:           ROUND_SCORING_ONLY,
+    score_mode:        'time',
   },
   6: {
     sport_name:        'Bowling',
     participant_types: ['individual'],
     formats:           ROUND_SCORING_ONLY,
+    score_mode:        'points',
   },
 
   //E-Sports
@@ -80,6 +82,7 @@ const SPORT_RULES = {
     sport_name:        'Programming',
     participant_types: ['individual'],
     formats:           ROUND_SCORING_ONLY,
+    score_mode:        'points',
   },
 };
 

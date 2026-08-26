@@ -94,6 +94,13 @@ const TournamentCreatePage = () => {
     (rule) => rule.sport_name?.toLowerCase() === formData.sport?.toLowerCase()
   );
   const lobbySize = currentSportRules?.lobby_size || null;
+  const scoreMode = currentSportRules?.score_mode || 'points';
+  const isScoringSport = currentSportConfig
+    && String(currentSportConfig.format || '').toLowerCase().includes('scoring')
+    && !String(currentSportConfig.format || '').toLowerCase().includes('versus');
+  const enrichedSportConfig = currentSportConfig
+    ? { ...currentSportConfig, lobby_size: lobbySize, score_mode: scoreMode }
+    : currentSportConfig;
   const participantCount = formData.participantType === 'team'
     ? (formData.teamMode === 'predefine' ? (formData.teams || []).length : (formData.participants || []).length)
     : (formData.participants || []).length;
@@ -234,6 +241,12 @@ const TournamentCreatePage = () => {
   }, [formData.sport, currentSportConfig, formData.participantType, formData.format]);
 
   useEffect(() => {
+    if (scoreMode === 'time' && String(formData.setsPerMatch) !== '1') {
+      setFormData((prev) => ({ ...prev, setsPerMatch: '1' }));
+    }
+  }, [formData.sport, scoreMode, formData.setsPerMatch]);
+
+  useEffect(() => {
     if (!lobbySize || !isValidLobbyCount(participantCount, lobbySize)) return;
 
     const preset = getLobbyPreset(participantCount, lobbySize);
@@ -294,7 +307,8 @@ const TournamentCreatePage = () => {
     }
     if (idx === 2) {
       if (formData.format === 'hybrid') {
-        return !!formData.hybridSecondRound && !!formData.hybridGroups && !!formData.hybridAdvancing;
+        const hybridSecondRound = formData.hybridSecondRound || (isScoringSport ? 'round_scoring' : '');
+        return !!hybridSecondRound && !!formData.hybridGroups && !!formData.hybridAdvancing;
       }
       return !!formData.format;
     }
@@ -408,14 +422,13 @@ const TournamentCreatePage = () => {
           setToast({ message: 'Please configure the first round groups', type: 'error' });
           return false;
         }
-        if (!formData.hybridSecondRound) {
+        const hybridSecondRound = formData.hybridSecondRound || (isScoringSport ? 'round_scoring' : '');
+        if (!hybridSecondRound) {
           setToast({ message: 'Please select a format for the second round', type: 'error' });
           return false;
         }
       }
 
-      const sportFormat = String(currentSportConfig?.format || '').toLowerCase();
-      const isScoringSport = sportFormat.includes('scoring') && !sportFormat.includes('versus');
       const usesGamesPerMatch =
         formData.format === 'round_scoring' ||
         formData.hybridSecondRound === 'round_scoring' ||
@@ -448,7 +461,14 @@ const TournamentCreatePage = () => {
     }
 
     if (currentStep === 2) {
-      await saveFormatConfig(tournamentId, formData);
+      const formatData = { ...formData };
+      if (formData.format === 'hybrid' && isScoringSport && !formData.hybridSecondRound) {
+        formatData.hybridSecondRound = 'round_scoring';
+      }
+      if (scoreMode === 'time') {
+        formatData.setsPerMatch = '1';
+      }
+      await saveFormatConfig(tournamentId, formatData);
     }
   };
 
@@ -517,13 +537,13 @@ const TournamentCreatePage = () => {
       case 0:
         return <GeneralDetailsStep data={formData} onChange={updateStep1} />;
       case 1:
-        return <SportParticipantsStep data={formData} onChange={updateStep2} currentSportConfig={currentSportConfig ? { ...currentSportConfig, lobby_size: lobbySize } : currentSportConfig} />;
+        return <SportParticipantsStep data={formData} onChange={updateStep2} currentSportConfig={enrichedSportConfig} />;
       case 2:
         return (
           <FormatConfigStep
             data={formData}
             onChange={updateStep3}
-            currentSportConfig={currentSportConfig ? { ...currentSportConfig, lobby_size: lobbySize } : currentSportConfig}
+            currentSportConfig={enrichedSportConfig}
             participantCount={participantCount}
           />
         );

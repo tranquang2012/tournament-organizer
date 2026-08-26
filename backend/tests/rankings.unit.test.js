@@ -3,6 +3,7 @@ const assert = require('node:assert/strict');
 const {
   TournamentRankingService,
 } = require('../src/modules/tournament/service/ranking.service');
+const bracketRoundScoringService = require('../src/modules/tournament/service/bracketRoundScoring.service');
 
 const TOUR_ID = '00000000-0000-0000-0000-000000000001';
 const COMP_A = '00000000-0000-0000-0000-00000000000a';
@@ -534,4 +535,65 @@ test('ignores completed rows with unknown competitors or unusable results', asyn
   const result = await service.getTournamentRankings(TOUR_ID);
 
   assert.ok(result.rankings.every(row => row.played === 0 && row.rank === null));
+});
+
+test('prefers lower finish times for running when ranks are tied', async () => {
+  const service = createService({
+    tournament: tournament({ tour_format: 'round_scoring', sp_id: 5 }),
+    competitors: competitors.slice(0, 2),
+    matches: [
+      match({
+        match_id: 'running-time',
+        stage: 'round_scoring',
+        round: 1,
+        competitor1_id: null,
+        competitor2_id: null,
+        winning_competitor_id: null,
+        result1: null,
+        result2: null,
+        round_scores: [
+          { comp_id: COMP_A, score: 72000, rank: 1, advanced: true, eliminated: false, sets: [72000] },
+          { comp_id: COMP_B, score: 65000, rank: 1, advanced: true, eliminated: false, sets: [65000] },
+        ],
+      }),
+    ],
+  });
+
+  const result = await service.getTournamentRankings(TOUR_ID);
+
+  assert.equal(result.rankings[0].comp_id, COMP_B);
+  assert.equal(result.rankings[0].score, 65000);
+});
+
+test('prefers higher points for programming when ranks are tied', async () => {
+  const service = createService({
+    tournament: tournament({ tour_format: 'round_scoring', sp_id: 12 }),
+    competitors: competitors.slice(0, 2),
+    matches: [
+      match({
+        match_id: 'programming-points',
+        stage: 'round_scoring',
+        round: 1,
+        competitor1_id: null,
+        competitor2_id: null,
+        winning_competitor_id: null,
+        result1: null,
+        result2: null,
+        round_scores: [
+          { comp_id: COMP_A, score: 80, rank: 1, advanced: true, eliminated: false, sets: [80] },
+          { comp_id: COMP_B, score: 95, rank: 1, advanced: true, eliminated: false, sets: [95] },
+        ],
+      }),
+    ],
+  });
+
+  const result = await service.getTournamentRankings(TOUR_ID);
+
+  assert.equal(result.rankings[0].comp_id, COMP_B);
+  assert.equal(result.rankings[0].score, 95);
+});
+
+test('aggregates time scores using best finish and points using sum', () => {
+  assert.equal(bracketRoundScoringService._aggregateScore([72000, 65000], 'time'), 65000);
+  assert.equal(bracketRoundScoringService._aggregateScore([10, 20], 'points'), 30);
 });

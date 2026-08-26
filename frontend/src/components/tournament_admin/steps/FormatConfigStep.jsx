@@ -74,9 +74,12 @@ const FormatConfigStep = ({ data, onChange, currentSportConfig, participantCount
   const isScoringSport = currentSportConfig
     ? checkSupported(currentSportConfig.format, 'round_scoring') && !checkSupported(currentSportConfig.format, 'round_robin')
     : false;
-  const showGamesPerMatch =
+  const isOpenScoringSport = isScoringSport && !isLobbySport;
+  const isTimeSport = currentSportConfig?.score_mode === 'time';
+  const showGamesPerMatch = !isTimeSport && (
     data.format === 'round_scoring' ||
-    (data.format === 'hybrid' && (data.hybridSecondRound === 'round_scoring' || isScoringSport));
+    (data.format === 'hybrid' && (data.hybridSecondRound === 'round_scoring' || isScoringSport))
+  );
 
   const lobbyPreset = isLobbySport && LOBBY_TOURNAMENT_SIZES.includes(participantCount)
     ? {
@@ -86,7 +89,12 @@ const FormatConfigStep = ({ data, onChange, currentSportConfig, participantCount
     : null;
 
   useEffect(() => {
-    if (!isLobbySport || !LOBBY_TOURNAMENT_SIZES.includes(participantCount)) return;
+    if (!isTimeSport) return;
+    if (data.setsPerMatch === '1' || data.setsPerMatch === 1) return;
+    onChange({ ...data, setsPerMatch: '1' });
+  }, [isTimeSport, data.setsPerMatch]);
+
+  useEffect(() => {
 
     if (isLobbySingle && data.format !== 'round_scoring') {
       onChange({ ...data, format: 'round_scoring' });
@@ -112,6 +120,12 @@ const FormatConfigStep = ({ data, onChange, currentSportConfig, participantCount
       }
     }
   }, [isLobbySport, isLobbyHybrid, isLobbySingle, participantCount, lobbySize]);
+
+  useEffect(() => {
+    if (!isScoringSport || data.format !== 'hybrid') return;
+    if (data.hybridSecondRound === 'round_scoring') return;
+    onChange({ ...data, hybridSecondRound: 'round_scoring' });
+  }, [isScoringSport, data.format, data.hybridSecondRound]);
 
   return (
     <div className="animate-[fadeIn_0.3s_ease-out]">
@@ -158,7 +172,11 @@ const FormatConfigStep = ({ data, onChange, currentSportConfig, participantCount
               type="button"
               onClick={() => {
                 setActiveTab('multi');
-                onChange({ ...data, format: 'hybrid' });
+                onChange({
+                  ...data,
+                  format: 'hybrid',
+                  ...(isScoringSport ? { hybridSecondRound: 'round_scoring' } : {}),
+                });
               }}
               className={`
                 flex items-center gap-2 px-5 py-2 rounded-lg text-sm font-semibold
@@ -227,12 +245,12 @@ const FormatConfigStep = ({ data, onChange, currentSportConfig, participantCount
           <div>
             <h3 className="text-lg font-bold text-slate-800 m-0 mb-4 flex items-center gap-2">
               <span className="flex items-center justify-center w-6 h-6 rounded-full bg-[#123836] text-white text-xs">1</span>
-              {isScoringSport ? 'First Round: Scoring Lobbies' : 'First Round: Group Stage (Round Robin)'}
+              {isScoringSport ? (isLobbySport ? 'First Round: Scoring Lobbies' : 'First Round: Qualifying Heats') : 'First Round: Group Stage (Round Robin)'}
             </h3>
             <div className="bg-white rounded-2xl border border-slate-200 p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <InputField
-                  label="Number of Groups"
+                  label={isOpenScoringSport ? 'Number of Heats' : 'Number of Groups'}
                   type="number"
                   placeholder="e.g. 4"
                   value={data.hybridGroups || ''}
@@ -241,7 +259,7 @@ const FormatConfigStep = ({ data, onChange, currentSportConfig, participantCount
                   disabled={isLobbyHybrid}
                 />
                 <InputField
-                  label="Advance per Group"
+                  label={isOpenScoringSport ? 'Advance per Heat' : 'Advance per Group'}
                   type="number"
                   placeholder="e.g. 2"
                   value={data.hybridAdvancing || ''}
@@ -250,6 +268,11 @@ const FormatConfigStep = ({ data, onChange, currentSportConfig, participantCount
                   disabled={isLobbyHybrid}
                 />
               </div>
+              {isOpenScoringSport && !isLobbyHybrid && (
+                <p className="text-xs text-slate-500 mt-3 m-0">
+                  1 heat = everyone races together. Final size = heats × advance per heat.
+                </p>
+              )}
               {isLobbyHybrid && lobbyPreset && (
                 <p className="text-xs text-slate-500 mt-3 m-0">
                   Locked for {participantCount} players: {lobbyPreset.groups} lobbies of {lobbySize}, top {lobbyPreset.advance} advance to an 8-player final.
@@ -317,7 +340,9 @@ const FormatConfigStep = ({ data, onChange, currentSportConfig, participantCount
                 Second Round: Scoring Final
               </h3>
               <p className="text-sm text-slate-500 m-0">
-                Top qualifiers from each lobby play one final 8-player scoring match.
+                {isLobbySport
+                  ? 'Top qualifiers from each lobby play one final 8-player scoring match.'
+                  : 'Top qualifiers from each heat play one scoring final.'}
               </p>
             </div>
           )}
@@ -328,7 +353,7 @@ const FormatConfigStep = ({ data, onChange, currentSportConfig, participantCount
         <div className="mt-2 bg-white rounded-2xl border border-slate-200 p-6">
           <div className="max-w-sm">
             <InputField
-              label="Games per match"
+              label={isTimeSport ? 'Races per session' : 'Games per match'}
               type="number"
               placeholder="e.g. 3"
               value={data.setsPerMatch ?? '1'}
@@ -338,7 +363,9 @@ const FormatConfigStep = ({ data, onChange, currentSportConfig, participantCount
             />
           </div>
           <p className="text-xs text-slate-400 mt-2 m-0">
-            How many games are played in one scoring session. Rankings use the sum of all games.
+            {isTimeSport
+              ? 'How many races in one session. Rankings use the best (fastest) time.'
+              : 'How many games are played in one scoring session. Rankings use the sum of all games.'}
           </p>
         </div>
       )}

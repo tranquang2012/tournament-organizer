@@ -64,17 +64,82 @@ class BracketHybridService {
           }
           result = { totalMatches };
         } else {
-          const matchId = await bracketRepository.insertRoundScoringMatch(
-            tourId,
-            1,
-            client,
-            this.getStageKey(firstStage)
-          );
-          await client.query(
-            `UPDATE matches SET status = 'ready' WHERE match_id = $1`,
-            [matchId]
-          );
-          result = { totalMatches: 1 };
+          const advancePerGroup = firstStage.advance_per_group || 1;
+          const finalSize = groupCount * advancePerGroup;
+          if (finalSize < 2) {
+            throw new AppError('Final must have at least 2 qualifiers. Increase heats or advance per heat.', 400);
+          }
+
+          let totalMatches = 0;
+          if (groupCount <= 1) {
+            const roster = competitors.map((c) => ({
+              comp_id: c.comp_id,
+              sets: Array.from({ length: setsPerMatch }, () => null),
+              score: null,
+            }));
+            const matchId = await bracketRepository.insertRoundScoringMatch(
+              tourId,
+              1,
+              client,
+              this.getStageKey(firstStage),
+              { groupName: 'Heat', roundScores: roster }
+            );
+            await client.query(
+              `UPDATE matches SET status = 'ready' WHERE match_id = $1`,
+              [matchId]
+            );
+            totalMatches = 1;
+          } else {
+            if (competitors.length < groupCount * 2) {
+              throw new AppError(
+                `Need at least ${groupCount * 2} players for ${groupCount} heats (2 per heat).`,
+                400
+              );
+            }
+            if (advancePerGroup < 1) {
+              throw new AppError('Advance per heat must be at least 1.', 400);
+            }
+
+            const groups = Array.from({ length: groupCount }, () => []);
+            seeding.forEach((compId, index) => {
+              const round = Math.floor(index / groupCount);
+              const pos = index % groupCount;
+              const groupIndex = round % 2 === 0 ? pos : groupCount - 1 - pos;
+              groups[groupIndex].push(compId);
+            });
+
+            for (let i = 0; i < groupCount; i++) {
+              const heatCompIds = groups[i];
+              if (heatCompIds.length < 2) {
+                throw new AppError(`Heat ${String.fromCharCode(65 + i)} needs at least 2 players.`, 400);
+              }
+              if (heatCompIds.length < advancePerGroup) {
+                throw new AppError(
+                  `Heat ${String.fromCharCode(65 + i)} has fewer players than advance per heat.`,
+                  400
+                );
+              }
+              const roster = heatCompIds.map((comp_id) => ({
+                comp_id,
+                sets: Array.from({ length: setsPerMatch }, () => null),
+                score: null,
+              }));
+              const groupName = `Heat ${String.fromCharCode(65 + i)}`;
+              const matchId = await bracketRepository.insertRoundScoringMatch(
+                tourId,
+                1,
+                client,
+                this.getStageKey(firstStage),
+                { groupName, roundScores: roster }
+              );
+              await client.query(
+                `UPDATE matches SET status = 'ready' WHERE match_id = $1`,
+                [matchId]
+              );
+              totalMatches += 1;
+            }
+          }
+          result = { totalMatches };
         }
       } else {
         result = await this.standardService.generateBracketStage(tourId, {

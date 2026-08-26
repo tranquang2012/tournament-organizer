@@ -9,7 +9,9 @@ import first from '../../assets/RankingIcon/1st.png'
 import second from '../../assets/RankingIcon/2nd.png'
 import third from '../../assets/RankingIcon/3rd.png'
 
-const MatchLeaderBoardCard = ({ match }) => {
+import { formatDuration } from '../../utils/duration';
+
+const MatchLeaderBoardCard = ({ match, scoreMode = 'points' }) => {
     const isCompleted = match.status === 'completed';
     const isOngoing = match.status === 'ongoing';
     const isPausing = match.status === 'pausing' || match.status === 'paused';
@@ -102,7 +104,9 @@ const MatchLeaderBoardCard = ({ match }) => {
                                 className={`h-4 w-4 md:h-6 md:w-6 object-contain ${isCompleted && index >= 3 ? 'opacity-40' : ''}`}
                             />
                             <span className={`font-semibold truncate ${isCompleted && index >= 3 ? 'text-gray-400' : ''}`}>{participant.name}</span>
-                            <span className={`font-semibold ml-auto ${isCompleted && index >= 3 ? 'text-gray-400' : ''}`}>{participant.score} pts</span>
+                            <span className={`font-semibold ml-auto ${isCompleted && index >= 3 ? 'text-gray-400' : ''}`}>
+                                {scoreMode === 'time' ? formatDuration(participant.score) : `${participant.score} pts`}
+                            </span>
                         </div>
                     ))}
                 </div>

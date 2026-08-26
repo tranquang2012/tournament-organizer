@@ -1,8 +1,11 @@
 import React from 'react';
+import { formatDuration } from '../../utils/duration';
 
 const MEDAL_ICONS = ['🥇', '🥈', '🥉'];
 
-const GlobalLeaderboard = ({ participants, rounds, setsPerMatch = 1 }) => {
+const GlobalLeaderboard = ({ participants, rounds, setsPerMatch = 1, scoreMode = 'points' }) => {
+  const isTimeMode = scoreMode === 'time';
+  const formatValue = (value) => (isTimeMode ? formatDuration(value) : value);
   const completedRounds = rounds.filter(r => r.status === 'Completed').length;
   const totalRounds = rounds.length;
   const activeCount = participants.filter(p => p.status === 'Active').length;
@@ -19,7 +22,9 @@ const GlobalLeaderboard = ({ participants, rounds, setsPerMatch = 1 }) => {
         <div>
           <h2 className="text-lg font-bold text-slate-800">Global Leaderboard</h2>
           <p className="text-xs font-medium text-slate-400 mt-0.5">
-            {completedRounds}/{totalRounds} rounds completed - {showGameColumns ? `Sum of ${gameCount} games` : 'Score (Points)'}
+            {completedRounds}/{totalRounds} rounds completed - {showGameColumns
+              ? (isTimeMode ? `Best of ${gameCount} races` : `Sum of ${gameCount} games`)
+              : (isTimeMode ? 'Finish time' : 'Score (Points)')}
           </p>
         </div>
         <div className="flex items-center gap-5">
@@ -49,7 +54,9 @@ const GlobalLeaderboard = ({ participants, rounds, setsPerMatch = 1 }) => {
                       Game {index + 1}
                     </th>
                   ))}
-                  <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-16">Total</th>
+                  <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-16">
+                    {isTimeMode ? 'Best' : 'Total'}
+                  </th>
                 </>
               ) : (
                 <>
@@ -59,7 +66,9 @@ const GlobalLeaderboard = ({ participants, rounds, setsPerMatch = 1 }) => {
                     </th>
                   ))}
                   <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-16">Best</th>
-                  <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-16">Total</th>
+                  {!isTimeMode && (
+                    <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-16">Total</th>
+                  )}
                 </>
               )}
             </tr>
@@ -116,13 +125,15 @@ const GlobalLeaderboard = ({ participants, rounds, setsPerMatch = 1 }) => {
                         const score = p.sets?.[singleRoundId]?.[index];
                         return (
                           <td key={`${p.id}-game-${index}`} className="px-3 py-3.5 text-center font-semibold text-slate-600">
-                            {score != null ? score : (
+                            {score != null ? formatValue(score) : (
                               <span className="text-slate-300">-</span>
                             )}
                           </td>
                         );
                       })}
-                      <td className="px-3 py-3.5 text-center font-bold text-slate-800">{p.total}</td>
+                      <td className="px-3 py-3.5 text-center font-bold text-slate-800">
+                        {isTimeMode ? formatValue(p.best) : p.total}
+                      </td>
                     </>
                   ) : (
                     <>
@@ -130,14 +141,16 @@ const GlobalLeaderboard = ({ participants, rounds, setsPerMatch = 1 }) => {
                         const score = p.rounds[round.id];
                         return (
                           <td key={round.id} className="px-3 py-3.5 text-center font-semibold text-slate-600">
-                            {score != null ? score : (
+                            {score != null ? formatValue(score) : (
                               <span className="text-slate-300">-</span>
                             )}
                           </td>
                         );
                       })}
-                      <td className="px-3 py-3.5 text-center font-bold text-slate-700">{p.best}</td>
-                      <td className="px-3 py-3.5 text-center font-bold text-slate-800">{p.total}</td>
+                      <td className="px-3 py-3.5 text-center font-bold text-slate-700">{formatValue(p.best)}</td>
+                      {!isTimeMode && (
+                        <td className="px-3 py-3.5 text-center font-bold text-slate-800">{p.total}</td>
+                      )}
                     </>
                   )}
                 </tr>

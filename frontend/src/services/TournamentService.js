@@ -15,7 +15,7 @@ export const getSportRules = async () => {
   if (cachedSportRules) return cachedSportRules;
 
   const response = await axios.get('/api/tournaments/sport-rules');
-  cachedSportRules = response.data || {};
+  cachedSportRules = response?.data || response || {};
   return cachedSportRules;
 };
 

@@ -17,7 +17,14 @@ class BracketRoundScoringService {
     const letter = String.fromCharCode(65 + index);
     return `Group ${letter}`;
   }
-  _normalizeScoreEntries(scores, setsPerMatch, { draft = false } = {}) {
+
+  _aggregateScore(filledSets, scoreMode = 'points') {
+    if (!filledSets.length) return null;
+    if (scoreMode === 'time') return Math.min(...filledSets);
+    return filledSets.reduce((sum, value) => sum + value, 0);
+  }
+
+  _normalizeScoreEntries(scores, setsPerMatch, { draft = false, scoreMode = 'points' } = {}) {
     const expected = Math.max(1, Number(setsPerMatch) || 1);
 
     return scores.map((entry) => {
@@ -62,7 +69,7 @@ class BracketRoundScoringService {
         return {
           comp_id: entry.comp_id,
           sets,
-          score: filled.length ? filled.reduce((sum, value) => sum + value, 0) : null,
+          score: this._aggregateScore(filled, scoreMode),
         };
       }
 
@@ -172,7 +179,14 @@ class BracketRoundScoringService {
       .map((entry) => String(entry.comp_id));
     const rosterIdSet = existingRoster.length ? new Set(existingRoster) : null;
 
-    const normalizedScores = this._normalizeScoreEntries(scores, match.sets_per_match || 1, { draft: !finalize });
+    const sportRules = getSportRules(match.sp_id);
+    const scoreMode = sportRules?.score_mode || 'points';
+
+    const normalizedScores = this._normalizeScoreEntries(
+      scores,
+      match.sets_per_match || 1,
+      { draft: !finalize, scoreMode }
+    );
 
     for (const s of normalizedScores) {
       if (!validIdSet.has(String(s.comp_id))) {
@@ -211,9 +225,9 @@ class BracketRoundScoringService {
       };
     }
 
-    // Rank: highest score = rank 1
+    // Rank by sport mode: lowest time or highest score
     const ranked = [...normalizedScores]
-      .sort((a, b) => b.score - a.score)
+      .sort((a, b) => (scoreMode === 'time' ? a.score - b.score : b.score - a.score))
       .map((s, i) => ({ ...s, rank: i + 1 }));
 
     // Hybrid structure is handled by hybrid service, so we will need to optionally call it

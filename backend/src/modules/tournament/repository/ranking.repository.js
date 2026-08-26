@@ -4,7 +4,7 @@ class RankingRepository {
   async getTournamentRankingData(tourId, executor = pool) {
     const { rows: tournamentRows } = await executor.query(
       `SELECT tour_id, tour_format, tour_status, group_count, advance_per_group,
-              participant_type, first_stage_format, second_stage_format, sets_per_match
+              participant_type, first_stage_format, second_stage_format, sets_per_match, sp_id
        FROM tournament
        WHERE tour_id = $1`,
       [tourId]

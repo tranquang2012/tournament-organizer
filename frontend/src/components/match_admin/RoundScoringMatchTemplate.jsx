@@ -5,7 +5,7 @@ import GlobalLeaderboard from './GlobalLeaderboard';
 import RoundEntryTable from './RoundEntryTable';
 import MatchCard from './MatchCard';
 import MatchStatModal from './MatchStatModal';
-import { getParticipants, getTournamentStages, submitRoundScores } from '../../services/TournamentService';
+import { getParticipants, getTournamentStages, submitRoundScores, getSportRules } from '../../services/TournamentService';
 import imgFootball from '../../assets/sportImages/football.jpg';
 
 const TABS = [
@@ -60,6 +60,7 @@ const RoundScoringMatchTemplate = ({ tournament, stage = null }) => {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [statsRound, setStatsRound] = useState(null);
   const [setsPerMatch, setSetsPerMatch] = useState(Math.max(1, Number(tournament?.sets_per_match) || 1));
+  const [scoreMode, setScoreMode] = useState('points');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -69,14 +70,22 @@ const RoundScoringMatchTemplate = ({ tournament, stage = null }) => {
         setIsLoading(true);
         setError(null);
 
-        const [participantData, stagesPayload] = await Promise.all([
+        const [participantData, stagesPayload, rules] = await Promise.all([
           getParticipants(tournament.tour_id),
           getTournamentStages(tournament.tour_id, stage).catch((err) => {
             const status = err.response?.status;
             if (status === 404) return null;
             throw err;
           }),
+          getSportRules(),
         ]);
+
+        const sportRule = Object.values(rules || {}).find(
+          (rule) => rule.sport_name === tournament.sport_name
+        );
+        const nextScoreMode = sportRule?.score_mode || 'points';
+        setScoreMode(nextScoreMode);
+        const isTimeMode = nextScoreMode === 'time';
 
         const standings = extractStandingsPayload(stagesPayload);
         const nextSetsPerMatch = Math.max(
@@ -151,6 +160,17 @@ const RoundScoringMatchTemplate = ({ tournament, stage = null }) => {
             ? (latestStatusByComp[participant.id] || 'Eliminated')
             : 'Active';
 
+          const allSetValues = mappedRounds.flatMap((round) => {
+            const sets = roundSets[round.id];
+            return Array.isArray(sets) ? sets.filter((v) => v != null) : [];
+          });
+          const best = isTimeMode
+            ? (allSetValues.length ? Math.min(...allSetValues.map(Number)) : (numericScores.length ? Math.min(...numericScores.map(Number)) : 0))
+            : (numericScores.length ? Math.max(...numericScores.map(Number)) : 0);
+          const total = isTimeMode
+            ? best
+            : numericScores.reduce((sum, score) => sum + Number(score), 0);
+
           return {
             id: participant.id,
             rank: index + 1,
@@ -159,13 +179,19 @@ const RoundScoringMatchTemplate = ({ tournament, stage = null }) => {
             status,
             rounds: roundScores,
             sets: roundSets,
-            best: numericScores.length ? Math.max(...numericScores) : 0,
-            total: numericScores.reduce((sum, score) => sum + Number(score), 0),
+            best,
+            total,
           };
         });
 
         mappedParticipants.sort((a, b) => {
           if (a.status !== b.status) return a.status === 'Active' ? -1 : 1;
+          if (isTimeMode) {
+            if (!a.best && !b.best) return a.name.localeCompare(b.name);
+            if (!a.best) return 1;
+            if (!b.best) return -1;
+            return a.best - b.best || a.name.localeCompare(b.name);
+          }
           return b.total - a.total || a.name.localeCompare(b.name);
         });
         mappedParticipants.forEach((participant, index) => {
@@ -397,7 +423,7 @@ const RoundScoringMatchTemplate = ({ tournament, stage = null }) => {
                   ))}
                 </div>
               )}
-              <GlobalLeaderboard participants={participants} rounds={rounds} setsPerMatch={setsPerMatch} />
+              <GlobalLeaderboard participants={participants} rounds={rounds} setsPerMatch={setsPerMatch} scoreMode={scoreMode} />
             </div>
           )}
 
@@ -411,6 +437,7 @@ const RoundScoringMatchTemplate = ({ tournament, stage = null }) => {
                 isSubmitting={isSubmitting}
                 onOpenStats={setStatsRound}
                 setsPerMatch={setsPerMatch}
+                scoreMode={scoreMode}
               />
             </div>
           )}

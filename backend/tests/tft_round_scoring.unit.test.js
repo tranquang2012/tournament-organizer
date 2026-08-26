@@ -93,6 +93,25 @@ test('formatConfig scoring sport hybrid defaults both stages to round_scoring', 
   assert.equal(errors, null);
   assert.equal(data.first_stage_format, 'round_scoring');
   assert.equal(data.second_stage_format, 'round_scoring');
+  assert.equal(data.sets_per_match, 1);
+});
+
+test('formatConfig locks running to one race per session', () => {
+  const { data, errors } = validateFormatConfigDto(
+    { tour_format: 'round_scoring', setsPerMatch: 2 },
+    RUNNING_SP_ID,
+    10
+  );
+  assert.ok(errors?.some((e) => e.includes('one race')));
+  assert.equal(data, null);
+
+  const accepted = validateFormatConfigDto(
+    { tour_format: 'round_scoring', setsPerMatch: 1 },
+    RUNNING_SP_ID,
+    10
+  );
+  assert.equal(accepted.errors, null);
+  assert.equal(accepted.data.sets_per_match, 1);
 });
 
 test('formatConfig versus sport hybrid still uses round robin stage one', () => {

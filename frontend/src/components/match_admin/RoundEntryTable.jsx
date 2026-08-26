@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faClock, faScissors, faChartBar, faFloppyDisk } from '@fortawesome/free-solid-svg-icons';
 import ConfirmationModal from '../common/ConfirmationModal';
+import { fieldsToMs, formatDuration, msToFields } from '../../utils/duration';
 
 const emptySetValues = (count) => Array.from({ length: count }, () => '');
 
@@ -30,7 +31,8 @@ const scoreInputClass = (disabled, hasValue) => `
   }
 `;
 
-const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting, onOpenStats, setsPerMatch = 1 }) => {
+const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting, onOpenStats, setsPerMatch = 1, scoreMode = 'points' }) => {
+  const isTimeMode = scoreMode === 'time';
   const gameCount = Math.max(1, Number(setsPerMatch) || 1);
   const isMultiGame = gameCount > 1;
   const defaultRound = rounds.find(r => r.status !== 'Completed') || rounds[rounds.length - 1];
@@ -39,6 +41,7 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
   const [validationError, setValidationError] = useState(null);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saveMessage, setSaveMessage] = useState(null);
+  const [timeFields, setTimeFields] = useState({});
 
   const selectedRound = rounds.find(r => r.id === selectedRoundId);
   const isCompleted = selectedRound?.status === 'Completed';
@@ -68,12 +71,20 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
 
   useEffect(() => {
     const nextScores = {};
+    const nextTimeFields = {};
     entryParticipants.forEach((participant) => {
       nextScores[participant.id] = parseStoredSets(participant, selectedRoundId, gameCount);
+      if (isTimeMode) {
+        nextScores[participant.id].forEach((value, gameIndex) => {
+          const key = `${participant.id}-${gameIndex}`;
+          nextTimeFields[key] = msToFields(value);
+        });
+      }
     });
     setScores(nextScores);
+    if (isTimeMode) setTimeFields(nextTimeFields);
     setValidationError(null);
-  }, [selectedRoundId, participants, isCompleted, gameCount]);
+  }, [selectedRoundId, participants, isCompleted, gameCount, isTimeMode]);
 
   useEffect(() => {
     setSaveMessage(null);
@@ -105,20 +116,36 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
     setSaveMessage(null);
   };
 
+  const handleTimeFieldChange = (participantId, gameIndex, field, raw) => {
+    const key = `${participantId}-${gameIndex}`;
+    const current = timeFields[key] || { min: '', sec: '', cs: '' };
+    const next = { ...current, [field]: raw };
+    setTimeFields((prev) => ({ ...prev, [key]: next }));
+    if (next.min === '' && next.sec === '' && next.cs === '') {
+      handleScoreChange(participantId, gameIndex, '');
+      return;
+    }
+    try {
+      handleScoreChange(participantId, gameIndex, String(fieldsToMs(next.min, next.sec, next.cs)));
+    } catch {
+      handleScoreChange(participantId, gameIndex, '');
+    }
+  };
+
   const parseGameValue = (raw, participantName, gameIndex) => {
     if (raw === undefined || raw === '') {
       throw new Error(
         isMultiGame
-          ? `Enter a score for ${participantName} in Game ${gameIndex + 1}.`
-          : `Enter a score for ${participantName}.`
+          ? `Enter a ${isTimeMode ? 'time' : 'score'} for ${participantName} in ${isTimeMode ? 'Race' : 'Game'} ${gameIndex + 1}.`
+          : `Enter a ${isTimeMode ? 'finish time' : 'score'} for ${participantName}.`
       );
     }
     const score = Number(raw);
     if (!Number.isFinite(score) || score < 0) {
       throw new Error(
         isMultiGame
-          ? `Game ${gameIndex + 1} score for ${participantName} must be a non-negative number.`
-          : `Score for ${participantName} must be a non-negative number.`
+          ? `${isTimeMode ? 'Race' : 'Game'} ${gameIndex + 1} for ${participantName} must be valid.`
+          : `${isTimeMode ? 'Finish time' : 'Score'} for ${participantName} must be valid.`
       );
     }
     return score;
@@ -207,8 +234,12 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
           <h2 className="text-lg font-bold text-slate-800">Round Entry</h2>
           <p className="text-xs font-medium text-slate-400 mt-0.5">
             {isMultiGame
-              ? `Save game scores as you go. Rankings and cut-off use the total of all ${gameCount} games.`
-              : 'Save scores as you go, then apply cut-off when the round is complete'}
+              ? isTimeMode
+                ? `Save race times as you go. Rankings use the best of ${gameCount} races.`
+                : `Save game scores as you go. Rankings and cut-off use the total of all ${gameCount} games.`
+              : isTimeMode
+                ? 'Save finish times as you go, then apply cut-off when the round is complete'
+                : 'Save scores as you go, then apply cut-off when the round is complete'}
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -266,13 +297,17 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
                 <>
                   {Array.from({ length: gameCount }, (_, index) => (
                     <th key={`game-${index}`} className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-24">
-                      Game {index + 1}
+                      {isTimeMode ? `Race ${index + 1}` : `Game ${index + 1}`}
                     </th>
                   ))}
-                  <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-20">Total</th>
+                  <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-20">
+                    {isTimeMode ? 'Best' : 'Total'}
+                  </th>
                 </>
               ) : (
-                <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-32">Score</th>
+                <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-32">
+                  {isTimeMode ? 'Finish Time' : 'Score'}
+                </th>
               )}
               <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-20">Status</th>
             </tr>
@@ -293,8 +328,63 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
               });
               const filledCount = parsedValues.filter((value) => value != null).length;
               const hasAllScores = filledCount === gameCount;
-              const total = parsedValues.reduce((sum, value) => sum + (value || 0), 0);
+              const aggregate = isTimeMode
+                ? (filledCount ? Math.min(...parsedValues.filter((v) => v != null)) : null)
+                : parsedValues.reduce((sum, value) => sum + (value || 0), 0);
               const inputDisabled = isCompleted || isLocked;
+
+              const renderScoreInput = (gameIndex) => {
+                if (isTimeMode) {
+                  const key = `${p.id}-${gameIndex}`;
+                  const fields = timeFields[key] || msToFields(values[gameIndex]);
+                  return (
+                    <div className="flex items-center justify-center gap-1">
+                      <input
+                        type="number"
+                        min="0"
+                        value={fields.min}
+                        placeholder="m"
+                        disabled={inputDisabled}
+                        onChange={(e) => handleTimeFieldChange(p.id, gameIndex, 'min', e.target.value)}
+                        className={`${scoreInputClass(inputDisabled, fields.min !== '')} w-12`}
+                      />
+                      <span className="text-slate-400">:</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="59"
+                        value={fields.sec}
+                        placeholder="ss"
+                        disabled={inputDisabled}
+                        onChange={(e) => handleTimeFieldChange(p.id, gameIndex, 'sec', e.target.value)}
+                        className={`${scoreInputClass(inputDisabled, fields.sec !== '')} w-12`}
+                      />
+                      <span className="text-slate-400">.</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max="99"
+                        value={fields.cs}
+                        placeholder="hs"
+                        disabled={inputDisabled}
+                        onChange={(e) => handleTimeFieldChange(p.id, gameIndex, 'cs', e.target.value)}
+                        className={`${scoreInputClass(inputDisabled, fields.cs !== '')} w-12`}
+                      />
+                    </div>
+                  );
+                }
+                return (
+                  <input
+                    type="number"
+                    min="0"
+                    value={values[gameIndex] ?? ''}
+                    placeholder="0"
+                    disabled={inputDisabled}
+                    onChange={(e) => handleScoreChange(p.id, gameIndex, e.target.value)}
+                    className={scoreInputClass(inputDisabled, values[gameIndex] !== undefined && values[gameIndex] !== '')}
+                  />
+                );
+              };
 
               return (
                 <tr
@@ -313,23 +403,25 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
                     <span className="font-semibold text-slate-700">{p.name}</span>
                   </td>
 
-                  {values.map((value, gameIndex) => (
-                    <td key={`${p.id}-game-${gameIndex}`} className="px-3 py-3.5 text-center">
-                      <input
-                        type="number"
-                        min="0"
-                        value={value ?? ''}
-                        placeholder="0"
-                        disabled={inputDisabled}
-                        onChange={(e) => handleScoreChange(p.id, gameIndex, e.target.value)}
-                        className={scoreInputClass(inputDisabled, value !== undefined && value !== '')}
-                      />
+                  {isMultiGame ? (
+                    Array.from({ length: gameCount }, (_, gameIndex) => (
+                      <td key={`${p.id}-game-${gameIndex}`} className="px-3 py-3.5 text-center">
+                        {inputDisabled && isTimeMode
+                          ? formatDuration(values[gameIndex])
+                          : renderScoreInput(gameIndex)}
+                      </td>
+                    ))
+                  ) : (
+                    <td className="px-3 py-3.5 text-center">
+                      {inputDisabled && isTimeMode
+                        ? formatDuration(values[0])
+                        : renderScoreInput(0)}
                     </td>
-                  ))}
+                  )}
 
                   {isMultiGame && (
                     <td className="px-3 py-3.5 text-center font-bold text-slate-800">
-                      {filledCount > 0 ? total : <span className="text-slate-300">-</span>}
+                      {aggregate != null ? (isTimeMode ? formatDuration(aggregate) : aggregate) : <span className="text-slate-300">-</span>}
                     </td>
                   )}
 

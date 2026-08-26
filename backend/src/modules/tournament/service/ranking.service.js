@@ -1,5 +1,6 @@
 const AppError = require('../../../shared/errors/AppError');
 const rankingRepository = require('../repository/ranking.repository');
+const { getSportRules } = require('../config/sportRules.config');
 
 const RESULT_STATUSES = new Set(['completed', 'resolved', 'archived']);
 const TERMINAL_STATUSES = new Set([...RESULT_STATUSES, 'bye']);
@@ -493,7 +494,7 @@ const rankElimination = (competitors, matches, format, { includeAll = true } = {
   return rankings;
 };
 
-const buildScoreRankings = (competitors, matches) => {
+const buildScoreRankings = (competitors, matches, scoreMode = 'points') => {
   const competitorMap = new Map(competitors.map(c => [c.comp_id, c]));
   const completedRounds = matches
     .filter(match => RESULT_STATUSES.has(match.status))
@@ -524,7 +525,11 @@ const buildScoreRankings = (competitors, matches) => {
       };
     })
     .filter(Boolean)
-    .sort((a, b) => a.rank - b.rank || b.score - a.score || a.comp_name.localeCompare(b.comp_name));
+    .sort((a, b) => (
+      a.rank - b.rank
+      || (scoreMode === 'time' ? a.score - b.score : b.score - a.score)
+      || a.comp_name.localeCompare(b.comp_name)
+    ));
 
   const pending = competitors
     .filter(competitor => !seen.has(competitor.comp_id))
@@ -677,7 +682,9 @@ class TournamentRankingService {
     const state = getTournamentState(stageCompetitors, matches);
 
     if (format === 'round_scoring') {
-      const scoreData = buildScoreRankings(stageCompetitors, matches);
+      const sportRules = getSportRules(tournament.sp_id);
+      const scoreMode = sportRules?.score_mode || 'points';
+      const scoreData = buildScoreRankings(stageCompetitors, matches, scoreMode);
       return {
         stage,
         format,

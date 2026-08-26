@@ -186,7 +186,7 @@ async getRoundScoringMatch(matchId, tourId, executor = pool) {
     `SELECT m.match_id, m.round, m.stage, m.group_name, m.status, m.round_scores,
             m.scheduled_start, m.scheduled_end,
             t.created_by, t.advance_per_group, t.tour_round, t.sets_per_match,
-            t.tour_format, t.group_count, s.sport_format, t.first_stage_format, t.second_stage_format
+            t.tour_format, t.group_count, t.sp_id, s.sport_format, t.first_stage_format, t.second_stage_format
      FROM matches m
      JOIN tournament t ON t.tour_id = m.tour_id
      LEFT JOIN sport s ON t.sp_id = s.sport_id

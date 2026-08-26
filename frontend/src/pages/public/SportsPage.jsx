@@ -12,7 +12,7 @@ import InputField from '../../components/common/InputField'
 
 //import endpoints
 import { getSportInformation } from '../../services/SportService'
-import { getPublicTournaments } from '../../services/TournamentService'
+import { getPublicTournaments, getSportRules } from '../../services/TournamentService'
 import { getPublicMatchesBySport } from '../../services/MatchService'
 import { listFavorites } from '../../services/FavoriteService'
 import { useAuth } from '../../hooks/useAuth'
@@ -127,6 +127,7 @@ const SportsPage = () => {
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [scoreMode, setScoreMode] = useState('points');
 
   const filterTournaments = (items) => {
     let result = items;
@@ -177,6 +178,15 @@ const SportsPage = () => {
       setIsOpenCompleted(true);
     }
   }, [searchQuery, dateFrom, dateTo]);
+
+  useEffect(() => {
+    const loadScoreMode = async () => {
+      const rules = await getSportRules();
+      const sportId = parseInt(id, 10);
+      setScoreMode(rules?.[sportId]?.score_mode || 'points');
+    };
+    if (id) loadScoreMode();
+  }, [id]);
 
   useEffect(() => {
     const fetchSportInfo = async () => {
@@ -279,7 +289,7 @@ const SportsPage = () => {
           {matches.length > 0 ? (
             matches.map((match) => (
               match.isRoundScoring ? (
-                <MatchLeaderBoardCard key={match.matchId} match={match} />
+                <MatchLeaderBoardCard key={match.matchId} match={match} scoreMode={scoreMode} />
               ) : (
                 <MatchScoreCard key={match.matchId} match={match} />
               )

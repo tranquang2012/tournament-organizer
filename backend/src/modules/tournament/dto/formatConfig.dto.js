@@ -105,6 +105,10 @@ function validateFormatConfigDto(body, sp_id, participantCount = null) {
   }
 
   const setsPerMatch = parseSetsPerMatch(body, errors);
+  if (rules?.score_mode === 'time' && setsPerMatch !== 1) {
+    errors.push('Running uses one race per session.');
+  }
+  const resolvedSetsPerMatch = rules?.score_mode === 'time' ? 1 : setsPerMatch;
   const scoringSport = isRoundScoringSport(rules);
   const parsedParticipantCount = participantCount != null ? Number(participantCount) : null;
 
@@ -159,7 +163,7 @@ function validateFormatConfigDto(body, sp_id, participantCount = null) {
         advance_per_group: resolvedAdvancePerGroup,
         first_stage_format: firstStageFormat,
         second_stage_format: secondStageFormat,
-        sets_per_match: setsPerMatch,
+        sets_per_match: resolvedSetsPerMatch,
       }
     };
   }
@@ -180,7 +184,7 @@ function validateFormatConfigDto(body, sp_id, participantCount = null) {
       tour_format,
       group_count: validGroupCount,
       advance_per_group: validAdvancePerGroup,
-      sets_per_match: tour_format === 'round_scoring' ? setsPerMatch : 1,
+      sets_per_match: tour_format === 'round_scoring' ? resolvedSetsPerMatch : 1,
     }
   };
 }

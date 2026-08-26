@@ -1,6 +1,7 @@
 import trophy from '../../assets/trophy.png'
+import { formatDuration } from '../../utils/duration'
 
-const RoundScoringTable = ({ match }) => {
+const RoundScoringTable = ({ match, scoreMode = 'points' }) => {
     const isCompleted = match.status === 'completed';
     const isOngoing = match.status === 'ongoing';
 
@@ -45,12 +46,18 @@ const RoundScoringTable = ({ match }) => {
                             {match.rounds.map(r => (
                                 <th key={r} className='text-center px-3 py-3 font-semibold'>{r}</th>
                             ))}
-                            <th className='text-center px-3 py-3 font-semibold text-red-300'>Total Score</th>
+                            <th className='text-center px-3 py-3 font-semibold text-red-300'>
+                                {scoreMode === 'time' ? 'Best Time' : 'Total Score'}
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
                         {match.participants.map((p, i) => {
-                            const total = p.scores.reduce((sum, value) => sum + (Number(value) || 0), 0)
+                            const total = scoreMode === 'time'
+                                ? (p.scores.filter((v) => v != null).length
+                                    ? Math.min(...p.scores.filter((v) => v != null).map(Number))
+                                    : null)
+                                : p.scores.reduce((sum, value) => sum + (Number(value) || 0), 0)
                             return (
                                 <tr key={i} className='border-t border-gray-100 hover:bg-gray-50 transition-colors'>
                                     <td className='px-4 py-3 font-medium text-gray-800 flex items-center gap-2'>
@@ -58,9 +65,13 @@ const RoundScoringTable = ({ match }) => {
                                         {rankBadge(p.rank) && <span>{rankBadge(p.rank)}</span>}
                                     </td>
                                     {p.scores.map((s, j) => (
-                                        <td key={j} className='text-center px-3 py-3 text-gray-700'>{s == null ? '--' : s}</td>
+                                        <td key={j} className='text-center px-3 py-3 text-gray-700'>
+                                            {s == null ? '--' : (scoreMode === 'time' ? formatDuration(s) : s)}
+                                        </td>
                                     ))}
-                                    <td className='text-center px-3 py-3 font-bold text-red-500'>{total}</td>
+                                    <td className='text-center px-3 py-3 font-bold text-red-500'>
+                                        {total == null ? '--' : (scoreMode === 'time' ? formatDuration(total) : total)}
+                                    </td>
                                 </tr>
                             )
                         })}
