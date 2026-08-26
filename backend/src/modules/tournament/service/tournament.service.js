@@ -141,9 +141,16 @@ class TournamentService {
       throw new AppError('Sport must be selected in Step 2 before configuring format.', 400);
     }
 
+    const { rows: competitorRows } = await pool.query(
+      `SELECT COUNT(*)::int AS count FROM competitors WHERE tour_id = $1`,
+      [tourId]
+    );
+    const participantCount = competitorRows[0]?.count ?? 0;
+
     const { data, errors } = validateFormatConfigDto(
       { ...body, sport_format: tournament.sport_format },
-      tournament.sp_id
+      tournament.sp_id,
+      participantCount
     );
     if (errors) throw new AppError(errors.join(' | '), 400);
 

@@ -3,6 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartColumn, faTableCells, faTrophy, faCalendarDays, faBolt, faClock, faCheck, faChartBar } from '@fortawesome/free-solid-svg-icons';
 import GlobalLeaderboard from './GlobalLeaderboard';
 import RoundEntryTable from './RoundEntryTable';
+import MatchCard from './MatchCard';
 import MatchStatModal from './MatchStatModal';
 import { getParticipants, getTournamentStages, submitRoundScores } from '../../services/TournamentService';
 import imgFootball from '../../assets/sportImages/football.jpg';
@@ -19,12 +20,37 @@ const mapRoundStatus = (status) => {
   return 'Upcoming';
 };
 
+const mapMatchCardStatus = (status) => {
+  if (status === 'completed') return 'Completed';
+  if (status === 'running') return 'Live';
+  return 'Upcoming';
+};
+
+const parseScheduleFields = (scheduledStart, scheduledEnd) => {
+  let date = '';
+  let startTime = '';
+  let endTime = '';
+  if (scheduledStart) {
+    const sd = new Date(scheduledStart);
+    const year = sd.getFullYear();
+    const month = String(sd.getMonth() + 1).padStart(2, '0');
+    const day = String(sd.getDate()).padStart(2, '0');
+    date = `${year}-${month}-${day}`;
+    startTime = `${String(sd.getHours()).padStart(2, '0')}:${String(sd.getMinutes()).padStart(2, '0')}`;
+  }
+  if (scheduledEnd) {
+    const ed = new Date(scheduledEnd);
+    endTime = `${String(ed.getHours()).padStart(2, '0')}:${String(ed.getMinutes()).padStart(2, '0')}`;
+  }
+  return { date, startTime, endTime };
+};
+
 const extractStandingsPayload = (payload) => {
   if (!payload || Array.isArray(payload) || !Array.isArray(payload.rounds)) return null;
   return payload;
 };
 
-const RoundScoringMatchTemplate = ({ tournament }) => {
+const RoundScoringMatchTemplate = ({ tournament, stage = null }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
   const [participants, setParticipants] = useState([]);
   const [rounds, setRounds] = useState([]);
@@ -45,7 +71,7 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
 
         const [participantData, stagesPayload] = await Promise.all([
           getParticipants(tournament.tour_id),
-          getTournamentStages(tournament.tour_id).catch((err) => {
+          getTournamentStages(tournament.tour_id, stage).catch((err) => {
             const status = err.response?.status;
             if (status === 404) return null;
             throw err;
@@ -57,23 +83,31 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
           1,
           Number(standings?.sets_per_match) || Number(tournament?.sets_per_match) || 1
         );
-        const mappedRounds = (standings?.rounds || []).map((round) => ({
+        const mappedRounds = (standings?.rounds || []).map((round) => {
+          const schedule = parseScheduleFields(round.scheduled_start, round.scheduled_end);
+          return {
           id: String(round.match_id),
           matchId: round.match_id,
-          label: `Round ${round.round}`,
+          label: round.group_name || `Round ${round.round}`,
+          groupName: round.group_name || null,
           status: mapRoundStatus(round.status),
+          matchCardStatus: mapMatchCardStatus(round.status),
           rawStatus: round.status,
           roundNumber: round.round,
           roundScores: round.round_scores || [],
-        }));
+          scheduledStart: round.scheduled_start || null,
+          scheduledEnd: round.scheduled_end || null,
+          date: schedule.date,
+          startTime: schedule.startTime,
+          endTime: schedule.endTime,
+          rosterCompIds: (round.round_scores || [])
+            .map((entry) => entry?.comp_id)
+            .filter(Boolean),
+        };
+        });
 
         const scoreLookup = {};
         const setsLookup = {};
-        const latestCompleted = [...mappedRounds]
-          .filter((round) => round.rawStatus === 'completed')
-          .sort((a, b) => a.roundNumber - b.roundNumber)
-          .slice(-1)[0];
-
         mappedRounds.forEach((round) => {
           (round.roundScores || []).forEach((entry) => {
             if (!entry?.comp_id) return;
@@ -85,11 +119,22 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
         });
 
         const latestStatusByComp = {};
-        (latestCompleted?.roundScores || []).forEach((entry) => {
-          latestStatusByComp[entry.comp_id] = entry.eliminated ? 'Eliminated' : 'Active';
+        mappedRounds.forEach((round) => {
+          if (round.rawStatus !== 'completed') return;
+          (round.roundScores || []).forEach((entry) => {
+            if (!entry?.comp_id) return;
+            latestStatusByComp[entry.comp_id] = entry.eliminated ? 'Eliminated' : 'Active';
+          });
         });
 
-        const mappedParticipants = (participantData || []).map((participant, index) => {
+        const rosterCompIds = new Set(
+          mappedRounds.flatMap((round) => round.rosterCompIds || [])
+        );
+        const relevantParticipants = rosterCompIds.size
+          ? (participantData || []).filter((participant) => rosterCompIds.has(participant.id))
+          : (participantData || []);
+
+        const mappedParticipants = relevantParticipants.map((participant, index) => {
           const roundScores = {};
           const roundSets = {};
           mappedRounds.forEach((round) => {
@@ -99,7 +144,10 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
           });
 
           const numericScores = Object.values(roundScores).filter((score) => score != null);
-          const status = latestCompleted
+          const hasCompletedRound = mappedRounds.some(
+            (round) => round.rawStatus === 'completed' && round.rosterCompIds.includes(participant.id)
+          );
+          const status = hasCompletedRound
             ? (latestStatusByComp[participant.id] || 'Eliminated')
             : 'Active';
 
@@ -136,7 +184,7 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
     };
 
     fetchData();
-  }, [tournament, refreshTrigger]);
+  }, [tournament, refreshTrigger, stage]);
 
   const handleSubmitScores = async (round, scores) => {
     setIsSubmitting(true);
@@ -208,6 +256,19 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
     badgeColor = 'bg-slate-100 text-slate-600';
     badgeDotColor = 'bg-slate-400';
   }
+
+  const handleScheduleUpdate = () => {
+    setRefreshTrigger((prev) => prev + 1);
+  };
+
+  const scheduleMatches = useMemo(() => rounds.map((round) => ({
+    id: round.matchId,
+    status: round.matchCardStatus,
+    round: round.label,
+    date: round.date,
+    startTime: round.startTime,
+    endTime: round.endTime,
+  })), [rounds]);
 
   const emptyState = useMemo(() => (
     <div className="py-12 text-center text-slate-400 font-medium bg-white rounded-xl border border-dashed border-slate-300">
@@ -323,6 +384,19 @@ const RoundScoringMatchTemplate = ({ tournament }) => {
         <>
           {activeTab === 'dashboard' && (
             <div className="animate-[fadeIn_0.2s_ease-out]">
+              {scheduleMatches.length > 0 && (
+                <div className="mb-6">
+                  <h2 className="text-lg font-bold text-slate-800 mb-3">Lobby Schedule</h2>
+                  {scheduleMatches.map((match) => (
+                    <MatchCard
+                      key={match.id}
+                      match={match}
+                      variant="scoring"
+                      onUpdate={handleScheduleUpdate}
+                    />
+                  ))}
+                </div>
+              )}
               <GlobalLeaderboard participants={participants} rounds={rounds} setsPerMatch={setsPerMatch} />
             </div>
           )}

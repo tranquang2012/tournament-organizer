@@ -7,7 +7,8 @@ import { scheduleMatch, updateMatch } from '../../services/MatchService';
 import MatchStatModal from './MatchStatModal';
 import { faChartBar } from '@fortawesome/free-solid-svg-icons';
 
-const MatchCard = ({ match, onUpdate }) => {
+const MatchCard = ({ match, onUpdate, variant = 'versus' }) => {
+  const isScoring = variant === 'scoring';
   const { status, round, team1, team2, startTime, endTime, date, autoStartAt, autoStopAt, id } = match;
 
   const isLive = status === 'Live';
@@ -17,14 +18,15 @@ const MatchCard = ({ match, onUpdate }) => {
   const [scheduleDate, setScheduleDate] = useState(date || '');
   const [scheduleStart, setScheduleStart] = useState(startTime || '');
   const [scheduleEnd, setScheduleEnd] = useState(endTime || '');
-  const [localScore1, setLocalScore1] = useState(team1.score || 0);
-  const [localScore2, setLocalScore2] = useState(team2.score || 0);
+  const [localScore1, setLocalScore1] = useState(team1?.score || 0);
+  const [localScore2, setLocalScore2] = useState(team2?.score || 0);
   const [isUpdating, setIsUpdating] = useState(false);
   const [modalContent, setModalContent] = useState(null); 
   const [showStatsModal, setShowStatsModal] = useState(false);
 
   const handleScoreBlur = async () => {
-    if (localScore1 === (team1.score || 0) && localScore2 === (team2.score || 0)) return;
+    if (isScoring) return;
+    if (localScore1 === (team1?.score || 0) && localScore2 === (team2?.score || 0)) return;
     try {
       setIsUpdating(true);
       await updateMatch(id, { score1: Number(localScore1), score2: Number(localScore2) });
@@ -163,7 +165,8 @@ const MatchCard = ({ match, onUpdate }) => {
         </div>
       </div>
 
-      {/* Main content: Teams and Scores */}
+      {/* Main content: Teams and Scores (versus only) */}
+      {!isScoring && (
       <div className="px-5 py-5 flex items-center justify-between">
         
         {/* Team 1 */}
@@ -229,6 +232,7 @@ const MatchCard = ({ match, onUpdate }) => {
           </div>
         </div>
       </div>
+      )}
 
       {/* Footer section: Controls & Action buttons */}
       <div 
@@ -290,7 +294,8 @@ const MatchCard = ({ match, onUpdate }) => {
           )}
         </div>
 
-        {/* Right: Action Buttons */}
+        {/* Right: Action Buttons (versus only) */}
+        {!isScoring && (
         <div className="flex items-center gap-3">
           {(isLive || isCompleted) && (
             <button 
@@ -327,6 +332,7 @@ const MatchCard = ({ match, onUpdate }) => {
           )}
           
         </div>
+        )}
 
       </div>
 
@@ -341,7 +347,7 @@ const MatchCard = ({ match, onUpdate }) => {
         cancelLabel={modalContent?.cancelLabel || "Close"}
       />
 
-      {showStatsModal && (
+      {showStatsModal && !isScoring && (
         <MatchStatModal
           matchId={id}
           team1={team1}

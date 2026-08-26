@@ -1,5 +1,7 @@
 const { getSportRules } = require('../config/sportRules.config');
 
+const LOBBY_TOURNAMENT_SIZES = [8, 16, 32, 64];
+
 const toPositiveInt = (value, fieldName, errors, { allowZero = false, defaultValue = null } = {}) => {
   if (value === undefined || value === null || value === '') return defaultValue;
 
@@ -13,19 +15,35 @@ const toPositiveInt = (value, fieldName, errors, { allowZero = false, defaultVal
   return parsed;
 };
 
-const HYBRID_FIRST_STAGE_FORMAT = 'round_robin';
+const isRoundScoringSport = (rules) => (
+  rules
+  && rules.formats.includes('round_scoring')
+  && !rules.formats.includes('round_robin')
+);
 
-const normalizeHybridStructure = (body, errors) => {
+const getLobbyPreset = (playerCount, lobbySize = 8) => {
+  if (!LOBBY_TOURNAMENT_SIZES.includes(playerCount) || playerCount === lobbySize) return null;
+  const groupCount = playerCount / lobbySize;
+  const advancePerGroup = lobbySize / groupCount;
+  return { group_count: groupCount, advance_per_group: advancePerGroup };
+};
+
+const normalizeHybridStructure = (body, errors, rules) => {
   const stageInput = Array.isArray(body.stages) ? body.stages : null;
   const inputStageOne = stageInput?.[0] || {};
+  const scoringSport = isRoundScoringSport(rules);
+  const defaultFirstStage = scoringSport ? 'round_scoring' : 'round_robin';
 
   if (stageInput && stageInput.length > 2) {
     errors.push('Hybrid tournaments support a maximum of 2 stages.');
   }
 
-  const firstStageFormat = inputStageOne.format || body.first_stage_format || HYBRID_FIRST_STAGE_FORMAT;
-  if (firstStageFormat !== HYBRID_FIRST_STAGE_FORMAT) {
-    errors.push(`Stage 1 must use ${HYBRID_FIRST_STAGE_FORMAT}.`);
+  const firstStageFormat = inputStageOne.format || body.first_stage_format || defaultFirstStage;
+  if (!scoringSport && firstStageFormat !== 'round_robin') {
+    errors.push('Stage 1 must use round_robin.');
+  }
+  if (scoringSport && firstStageFormat !== 'round_scoring') {
+    errors.push('Stage 1 must use round_scoring for scoring sports.');
   }
 
   const groupCount = toPositiveInt(
@@ -58,7 +76,7 @@ const parseSetsPerMatch = (body, errors) => {
   return parsed || 1;
 };
 
-function validateFormatConfigDto(body, sp_id) {
+function validateFormatConfigDto(body, sp_id, participantCount = null) {
   const errors = [];
   const { tour_format, group_count, advance_per_group } = body;
 
@@ -87,17 +105,46 @@ function validateFormatConfigDto(body, sp_id) {
   }
 
   const setsPerMatch = parseSetsPerMatch(body, errors);
+  const scoringSport = isRoundScoringSport(rules);
+  const parsedParticipantCount = participantCount != null ? Number(participantCount) : null;
+
+  if (rules.lobby_size && parsedParticipantCount != null) {
+    if (!LOBBY_TOURNAMENT_SIZES.includes(parsedParticipantCount)) {
+      errors.push(
+        `${rules.sport_name} requires 8, 16, 32, or 64 players. You currently have ${parsedParticipantCount}.`
+      );
+    } else if (parsedParticipantCount === 8 && tour_format !== 'round_scoring') {
+      errors.push(`${rules.sport_name} with 8 players must use single round scoring format.`);
+    } else if (parsedParticipantCount > 8 && tour_format !== 'hybrid') {
+      errors.push(`${rules.sport_name} with ${parsedParticipantCount} players must use multi-round hybrid format.`);
+    }
+  }
 
   if (tour_format === 'hybrid') {
-    const hybridConfig = normalizeHybridStructure(body, errors);
+    const hybridConfig = normalizeHybridStructure(body, errors, rules);
 
-    const isRoundScoringSport = rules && rules.formats.includes('round_scoring') && !rules.formats.includes('round_robin');
-    const firstStageFormat = isRoundScoringSport ? 'round_scoring' : 'round_robin';
+    const firstStageFormat = scoringSport ? 'round_scoring' : 'round_robin';
+    const secondStageFormat = scoringSport
+      ? 'round_scoring'
+      : (body.second_stage_format || 'single_elimination');
 
-    const allowedSecondStageFormats = ['single_elimination', 'double_elimination', 'round_scoring'];
-    const secondStageFormat = body.second_stage_format || 'single_elimination';
+    const allowedSecondStageFormats = scoringSport
+      ? ['round_scoring']
+      : ['single_elimination', 'double_elimination', 'round_scoring'];
+
     if (!allowedSecondStageFormats.includes(secondStageFormat)) {
       errors.push(`Invalid second stage format '${secondStageFormat}'. Allowed formats: ${allowedSecondStageFormats.join(', ')}.`);
+    }
+
+    let resolvedGroupCount = hybridConfig.group_count;
+    let resolvedAdvancePerGroup = hybridConfig.advance_per_group;
+
+    if (rules.lobby_size && parsedParticipantCount != null && LOBBY_TOURNAMENT_SIZES.includes(parsedParticipantCount)) {
+      const preset = getLobbyPreset(parsedParticipantCount, rules.lobby_size);
+      if (preset) {
+        resolvedGroupCount = preset.group_count;
+        resolvedAdvancePerGroup = preset.advance_per_group;
+      }
     }
 
     if (errors.length > 0) {
@@ -108,8 +155,8 @@ function validateFormatConfigDto(body, sp_id) {
       errors: null,
       data: {
         tour_format,
-        group_count: hybridConfig.group_count,
-        advance_per_group: hybridConfig.advance_per_group,
+        group_count: resolvedGroupCount,
+        advance_per_group: resolvedAdvancePerGroup,
         first_stage_format: firstStageFormat,
         second_stage_format: secondStageFormat,
         sets_per_match: setsPerMatch,
@@ -138,4 +185,9 @@ function validateFormatConfigDto(body, sp_id) {
   };
 }
 
-module.exports = { validateFormatConfigDto };
+module.exports = {
+  validateFormatConfigDto,
+  isRoundScoringSport,
+  getLobbyPreset,
+  LOBBY_TOURNAMENT_SIZES,
+};

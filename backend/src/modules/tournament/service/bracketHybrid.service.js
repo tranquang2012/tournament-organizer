@@ -1,6 +1,7 @@
 const pool = require('../../../shared/database/pool');
 const AppError = require('../../../shared/errors/AppError');
 const bracketRepository = require('../repository/bracket.repository');
+const { getSportRules } = require('../config/sportRules.config');
 
 class BracketHybridService {
   constructor(standardService, roundScoringService) {
@@ -25,17 +26,56 @@ class BracketHybridService {
 
       let result;
       if (firstStage.format === 'round_scoring') {
-        const matchId = await bracketRepository.insertRoundScoringMatch(
-          tourId,
-          1,
-          client,
-          this.getStageKey(firstStage)
-        );
-        await client.query(
-          `UPDATE matches SET status = 'ready' WHERE match_id = $1`,
-          [matchId]
-        );
-        result = { totalMatches: 1 };
+        const sportRules = getSportRules(tournament.sp_id);
+        const lobbySize = sportRules?.lobby_size;
+        const setsPerMatch = tournament.sets_per_match || 1;
+        const groupCount = firstStage.group_count || 1;
+
+        if (lobbySize) {
+          const expectedPlayers = groupCount * lobbySize;
+          if (competitors.length !== expectedPlayers) {
+            throw new AppError(
+              `${sportRules.sport_name} requires ${expectedPlayers} players for ${groupCount} lobbies of ${lobbySize}.`,
+              400
+            );
+          }
+
+          let totalMatches = 0;
+          for (let i = 0; i < groupCount; i++) {
+            const groupCompetitors = competitors.slice(i * lobbySize, (i + 1) * lobbySize);
+            const groupName = `Group ${String.fromCharCode(65 + i)}`;
+            const roster = groupCompetitors.map((c) => ({
+              comp_id: c.comp_id,
+              sets: Array.from({ length: setsPerMatch }, () => null),
+              score: null,
+            }));
+            const matchId = await bracketRepository.insertRoundScoringMatch(
+              tourId,
+              1,
+              client,
+              this.getStageKey(firstStage),
+              { groupName, roundScores: roster }
+            );
+            await client.query(
+              `UPDATE matches SET status = 'ready' WHERE match_id = $1`,
+              [matchId]
+            );
+            totalMatches += 1;
+          }
+          result = { totalMatches };
+        } else {
+          const matchId = await bracketRepository.insertRoundScoringMatch(
+            tourId,
+            1,
+            client,
+            this.getStageKey(firstStage)
+          );
+          await client.query(
+            `UPDATE matches SET status = 'ready' WHERE match_id = $1`,
+            [matchId]
+          );
+          result = { totalMatches: 1 };
+        }
       } else {
         result = await this.standardService.generateBracketStage(tourId, {
           format: firstStage.format,
@@ -88,7 +128,19 @@ class BracketHybridService {
 
       let result;
       if (secondStage.format === 'round_scoring') {
-        const matchId = await bracketRepository.insertRoundScoringMatch(tourId, 2, client, stageTwoKey);
+        const setsPerMatch = tournament.sets_per_match || 1;
+        const roster = qualifiers.map((comp_id) => ({
+          comp_id,
+          sets: Array.from({ length: setsPerMatch }, () => null),
+          score: null,
+        }));
+        const matchId = await bracketRepository.insertRoundScoringMatch(
+          tourId,
+          2,
+          client,
+          stageTwoKey,
+          { groupName: 'Final', roundScores: roster }
+        );
         await client.query(
           `UPDATE matches SET status = 'ready' WHERE match_id = $1`,
           [matchId]
@@ -163,26 +215,38 @@ class BracketHybridService {
 
   _getExpectedQualifierCount(firstStage) {
     if (firstStage.format === 'round_scoring') {
-      return firstStage.advance_per_group || 3;
+      return (firstStage.group_count || 1) * (firstStage.advance_per_group || 1);
     }
     return (firstStage.group_count || 1) * (firstStage.advance_per_group || 1);
   }
 
   async _getHybridQualifiers(tourId, firstStage) {
     if (firstStage.format === 'round_scoring') {
-      const rounds = await bracketRepository.getRoundScoringMatchesByStage(
+      const matches = await bracketRepository.getRoundScoringMatchesByStage(
         tourId,
         this.getStageKey(firstStage)
       );
-      const firstRound = rounds.find(r => r.round === 1);
-      const roundScores = this._parseArray(firstRound?.round_scores);
-      if (!firstRound || firstRound.status !== 'completed' || !roundScores.length) {
+      if (!matches.length || matches.some((m) => m.status !== 'completed')) {
         return [];
       }
-      return roundScores
-        .filter(r => r.advanced)
-        .sort((a, b) => a.rank - b.rank)
-        .map(r => r.comp_id);
+
+      const advancePerGroup = firstStage.advance_per_group || 1;
+      const qualifiers = [];
+
+      for (const match of matches) {
+        const roundScores = this._parseArray(match.round_scores);
+        if (!roundScores.length) return [];
+
+        const ranked = roundScores
+          .filter((r) => r.advanced)
+          .sort((a, b) => a.rank - b.rank)
+          .slice(0, advancePerGroup);
+
+        if (ranked.length < advancePerGroup) return [];
+        qualifiers.push(...ranked.map((r) => r.comp_id));
+      }
+
+      return qualifiers;
     }
 
     if (firstStage.format !== 'round_robin') {

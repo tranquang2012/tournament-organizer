@@ -57,6 +57,19 @@ const INITIAL_DATA = {
   setsPerMatch: '1',
 };
 
+const LOBBY_TOURNAMENT_SIZES = [8, 16, 32, 64];
+
+const getLobbyPreset = (playerCount, lobbySize = 8) => {
+  if (!LOBBY_TOURNAMENT_SIZES.includes(playerCount)) return null;
+  const groupCount = playerCount / lobbySize;
+  const advancePerGroup = lobbySize / groupCount;
+  return { groupCount, advancePerGroup };
+};
+
+const isValidLobbyCount = (count, lobbySize) => (
+  lobbySize ? LOBBY_TOURNAMENT_SIZES.includes(count) : true
+);
+
 const getErrorMessage = (error) => (
   error?.response?.data?.error?.message || error?.message || 'Something went wrong'
 );
@@ -81,6 +94,9 @@ const TournamentCreatePage = () => {
     (rule) => rule.sport_name?.toLowerCase() === formData.sport?.toLowerCase()
   );
   const lobbySize = currentSportRules?.lobby_size || null;
+  const participantCount = formData.participantType === 'team'
+    ? (formData.teamMode === 'predefine' ? (formData.teams || []).length : (formData.participants || []).length)
+    : (formData.participants || []).length;
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
@@ -174,12 +190,25 @@ const TournamentCreatePage = () => {
       };
 
       const checkSupportedFormat = (supportedList, val) => {
+        if (val === 'hybrid') {
+          const supportsCategory = (category) => {
+            if (!supportedList) return true;
+            if (Array.isArray(supportedList)) {
+              return supportedList.some((s) => s.toLowerCase() === category.toLowerCase());
+            }
+            if (typeof supportedList === 'string') {
+              return supportedList.toLowerCase().includes(category.toLowerCase());
+            }
+            return true;
+          };
+          return supportsCategory('versus') || supportsCategory('scoring');
+        }
+
         const FORMAT_CATEGORIES = {
           'single_elimination': 'versus',
           'double_elimination': 'versus',
           'round_robin': 'versus',
           'round_scoring': 'scoring',
-          'hybrid': 'versus',
         };
         const category = FORMAT_CATEGORIES[val];
         if (!supportedList || !category) return true;
@@ -204,6 +233,44 @@ const TournamentCreatePage = () => {
     }
   }, [formData.sport, currentSportConfig, formData.participantType, formData.format]);
 
+  useEffect(() => {
+    if (!lobbySize || !isValidLobbyCount(participantCount, lobbySize)) return;
+
+    const preset = getLobbyPreset(participantCount, lobbySize);
+    if (!preset) return;
+
+    setFormData((prev) => {
+      const next = { ...prev };
+      let changed = false;
+
+      if (participantCount === lobbySize && prev.format !== 'round_scoring') {
+        next.format = 'round_scoring';
+        changed = true;
+      } else if (participantCount > lobbySize) {
+        if (prev.format !== 'hybrid') {
+          next.format = 'hybrid';
+          changed = true;
+        }
+        const groups = String(preset.groupCount);
+        const advancing = String(preset.advancePerGroup);
+        if (prev.hybridGroups !== groups) {
+          next.hybridGroups = groups;
+          changed = true;
+        }
+        if (prev.hybridAdvancing !== advancing) {
+          next.hybridAdvancing = advancing;
+          changed = true;
+        }
+        if (prev.hybridSecondRound !== 'round_scoring') {
+          next.hybridSecondRound = 'round_scoring';
+          changed = true;
+        }
+      }
+
+      return changed ? next : prev;
+    });
+  }, [lobbySize, participantCount]);
+
   /* Validation */
   const isStepCompleted = (idx) => {
     if (idx === 0) {
@@ -211,10 +278,7 @@ const TournamentCreatePage = () => {
     }
     if (idx === 1) {
       if (!formData.sport) return false;
-      const participantCount = formData.participantType === 'team'
-        ? (formData.teamMode === 'predefine' ? (formData.teams || []).length : (formData.participants || []).length)
-        : (formData.participants || []).length;
-      if (lobbySize && participantCount !== lobbySize) return false;
+      if (lobbySize && !isValidLobbyCount(participantCount, lobbySize)) return false;
       if (formData.participantType === 'individual') {
         return formData.participants?.length > 0;
       }
@@ -324,12 +388,9 @@ const TournamentCreatePage = () => {
       }
 
       if (lobbySize) {
-        const participantCount = formData.participantType === 'team'
-          ? (formData.teamMode === 'predefine' ? (formData.teams || []).length : (formData.participants || []).length)
-          : (formData.participants || []).length;
-        if (participantCount !== lobbySize) {
+        if (!isValidLobbyCount(participantCount, lobbySize)) {
           setToast({
-            message: `${formData.sport} requires exactly ${lobbySize} players for one lobby. You currently have ${participantCount}.`,
+            message: `${formData.sport} requires 8, 16, 32, or 64 players (lobbies of ${lobbySize}). You currently have ${participantCount}.`,
             type: 'error',
           });
           return false;
@@ -458,7 +519,14 @@ const TournamentCreatePage = () => {
       case 1:
         return <SportParticipantsStep data={formData} onChange={updateStep2} currentSportConfig={currentSportConfig ? { ...currentSportConfig, lobby_size: lobbySize } : currentSportConfig} />;
       case 2:
-        return <FormatConfigStep data={formData} onChange={updateStep3} currentSportConfig={currentSportConfig} />;
+        return (
+          <FormatConfigStep
+            data={formData}
+            onChange={updateStep3}
+            currentSportConfig={currentSportConfig ? { ...currentSportConfig, lobby_size: lobbySize } : currentSportConfig}
+            participantCount={participantCount}
+          />
+        );
       case 3:
         return (
           <ReviewPublishStep

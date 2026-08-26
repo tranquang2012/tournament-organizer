@@ -149,7 +149,7 @@ async resumeTournament(req, res, next) {
 
   async getStages(req, res, next) {
     try {
-      const data = await bracketService.getStages(req.params.id);
+      const data = await bracketService.getStages(req.params.id, { stage: req.query.stage || null });
       res.status(200).json({ success: true, data });
     } catch (err) { next(err); }
   }

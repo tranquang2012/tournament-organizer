@@ -4,6 +4,19 @@ const bracketRepository = require('../repository/bracket.repository');
 const { getSportRules } = require('../config/sportRules.config');
 
 class BracketRoundScoringService {
+  _buildRosterEntries(competitorIds, setsPerMatch = 1) {
+    const expected = Math.max(1, Number(setsPerMatch) || 1);
+    return competitorIds.map((comp_id) => ({
+      comp_id,
+      sets: Array.from({ length: expected }, () => null),
+      score: null,
+    }));
+  }
+
+  _groupLabel(index) {
+    const letter = String.fromCharCode(65 + index);
+    return `Group ${letter}`;
+  }
   _normalizeScoreEntries(scores, setsPerMatch, { draft = false } = {}) {
     const expected = Math.max(1, Number(setsPerMatch) || 1);
 
@@ -80,15 +93,29 @@ class BracketRoundScoringService {
     }
 
     const sportRules = getSportRules(tournament.sp_id);
-    if (sportRules?.lobby_size && competitors.length !== sportRules.lobby_size) {
-      throw new AppError(
-        `${sportRules.sport_name} requires exactly ${sportRules.lobby_size} players for one lobby. This tournament has ${competitors.length}.`,
-        400
-      );
+    if (sportRules?.lobby_size) {
+      const allowed = [8, 16, 32, 64];
+      if (!allowed.includes(competitors.length)) {
+        throw new AppError(
+          `${sportRules.sport_name} requires 8, 16, 32, or 64 players. This tournament has ${competitors.length}.`,
+          400
+        );
+      }
+      if (competitors.length !== sportRules.lobby_size) {
+        throw new AppError(
+          `${sportRules.sport_name} with ${competitors.length} players must use hybrid format.`,
+          400
+        );
+      }
     }
 
     const advancePerRound = tournament.advance_per_group || 3;
     const totalRounds = 1;
+    const setsPerMatch = tournament.sets_per_match || 1;
+    const roster = this._buildRosterEntries(
+      competitors.map((c) => c.comp_id),
+      setsPerMatch
+    );
 
     const client = await pool.connect();
     try {
@@ -98,18 +125,15 @@ class BracketRoundScoringService {
       await bracketRepository.deleteMatchesByTournament(tourId, client);
       await bracketRepository.updateTournamentRoundCount(tourId, totalRounds, client);
 
-      // Insert one match row per round
-      // Round 1 is immediately 'ready', rest stay 'locked' until previous round completes
-      for (let r = 1; r <= totalRounds; r++) {
-        const matchId = await bracketRepository.insertRoundScoringMatch(tourId, r, client);
+      const matchId = await bracketRepository.insertRoundScoringMatch(tourId, 1, client, 'round_scoring', {
+        groupName: sportRules?.lobby_size ? 'Lobby' : null,
+        roundScores: sportRules?.lobby_size ? roster : null,
+      });
 
-        if (r === 1) {
-          await client.query(
-            `UPDATE matches SET status = 'ready' WHERE match_id = $1`,
-            [matchId]
-          );
-        }
-      }
+      await client.query(
+        `UPDATE matches SET status = 'ready' WHERE match_id = $1`,
+        [matchId]
+      );
 
       await client.query('COMMIT');
 
@@ -143,12 +167,24 @@ class BracketRoundScoringService {
       [tourId]
     );
     const validIdSet = new Set(validComps.map(c => String(c.comp_id)));
+    const existingRoster = this._parseRoundScores(match.round_scores)
+      .filter((entry) => entry?.comp_id)
+      .map((entry) => String(entry.comp_id));
+    const rosterIdSet = existingRoster.length ? new Set(existingRoster) : null;
+
     const normalizedScores = this._normalizeScoreEntries(scores, match.sets_per_match || 1, { draft: !finalize });
 
     for (const s of normalizedScores) {
       if (!validIdSet.has(String(s.comp_id))) {
         throw new AppError(`Competitor ${s.comp_id} does not belong to this tournament.`, 400);
       }
+      if (rosterIdSet && !rosterIdSet.has(String(s.comp_id))) {
+        throw new AppError(`Competitor ${s.comp_id} is not assigned to this lobby.`, 400);
+      }
+    }
+
+    if (finalize && rosterIdSet && normalizedScores.length !== rosterIdSet.size) {
+      throw new AppError(`Each lobby requires scores for all ${rosterIdSet.size} assigned players.`, 400);
     }
 
     if (!finalize) {
@@ -193,7 +229,11 @@ class BracketRoundScoringService {
       ? (hybridStructure.stages[0].advance_per_group || 3)
       : (match.advance_per_group || 3);
       
-    const isLastRound = match.tour_format === 'hybrid' ? false : match.round === match.tour_round;
+    const isHybridStageTwo = match.tour_format === 'hybrid'
+      && match.stage === 'stage_2'
+      && match.second_stage_format === 'round_scoring';
+    const isLastRound = isHybridStageTwo
+      || (match.tour_format !== 'hybrid' && match.round === match.tour_round);
 
     // On the final round everyone gets ranked, top 3 are podium
     // On earlier rounds, only top advanceCount survive
@@ -287,8 +327,10 @@ class BracketRoundScoringService {
     return [];
   }
 
-  async getRoundScoringStandings(tourId) {
-    const rounds = await bracketRepository.getRoundScoringMatches(tourId);
+  async getRoundScoringStandings(tourId, stageName = null) {
+    const rounds = stageName
+      ? await bracketRepository.getRoundScoringMatchesByStage(tourId, stageName)
+      : await bracketRepository.getRoundScoringMatches(tourId);
     if (!rounds.length) throw new AppError('No rounds found. Generate the bracket first.', 404);
 
     const competitors = await bracketRepository.getCompetitorsForSeeding(tourId);
@@ -298,7 +340,10 @@ class BracketRoundScoringService {
     const mappedRounds = rounds.map(r => ({
       match_id: r.match_id,
       round: r.round,
+      group_name: r.group_name || null,
       status: r.status,
+      scheduled_start: r.scheduled_start || null,
+      scheduled_end: r.scheduled_end || null,
       round_scores: this._parseRoundScores(r.round_scores).map(score => ({
         ...score,
         comp_name: compMap[score.comp_id]?.comp_name || 'Unknown',

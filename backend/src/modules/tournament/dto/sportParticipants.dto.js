@@ -74,9 +74,10 @@ function validateSportParticipantsDto(body) {
 
       if (rules.lobby_size) {
         const count = participants.length;
-        if (count !== rules.lobby_size) {
+        const allowedCounts = [8, 16, 32, 64];
+        if (!allowedCounts.includes(count)) {
           errors.push(
-            `${rules.sport_name} requires exactly ${rules.lobby_size} players for one lobby. You currently have ${count}.`
+            `${rules.sport_name} requires 8, 16, 32, or 64 players (lobbies of ${rules.lobby_size}). You currently have ${count}.`
           );
         }
       }

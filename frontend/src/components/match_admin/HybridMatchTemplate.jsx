@@ -11,7 +11,7 @@ const HybridMatchTemplate = ({ tournament }) => {
 
   const renderStage = (stageKey, format) => {
     if (format === 'round_scoring') {
-      return <RoundScoringMatchTemplate tournament={tournament} />;
+      return <RoundScoringMatchTemplate tournament={tournament} stage={stageKey} />;
     }
     if (format === 'round_robin') {
       return <RoundRobinMatchTemplate tournament={tournament} stage={stageKey} />;

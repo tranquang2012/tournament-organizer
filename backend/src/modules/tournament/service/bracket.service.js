@@ -108,7 +108,7 @@ class BracketService {
     });
   }
 
-  async getStages(tourId) {
+  async getStages(tourId, { stage = null } = {}) {
     const tournament = await bracketRepository.getTournamentFormat(tourId);
     if (!tournament) throw new AppError('Tournament not found.', 404);
 
@@ -119,6 +119,14 @@ class BracketService {
 
     if (tournament.tour_format === 'hybrid') {
       await bracketHybridService.ensureHybridStageTwoGenerated(tourId);
+
+      if (stage) {
+        const structure = bracketHybridService.getHybridStructure(tournament);
+        const stageConfig = structure.stages.find((s) => bracketHybridService.getStageKey(s) === stage);
+        if (stageConfig?.format === 'round_scoring') {
+          return bracketRoundScoringService.getRoundScoringStandings(tourId, stage);
+        }
+      }
     }
 
     const matches = await this.getMatches(tourId);
@@ -146,8 +154,8 @@ class BracketService {
     return bracketHybridService.ensureHybridStageTwoGenerated(tourId);
   }
 
-  async getRoundScoringStandings(tourId) {
-    return bracketRoundScoringService.getRoundScoringStandings(tourId);
+  async getRoundScoringStandings(tourId, stageName = null) {
+    return bracketRoundScoringService.getRoundScoringStandings(tourId, stageName);
   }
 }
 

@@ -294,12 +294,12 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
             </p>
             {currentSportConfig?.lobby_size ? (
               <p className={`text-xs m-0 ${
-                (data.participants || []).length === currentSportConfig.lobby_size
+                [8, 16, 32, 64].includes((data.participants || []).length)
                   ? 'text-emerald-600'
                   : 'text-amber-600'
               }`}>
-                {currentSportConfig.name} needs exactly {currentSportConfig.lobby_size} players for one lobby.
-                {' '}You currently have {(data.participants || []).length}.
+                {currentSportConfig.name} uses lobbies of {currentSportConfig.lobby_size} players.
+                {' '}Allowed totals: 8, 16, 32, or 64. You currently have {(data.participants || []).length}.
               </p>
             ) : null}
           </div>

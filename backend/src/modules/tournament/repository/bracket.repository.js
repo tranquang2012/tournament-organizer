@@ -138,25 +138,32 @@ class BracketRepository {
     );
   }
 
-  async insertRoundScoringMatch(tourId, roundNum, executor = pool, stageName = 'round_scoring') {
-  const { rows } = await executor.query(
-    `INSERT INTO matches (
-      tour_id, round, stage, status, is_draw, created_at, updated_at
-    ) VALUES ($1, $2, $3, 'locked', false, NOW(), NOW())
-    RETURNING match_id`,
-    [tourId, roundNum, stageName]
-  );
-  const matchId = rows[0].match_id;
-  await this._bootstrapMatchStats(tourId, matchId, executor);
-  return matchId;
-}
+  async insertRoundScoringMatch(tourId, roundNum, executor = pool, stageName = 'round_scoring', { groupName = null, roundScores = null } = {}) {
+    const { rows } = await executor.query(
+      `INSERT INTO matches (
+        tour_id, round, stage, group_name, round_scores, status, is_draw, created_at, updated_at
+      ) VALUES ($1, $2, $3, $4, $5, 'locked', false, NOW(), NOW())
+      RETURNING match_id`,
+      [
+        tourId,
+        roundNum,
+        stageName,
+        groupName,
+        roundScores ? JSON.stringify(roundScores) : null,
+      ]
+    );
+    const matchId = rows[0].match_id;
+    await this._bootstrapMatchStats(tourId, matchId, executor);
+    return matchId;
+  }
 
 async getRoundScoringMatches(tourId, executor = pool) {
   const { rows } = await executor.query(
-    `SELECT match_id, round, status, round_scores
+    `SELECT match_id, round, stage, group_name, status, round_scores,
+            scheduled_start, scheduled_end
      FROM matches
      WHERE tour_id = $1 AND stage = 'round_scoring'
-     ORDER BY round ASC`,
+     ORDER BY round ASC, group_name ASC`,
     [tourId]
   );
   return rows;
@@ -164,10 +171,11 @@ async getRoundScoringMatches(tourId, executor = pool) {
 
 async getRoundScoringMatchesByStage(tourId, stageName, executor = pool) {
   const { rows } = await executor.query(
-    `SELECT match_id, round, status, round_scores
+    `SELECT match_id, round, stage, group_name, status, round_scores,
+            scheduled_start, scheduled_end
      FROM matches
      WHERE tour_id = $1 AND stage = $2
-     ORDER BY round ASC`,
+     ORDER BY group_name ASC, round ASC`,
     [tourId, stageName]
   );
   return rows;
@@ -175,7 +183,8 @@ async getRoundScoringMatchesByStage(tourId, stageName, executor = pool) {
 
 async getRoundScoringMatch(matchId, tourId, executor = pool) {
   const { rows } = await executor.query(
-    `SELECT m.match_id, m.round, m.stage, m.status, m.round_scores,
+    `SELECT m.match_id, m.round, m.stage, m.group_name, m.status, m.round_scores,
+            m.scheduled_start, m.scheduled_end,
             t.created_by, t.advance_per_group, t.tour_round, t.sets_per_match,
             t.tour_format, t.group_count, s.sport_format, t.first_stage_format, t.second_stage_format
      FROM matches m
@@ -183,7 +192,11 @@ async getRoundScoringMatch(matchId, tourId, executor = pool) {
      LEFT JOIN sport s ON t.sp_id = s.sport_id
      WHERE m.match_id = $1
        AND m.tour_id = $2
-       AND (m.stage = 'round_scoring' OR (m.stage = 'stage_1' AND t.first_stage_format = 'round_scoring'))`,
+       AND (
+         m.stage = 'round_scoring'
+         OR (m.stage = 'stage_1' AND t.first_stage_format = 'round_scoring')
+         OR (m.stage = 'stage_2' AND t.second_stage_format = 'round_scoring')
+       )`,
     [matchId, tourId]
   );
   return rows[0] || null;

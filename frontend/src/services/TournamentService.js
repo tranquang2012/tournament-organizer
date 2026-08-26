@@ -355,8 +355,10 @@ export const getTournamentMatches = async (tournamentId) => {
   return response?.data || [];
 };
 
-export const getTournamentStages = async (tournamentId) => {
-  const response = await axios.get(`/api/tournaments/${tournamentId}/stages`);
+export const getTournamentStages = async (tournamentId, stage = null) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/stages`, {
+    params: stage ? { stage } : undefined,
+  });
   return response?.data || [];
 };
 

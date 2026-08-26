@@ -251,6 +251,8 @@ const TournamentPage = () => {
 
   const [roundScoringData, setRoundScoringData] = useState(null)
   const [loadingRoundScoring, setLoadingRoundScoring] = useState(false)
+  const [hybridStage1Scoring, setHybridStage1Scoring] = useState(null)
+  const [hybridStage2Scoring, setHybridStage2Scoring] = useState(null)
 
   const [rankingsData, setRankingsData] = useState(null)
   const [loadingRankings, setLoadingRankings] = useState(false)
@@ -347,6 +349,17 @@ const TournamentPage = () => {
           const standings = await getTournamentStages(id);
           setRoundScoringData(standings);
           setLoadingRoundScoring(false);
+        } else if (tournament.format === 'hybrid') {
+          const flatMatches = await getTournamentMatches(id);
+          setMatches(flatMatches);
+          if (tournament.first_stage_format === 'round_scoring') {
+            const stageOne = await getTournamentStages(id, 'stage_1').catch(() => null);
+            setHybridStage1Scoring(stageOne);
+          }
+          if (tournament.second_stage_format === 'round_scoring') {
+            const stageTwo = await getTournamentStages(id, 'stage_2').catch(() => null);
+            setHybridStage2Scoring(stageTwo);
+          }
         } else {
           const flatMatches = await getTournamentMatches(id);
           setMatches(flatMatches);
@@ -490,7 +503,75 @@ const TournamentPage = () => {
       lose: r.losses
     }))
   })) || [];
-  const groupRecentMatches = tournament.format === 'hybrid'
+  const isHybridScoring = tournament.format === 'hybrid' && tournament.first_stage_format === 'round_scoring';
+  const isHybridScoringFinal = tournament.format === 'hybrid' && tournament.second_stage_format === 'round_scoring';
+
+  const formatScoringSchedule = (scheduledStart) => {
+    if (!scheduledStart) return null;
+    const d = new Date(scheduledStart);
+    if (isNaN(d.getTime())) return null;
+    const date = d.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+    const time = d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+    return `${date} · ${time}`;
+  };
+
+  const renderScoringRoundButtons = (rounds) => (
+    <div className='grid grid-cols-1 md:grid-cols-2 gap-5'>
+      {rounds.map((round) => {
+        const scheduleLabel = formatScoringSchedule(round.scheduled_start);
+        return (
+        <button
+          key={round.match_id}
+          type="button"
+          onClick={() => navigate(`/matches/${round.match_id}`)}
+          className='flex items-center justify-between p-4 border border-[#123836]/20 rounded-lg shadow-sm bg-white text-left cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] hover:border-[#123836]'
+        >
+          <div className='flex flex-col gap-1'>
+            <span className='font-semibold text-[#123836] text-[16px] md:text-[20px]'>
+              {round.group_name || `Round ${round.round}`}
+            </span>
+            {scheduleLabel && (
+              <span className='text-xs md:text-sm text-slate-500 font-medium'>
+                {scheduleLabel}
+              </span>
+            )}
+          </div>
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold uppercase ${round.status === 'completed' ? 'bg-green-100 text-green-800' :
+              round.status === 'running' ? 'bg-blue-100 text-blue-800' :
+                round.status === 'ready' ? 'bg-yellow-100 text-yellow-800' : 'bg-gray-100 text-gray-800'
+            }`}>{round.status}</span>
+        </button>
+        );
+      })}
+    </div>
+  );
+
+  const renderScoringStandingsTable = (standingsRows) => (
+    <div className='w-full flex flex-col rounded-[15px] border border-[#123836]/20 shadow-sm text-[13px] md:text-[18px]'>
+      <div className='flex bg-[#123836] text-white px-[1%] py-[1%] font-semibold text-center'>
+        <span className='w-[10%] border-r border-gray-300'>RANK</span>
+        <span className='w-[60%] border-r border-gray-300'>PARTICIPANTS</span>
+        <span className='w-[15%] border-r border-gray-300'>SCORE</span>
+        <span className='w-[15%]'>STATUS</span>
+      </div>
+      {standingsRows.map((row, index) => (
+        <div
+          key={index}
+          className={`flex mx-[1%] py-[1%] text-center items-center border-t border-gray-300 ${row.status === 'eliminated' ? 'text-gray-400' : 'font-semibold'}`}
+        >
+          <span className='w-[10%]'>{row.rank}</span>
+          <div className='w-[60%] flex gap-2 text-start items-center pl-[1%]'>
+            <img src={row.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo1)} className={`h-4 w-4 md:h-7 md:w-7 object-contain ${row.status === 'eliminated' && 'opacity-40'}`} />
+            <span>{row.comp_name}</span>
+          </div>
+          <span className='w-[15%]'>{row.score}</span>
+          <span className={`w-[15%] uppercase ${row.status === 'active' ? 'text-green-600' : 'text-red-500'}`}>{row.status}</span>
+        </div>
+      ))}
+    </div>
+  );
+
+  const groupRecentMatches = tournament.format === 'hybrid' && !isHybridScoring
     ? getMatchesForRecentSection(matches.filter(m => !m.stage || m.stage === 'stage_1'), 'round_robin')
     : [];
   const eliminationRecentMatches = tournament.format === 'hybrid'
@@ -545,8 +626,8 @@ const TournamentPage = () => {
       <div className='flex mx-[5%] md:mx-[10%] py-[1%] gap-5 border-b border-gray-300'>
         {(tournament.format === 'hybrid'
           ? [
-            { id: 'group_stage', name: 'Group Stage' },
-            { id: 'elimination_stage', name: 'Elimination Stage' },
+            { id: 'group_stage', name: isHybridScoring ? 'Scoring Lobbies' : 'Group Stage' },
+            { id: 'elimination_stage', name: isHybridScoringFinal ? 'Final Lobby' : 'Elimination Stage' },
             { id: 'matches', name: 'Matches' }
           ]
           : [
@@ -648,8 +729,32 @@ const TournamentPage = () => {
 
       {selectedTab === 'group_stage' && (
         <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
-          <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Group Stage Standings</span>
-          {groups.length > 0 ? (
+          <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>
+            {isHybridScoring ? 'Scoring Lobbies' : 'Group Stage Standings'}
+          </span>
+          {isHybridScoring ? (
+            hybridStage1Scoring?.rounds?.length > 0 ? (
+              <div className='flex flex-col gap-8'>
+                {hybridStage1Scoring.rounds.map((round) => (
+                  <div key={round.match_id}>
+                    <h3 className='text-[#123836] font-semibold text-[16px] md:text-[24px] mb-3'>
+                      {round.group_name || `Round ${round.round}`}
+                    </h3>
+                    {round.round_scores?.length > 0
+                      ? renderScoringStandingsTable(round.round_scores.map((row) => ({
+                        ...row,
+                        status: row.eliminated ? 'eliminated' : 'active',
+                      })))
+                      : <span className='text-gray-500'>No scores yet.</span>}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className='flex flex-col py-[5%] items-center justify-center text-gray-500'>
+                <span>No scoring lobbies generated yet.</span>
+              </div>
+            )
+          ) : groups.length > 0 ? (
             <div className='grid grid-cols-1 md:grid-cols-2 gap-10 items-start'>
               {groups.map((group) => (
                 <LeaderboardTable key={group.id} group={group} advanceCount={tournament.advance_per_group} />
@@ -665,8 +770,23 @@ const TournamentPage = () => {
 
       {selectedTab === 'elimination_stage' && (
         <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
-          <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Elimination Stage Bracket</span>
-          {matches.filter(m => m.stage === 'stage_2').length > 0 ? (
+          <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>
+            {isHybridScoringFinal ? 'Final Scoring Lobby' : 'Elimination Stage Bracket'}
+          </span>
+          {isHybridScoringFinal ? (
+            hybridStage2Scoring?.rounds?.length > 0 ? (
+              hybridStage2Scoring.rounds[0]?.round_scores?.length > 0
+                ? renderScoringStandingsTable(hybridStage2Scoring.rounds[0].round_scores.map((row) => ({
+                  ...row,
+                  status: row.eliminated ? 'eliminated' : 'active',
+                })))
+                : renderScoringRoundButtons(hybridStage2Scoring.rounds)
+            ) : (
+              <div className='flex flex-col py-[5%] items-center justify-center text-gray-500'>
+                <span>Final lobby has not been generated yet. Complete all stage-one lobbies first.</span>
+              </div>
+            )
+          ) : matches.filter(m => m.stage === 'stage_2').length > 0 ? (
             <TournamentBracket
               mode={tournament.second_stage_format === 'double_elimination' ? 'double' : 'single'}
               matches={tournament.second_stage_format === 'double_elimination' ? undefined : bracketData}
@@ -709,7 +829,15 @@ const TournamentPage = () => {
               </div>
 
               {hybridMatchesTab === 'group' ? (
-                groupRecentMatches.length > 0 ? (
+                isHybridScoring ? (
+                  hybridStage1Scoring?.rounds?.length > 0 ? (
+                    renderScoringRoundButtons(hybridStage1Scoring.rounds)
+                  ) : (
+                    <div className='flex flex-col py-[5%] items-center justify-center text-gray-500'>
+                      <span>No scoring lobbies generated yet.</span>
+                    </div>
+                  )
+                ) : groupRecentMatches.length > 0 ? (
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-10 items-start'>
                     {groupRecentMatches.map((match) => (
                       <MatchCard key={match.id} match={match} />
@@ -721,7 +849,15 @@ const TournamentPage = () => {
                   </div>
                 )
               ) : (
-                eliminationRecentMatches.length > 0 ? (
+                isHybridScoringFinal ? (
+                  hybridStage2Scoring?.rounds?.length > 0 ? (
+                    renderScoringRoundButtons(hybridStage2Scoring.rounds)
+                  ) : (
+                    <div className='flex flex-col py-[5%] items-center justify-center text-gray-500'>
+                      <span>No final scoring lobby generated yet.</span>
+                    </div>
+                  )
+                ) : eliminationRecentMatches.length > 0 ? (
                   <div className='grid grid-cols-1 md:grid-cols-2 gap-10 items-start'>
                     {eliminationRecentMatches.map((match) => (
                       <MatchCard key={match.id} match={match} />

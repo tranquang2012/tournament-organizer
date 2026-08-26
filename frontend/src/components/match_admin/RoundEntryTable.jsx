@@ -49,11 +49,15 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
 
   const entryParticipants = useMemo(() => {
     if (!selectedRoundId) return [];
+    const rosterIds = selectedRound?.rosterCompIds || [];
+    const inRoster = (participant) => (
+      rosterIds.length === 0 || rosterIds.includes(participant.id)
+    );
     if (isCompleted) {
-      return participants.filter(p => p.rounds[selectedRoundId] != null);
+      return participants.filter(p => p.rounds[selectedRoundId] != null && inRoster(p));
     }
-    return participants.filter(p => p.status === 'Active');
-  }, [participants, selectedRoundId, isCompleted]);
+    return participants.filter(p => p.status === 'Active' && inRoster(p));
+  }, [participants, selectedRoundId, isCompleted, selectedRound?.rosterCompIds]);
 
   useEffect(() => {
     const fallbackId = defaultRound?.id;
