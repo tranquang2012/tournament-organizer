@@ -152,7 +152,7 @@ const TournamentEditPage = () => {
         </div>
 
         {/* Tab bar */}
-        <div className="flex items-center gap-1 mb-8 bg-white rounded-xl border border-slate-200 p-1 self-start w-fit shadow-sm">
+        <div className="flex items-center gap-1 mb-8 bg-white rounded-xl border border-slate-200 p-1 self-start w-full max-w-full overflow-x-auto shadow-sm">
           {TABS.map((tab) => (
             <button
               key={tab.key}

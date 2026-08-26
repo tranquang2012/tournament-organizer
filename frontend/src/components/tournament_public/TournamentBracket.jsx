@@ -275,8 +275,8 @@ const TournamentBracket = ({
         doubleMatches.lower.length
     )
 
-    const svgWidth = Math.max(width * 0.8 - 80, 600)
-    const svgHeight = mode === 'double' ? Math.max(doubleMatchCount * matchHeight * 2.5, 600) : Math.max(singleMatchCount * matchHeight * 2.5, 400)
+    const svgWidth = Math.max(Math.min(width - 32, width * 0.95), 280)
+    const svgHeight = mode === 'double' ? Math.max(doubleMatchCount * matchHeight * 2.5, 400) : Math.max(singleMatchCount * matchHeight * 2.5, 300)
 
     const svgWrapper = ({ children, ...props }) => (
         <SVGViewer
@@ -285,7 +285,7 @@ const TournamentBracket = ({
             background="#ffffff"
             SVGBackground="#ffffff"
             detectWheel={false}
-            detectPinchGesture={false}
+            detectPinchGesture={true}
             disableDoubleClickZoomWithToolAuto={true}
             miniatureProps={{ position: 'none' }}
             {...props}
@@ -303,9 +303,9 @@ const TournamentBracket = ({
     }
 
     return (
-        <div>
+        <div className="overflow-x-auto">
             {showTabs && (
-                <div className="flex gap-2 mb-5">
+                <div className="flex flex-wrap gap-2 mb-5">
                     {[
                         { key: 'single', label: 'Single Elimination' },
                         { key: 'double', label: 'Double Elimination' },
@@ -313,7 +313,7 @@ const TournamentBracket = ({
                         <button
                             key={key}
                             onClick={() => setMode(key)}
-                            className={`px-4 py-1.5 rounded-[15px] text-[18px] font-medium border transition-all
+                            className={`px-3 md:px-4 py-1.5 rounded-[15px] text-sm md:text-[18px] font-medium border transition-all
                                     ${mode === key
                                     ? 'bg-[#123836] text-white border-[#123836]'
                                     : 'bg-white text-[#123836] border-gray-300 hover:bg-[#123836]/10 cursor-pointer'}`}

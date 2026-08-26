@@ -38,8 +38,8 @@ const RoundScoringTable = ({ match, scoreMode = 'points' }) => {
             </div>
 
             {/* Table */}
-            <div className='border border-gray-200 rounded-[10px] overflow-hidden shadow-sm'>
-                <table className='w-full text-[15px]'>
+            <div className='border border-gray-200 rounded-[10px] overflow-hidden shadow-sm overflow-x-auto'>
+                <table className='w-full text-xs md:text-[15px] min-w-[300px]'>
                     <thead>
                         <tr className='bg-[#123836] text-white'>
                             <th className='text-left px-4 py-3 font-semibold'>Participants</th>

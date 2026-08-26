@@ -366,8 +366,8 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
             </div>
 
             {/* RIGHT  */}
-            <div className="bg-slate-50/50 rounded-xl border border-slate-100 overflow-hidden">
-              <table className="w-full border-collapse text-left">
+            <div className="bg-slate-50/50 rounded-xl border border-slate-100 overflow-hidden overflow-x-auto">
+              <table className="w-full border-collapse text-left min-w-[400px]">
                 <thead>
                   <tr className="border-b border-slate-200/60">
                     <th className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-5 py-3 w-10">
@@ -779,8 +779,8 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
                   </div>
 
                   {/* RIGHT — Player Table */}
-                  <div className="bg-slate-50/50 rounded-xl border border-slate-100 overflow-hidden">
-                    <table className="w-full border-collapse text-left">
+                  <div className="bg-slate-50/50 rounded-xl border border-slate-100 overflow-hidden overflow-x-auto">
+                    <table className="w-full border-collapse text-left min-w-[400px]">
                       <thead>
                         <tr className="border-b border-slate-200/60">
                           <th className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-5 py-3 w-10">#</th>

@@ -26,18 +26,18 @@ const TopNavBar = () => {
   const handleLogin = () => navigate('/login')
 
   return (
-    <div className='sticky top-0 bg-white h-[80px] w-full px-[3%] flex items-center z-50'>
-      <div className='w-full h-full flex font-[Poppins,sans-serif]'>
-        <div className='flex items-center w-[25%] md:w-[25%]'>
+    <div className='sticky top-0 bg-white h-14 md:h-[80px] w-full px-3 md:px-[3%] flex items-center z-50 shadow-sm'>
+      <div className='w-full h-full flex items-center font-[Poppins,sans-serif]'>
+        <div className='flex items-center gap-2 md:gap-0 md:w-[25%] shrink-0'>
           <FontAwesomeIcon
             icon={faBars}
-            className='text-[30px] mr-[7%] cursor-pointer'
+            className='text-xl md:text-[30px] cursor-pointer shrink-0'
             onClick={() => setSidebarOpen(true)}
           />
           <img
             src={logo}
             alt="logo"
-            className='md:w-[50%] max-h-[80px] object-contain cursor-pointer'
+            className='h-10 md:h-auto max-w-[120px] md:max-w-none md:w-[50%] max-h-[60px] md:max-h-[80px] object-contain cursor-pointer'
             onClick={() => navigate('/')}
           />
         </div>

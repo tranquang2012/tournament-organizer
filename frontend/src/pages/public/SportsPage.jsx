@@ -272,7 +272,7 @@ const SportsPage = () => {
   return (
     <div>
       <TopLoadingBar isLoading={isLoading} />
-      <div className='h-[80px] md:h-full w-full overflow-hidden'>
+      <div className='h-40 md:h-[280px] w-full overflow-hidden'>
         <img
           src={sportInfo?.data?.banner}
           alt={id}
@@ -280,12 +280,13 @@ const SportsPage = () => {
           onLoad={() => setImageLoaded(true)}
         />
       </div>
-      <div className='flex items-center bg-[#d9d9d9]/50 h-[70px] px-[5%] md:px-[10%] text-[#123836] text-[20px] md:text-[30px] font-semibold w-full'>
+      <div className='hidden md:flex items-center bg-[#d9d9d9]/50 h-[70px] px-[5%] md:px-[10%] text-[#123836] text-[20px] md:text-[30px] font-semibold w-full'>
         <div className='w-[60%]'>Recent Matches</div>
         <div className='w-[40%] ml-5'>Tournament List</div>
       </div>
       <div className='flex flex-col md:flex-row px-[5%] md:px-[10%] py-5'>
         <div className='flex flex-col gap-10 w-full md:pr-5 md:w-[60%] md:border-r border-[#d9d9d9]'>
+          <span className='md:hidden text-[#123836] text-[20px] font-semibold'>Recent Matches</span>
           {matches.length > 0 ? (
             matches.map((match) => (
               match.isRoundScoring ? (
@@ -299,6 +300,7 @@ const SportsPage = () => {
           )}
         </div>
         <div className='flex flex-col w-full md:w-[40%] md:ml-5 gap-3'>
+          <span className='md:hidden text-[#123836] text-[20px] font-semibold mt-6'>Tournament List</span>
           <input
             type='text'
             placeholder='Search tournament...'
@@ -306,8 +308,8 @@ const SportsPage = () => {
             onChange={(e) => setSearchQuery(e.target.value)}
             className='w-full border border-[#d9d9d9] rounded-lg px-3 py-2 text-[14px] outline-none focus:border-[#123836] transition-colors duration-200 mt-5 md:mt-0'
           />
-          <div className='flex items-center gap-3'>
-            <div className='w-[50%]'>
+          <div className='flex flex-col sm:flex-row items-stretch sm:items-center gap-3'>
+            <div className='w-full sm:w-[50%]'>
               <InputField
                 label='From:'
                 type='date'
@@ -315,7 +317,7 @@ const SportsPage = () => {
                 onChange={(e) => setDateFrom(e.target.value)}
               />
             </div>
-            <div className='w-[50%]'>
+            <div className='w-full sm:w-[50%]'>
               <InputField
                 label='To:'
                 type='date'

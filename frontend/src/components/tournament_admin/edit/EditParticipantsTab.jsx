@@ -28,8 +28,8 @@ const expStyle = (exp) => EXP_COLORS[exp] || EXP_COLORS.Beginner;
 
 /* Individual participants list */
 const IndividualList = ({ participants, onEdit }) => (
-  <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden">
-    <table className="w-full border-collapse text-left">
+  <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden overflow-x-auto">
+    <table className="w-full border-collapse text-left min-w-[400px]">
       <thead>
         <tr className="border-b border-slate-100">
           <th className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-5 py-3 w-10">#</th>
@@ -545,7 +545,7 @@ const EditParticipantsTab = ({ tournamentData }) => {
 
       {/* Confirm swap bar*/}
       {swapMode && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 bg-[#123836] rounded-2xl shadow-2xl animate-[fadeIn_0.25s_ease-out]">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:bottom-6 z-50 flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-4 sm:px-5 py-3 sm:py-3.5 bg-[#123836] rounded-2xl shadow-2xl animate-[fadeIn_0.25s_ease-out] max-w-[calc(100vw-2rem)] sm:max-w-none">
           <p className="text-white text-sm font-semibold">
             {swapPending.length > 0
               ? `${swapPending.length} pending change${swapPending.length > 1 ? 's' : ''}`

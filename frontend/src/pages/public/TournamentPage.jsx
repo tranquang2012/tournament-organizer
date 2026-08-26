@@ -547,7 +547,8 @@ const TournamentPage = () => {
   );
 
   const renderScoringStandingsTable = (standingsRows) => (
-    <div className='w-full flex flex-col rounded-[15px] border border-[#123836]/20 shadow-sm text-[13px] md:text-[18px]'>
+    <div className='w-full overflow-x-auto'>
+    <div className='w-full min-w-[320px] flex flex-col rounded-[15px] border border-[#123836]/20 shadow-sm text-xs md:text-[18px]'>
       <div className='flex bg-[#123836] text-white px-[1%] py-[1%] font-semibold text-center'>
         <span className='w-[10%] border-r border-gray-300'>RANK</span>
         <span className='w-[60%] border-r border-gray-300'>PARTICIPANTS</span>
@@ -560,14 +561,15 @@ const TournamentPage = () => {
           className={`flex mx-[1%] py-[1%] text-center items-center border-t border-gray-300 ${row.status === 'eliminated' ? 'text-gray-400' : 'font-semibold'}`}
         >
           <span className='w-[10%]'>{row.rank}</span>
-          <div className='w-[60%] flex gap-2 text-start items-center pl-[1%]'>
-            <img src={row.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo1)} className={`h-4 w-4 md:h-7 md:w-7 object-contain ${row.status === 'eliminated' && 'opacity-40'}`} />
-            <span>{row.comp_name}</span>
+          <div className='w-[60%] flex gap-2 text-start items-center pl-[1%] min-w-0'>
+            <img src={row.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo1)} className={`h-4 w-4 md:h-7 md:w-7 object-contain shrink-0 ${row.status === 'eliminated' && 'opacity-40'}`} />
+            <span className='truncate'>{row.comp_name}</span>
           </div>
           <span className='w-[15%]'>{row.score}</span>
           <span className={`w-[15%] uppercase ${row.status === 'active' ? 'text-green-600' : 'text-red-500'}`}>{row.status}</span>
         </div>
       ))}
+    </div>
     </div>
   );
 
@@ -599,7 +601,7 @@ const TournamentPage = () => {
           />
         </div>
         <span className='text-[13px] md:text-[18px]'>{tournament.description}</span>
-        <div className='flex gap-3 md:gap-20'>
+        <div className='flex flex-wrap gap-3 md:gap-20'>
           <div className='flex gap-1 items-center'>
             <FontAwesomeIcon icon={faCalendarDay} className='text-[11px] md:text-[18px] text-[#123836]' />
             <span className='text-[11px] md:text-[18px]'>Start Date: {tournament.startDate}</span>
@@ -695,7 +697,8 @@ const TournamentPage = () => {
                   <div className="w-8 h-8 border-4 border-slate-200 border-t-[#123836] rounded-full animate-spin" />
                 </div>
               ) : roundScoringData && roundScoringData.standings && roundScoringData.standings.length > 0 ? (
-                <div className='w-full flex flex-col rounded-[15px] border border-[#123836]/20 shadow-sm text-[13px] md:text-[18px]'>
+                <div className='w-full overflow-x-auto'>
+                <div className='w-full min-w-[320px] flex flex-col rounded-[15px] border border-[#123836]/20 shadow-sm text-xs md:text-[18px]'>
                   <div className='flex bg-[#123836] text-white px-[1%] py-[1%] font-semibold text-center'>
                     <span className='w-[10%] border-r border-gray-300'>RANK</span>
                     <span className='w-[60%] border-r border-gray-300'>PARTICIPANTS</span>
@@ -708,14 +711,15 @@ const TournamentPage = () => {
                       className={`flex mx-[1%] py-[1%] text-center items-center border-t border-gray-300 ${row.status === 'eliminated' ? 'text-gray-400' : 'font-semibold'}`}
                     >
                       <span className='w-[10%]'>{row.rank}</span>
-                      <div className='w-[60%] flex gap-2 text-start items-center pl-[1%]'>
-                        <img src={row.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo1)} className={`h-4 w-4 md:h-7 md:w-7 object-contain ${row.status === 'eliminated' && 'opacity-40'}`} />
-                        <span>{row.comp_name}</span>
+                      <div className='w-[60%] flex gap-2 text-start items-center pl-[1%] min-w-0'>
+                        <img src={row.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo1)} className={`h-4 w-4 md:h-7 md:w-7 object-contain shrink-0 ${row.status === 'eliminated' && 'opacity-40'}`} />
+                        <span className='truncate'>{row.comp_name}</span>
                       </div>
                       <span className='w-[15%]'>{row.score}</span>
                       <span className={`w-[15%] uppercase ${row.status === 'active' ? 'text-green-600' : 'text-red-500'}`}>{row.status}</span>
                     </div>
                   ))}
+                </div>
                 </div>
               ) : (
                 <div className='flex flex-col py-[5%] items-center justify-center text-gray-500'>
@@ -908,15 +912,15 @@ const TournamentPage = () => {
         </div>
       )}
 
-      <div className='flex mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10'>
-        <div className='flex flex-col w-[50%] pr-[1%] gap-5 border-r border-gray-300'>
+      <div className='flex flex-col md:flex-row mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10'>
+        <div className='flex flex-col w-full md:w-1/2 md:pr-[1%] gap-5 md:border-r border-gray-300'>
           <span className='text-[#123836] font-semibold text-[18px] md:text-[32px] py-[1%]'>Tournament Participants</span>
           {loadingParticipants ? (
             <div className="flex justify-center items-center py-10">
               <div className="w-8 h-8 border-4 border-slate-200 border-t-[#123836] rounded-full animate-spin" />
             </div>
           ) : !isIndividual ? (
-            <div className='grid grid-cols-2 md:grid-cols-3 gap-10 items-start'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 md:gap-10 items-start'>
               {participants.map((team) => (
                 <TeamCard key={team.id} team={team} />
               ))}
@@ -925,7 +929,7 @@ const TournamentPage = () => {
             <ParticipantTable participants={participants} />
           )}
         </div>
-        <div className='flex flex-col w-full md:w-[50%] pr-[1%] gap-5'>
+        <div className='flex flex-col w-full md:w-1/2 md:pr-[1%] gap-5'>
           <span className='text-[#123836] font-semibold text-[18px] md:text-[32px] py-[1%]'>Tournament Recent Matches</span>
           {loadingMatches ? (
             <div className="flex justify-center items-center py-10">
@@ -953,7 +957,7 @@ const TournamentPage = () => {
               <span className='text-[14px] text-gray-400'>No recent matches.</span>
             )
           ) : recentMatchesList.length > 0 ? (
-            <div className='grid grid-cols-2 md:grid-cols-2 gap-10 items-start'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-10 items-start'>
               {recentMatchesList.slice(0, 8).map((match) => (
                 <MatchCard key={match.id} match={match}/>
               ))}

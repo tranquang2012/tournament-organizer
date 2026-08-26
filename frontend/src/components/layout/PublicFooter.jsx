@@ -5,7 +5,7 @@ import { faLocationDot, faEnvelope, faPhone } from '@fortawesome/free-solid-svg-
 const PublicFooter = () => {
     return (
         <footer className='bg-[#123836] text-white px-[5%] md:px-[10%] py-10'>
-            <div className='grid grid-cols-2 md:grid-cols-4 gap-15 md:gap-53'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 md:gap-12'>
                 <div className='flex flex-col gap-3'>
                     <span className='font-bold text-[20px] tracking-widest uppercase'>Footer Content</span>
                     <p className='text-[15px] text-gray-300'>

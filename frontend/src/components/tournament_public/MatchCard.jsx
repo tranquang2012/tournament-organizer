@@ -22,14 +22,14 @@ const MatchCard = ({ match }) => {
                     {match.team1.name !== 'BYE' && (
                         <img src={match.team1.logo} className='h-10 w-10 md:h-15 md:w-15 object-contain' />
                     )}
-                    <span className='text-[13px] md:text-[16px] font-semibold'>{match.team1.name}</span>
+                    <span className='text-[11px] md:text-[16px] font-semibold text-center truncate max-w-full px-1'>{match.team1.name}</span>
                 </div>
                 <span className='text-[10px] md:text-[18px] font-semibold'>{match.team1.score} - {match.team2.score}</span>
                 <div className={`flex flex-col w-[30%] items-center justify-center md:gap-1 ${team2Lose && 'opacity-40'} `}>
                     {match.team2.name !== 'BYE' && (
                         <img src={match.team2.logo} className='h-10 w-10 md:h-15 md:w-15 object-contain' />
                     )}
-                    <span className='text-[13px] md:text-[16px] font-semibold'>{match.team2.name}</span>
+                    <span className='text-[11px] md:text-[16px] font-semibold text-center truncate max-w-full px-1'>{match.team2.name}</span>
                 </div>
             </div>
         </div>

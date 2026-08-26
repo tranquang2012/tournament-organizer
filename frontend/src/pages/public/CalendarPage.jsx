@@ -85,21 +85,31 @@ const CalendarPage = () => {
 
     return (
         <div className='flex flex-col'>
-            <div className='bg-[#123836] text-white px-8 py-5'>
-                <span className='text-[22px] font-semibold'>Tournament Calendar</span>
+            <div className='bg-[#123836] text-white px-4 md:px-8 py-4 md:py-5'>
+                <span className='text-lg md:text-[22px] font-semibold'>Tournament Calendar</span>
             </div>
 
-            <div className='p-8' style={{ height: '90vh' }}>
+            <div className='p-4 md:p-8' style={{ minHeight: '70vh' }}>
                 <style>{`
-                    .rbc-toolbar { margin-bottom: 20px; }
+                    .rbc-toolbar {
+                        margin-bottom: 16px;
+                        flex-wrap: wrap;
+                        gap: 8px;
+                    }
                     .rbc-toolbar button {
                         border: 1px solid #d1d5db;
                         border-radius: 6px;
-                        padding: 5px 14px;
-                        font-size: 14px;
+                        padding: 4px 10px;
+                        font-size: 12px;
                         color: #374151;
                         background: white;
                         cursor: pointer;
+                    }
+                    @media (min-width: 768px) {
+                        .rbc-toolbar button {
+                            padding: 5px 14px;
+                            font-size: 14px;
+                        }
                     }
                     .rbc-toolbar button:hover { background: #f3f4f6; }
                     .rbc-toolbar button.rbc-active {
@@ -108,9 +118,18 @@ const CalendarPage = () => {
                         border-color: #123836 !important;
                     }
                     .rbc-toolbar-label {
-                        font-size: 18px;
+                        font-size: 14px;
                         font-weight: 600;
                         color: #111827;
+                        width: 100%;
+                        text-align: center;
+                        margin: 4px 0;
+                    }
+                    @media (min-width: 768px) {
+                        .rbc-toolbar-label {
+                            font-size: 18px;
+                            width: auto;
+                        }
                     }
                     .rbc-time-header { display: none; }
                     .rbc-time-gutter .rbc-timeslot-group { border: none; }
@@ -142,7 +161,7 @@ const CalendarPage = () => {
                 `}</style>
 
                 {loading ? (
-                    <div className="flex items-center justify-center" style={{ height: '70vh' }}>
+                    <div className="flex items-center justify-center" style={{ minHeight: '60vh' }}>
                         <div className="flex flex-col items-center gap-3">
                             <div className="w-8 h-8 border-3 border-slate-200 border-t-[#123836] rounded-full animate-spin" />
                             <p className="text-sm font-medium text-slate-400">Loading calendar…</p>

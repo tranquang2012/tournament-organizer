@@ -65,7 +65,7 @@ const MatchDetailCard = ({ match }) => {
                     </div>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team1Losing ? 'opacity-40' : ''}`}>
                         <img src={logo1} alt='logoteam1' className='w-10 h-10 md:h-15 md:w-15 object-contain' />
-                        <span className='text-[10px] md:text-[15px] font-black uppercase mt-2'>{match.team1}</span>
+                        <span className='text-[10px] md:text-[15px] font-black uppercase mt-2 truncate max-w-[100px] md:max-w-none text-center'>{match.team1}</span>
                         <div className='flex flex-col items-center mt-2 gap-0.5'>
                             {match.home?.scorers?.map((s, i) => (
                                 <span key={i} className='text-[10px] md:text-[12px] text-gray-500'>{s}</span>
@@ -77,7 +77,7 @@ const MatchDetailCard = ({ match }) => {
                     <div className='h-[30px] text-[#123836]'>Hide</div>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team2Losing ? 'opacity-40' : ''}`}>
                         <img src={logo2} alt='logoteam2' className='w-10 h-10 md:h-15 md:w-15 object-contain' />
-                        <span className='text-[10px] md:text-[15px] font-black uppercase mt-2'>{match.team2}</span>
+                        <span className='text-[10px] md:text-[15px] font-black uppercase mt-2 truncate max-w-[100px] md:max-w-none text-center'>{match.team2}</span>
                         <div className='flex flex-col items-center mt-2 gap-0.5'>
                             {match.away?.scorers?.map((s, i) => (
                                 <span key={i} className='text-[10px] md:text-[12px] text-white/70'>{s}</span>

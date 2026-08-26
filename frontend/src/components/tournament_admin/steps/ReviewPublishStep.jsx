@@ -47,8 +47,8 @@ const ReviewPublishStep = ({ data, onGoToStep, onPublish, publishing }) => {
           <Row label="Start Date" value={data.startDate || '—'} />
           <Row label="End Date" value={data.endDate || '—'} />
           {(data.banner || data.defaultBannerSrc) && (
-            <div className="flex items-center gap-2 py-2">
-              <span className="text-sm text-slate-400 w-[140px] shrink-0">Banner</span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 py-2">
+              <span className="text-sm text-slate-400 sm:w-[140px] shrink-0">Banner</span>
               <div className="flex items-center gap-3">
                 <div className="w-20 h-12 rounded-lg overflow-hidden border border-slate-200">
                   <img
@@ -174,8 +174,8 @@ function Section({ icon, title, onEdit, children }) {
 
 function Row({ label, value }) {
   return (
-    <div className="flex items-start gap-2 py-2">
-      <span className="text-sm text-slate-400 w-[140px] shrink-0">{label}</span>
+    <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2 py-2">
+      <span className="text-sm text-slate-400 sm:w-[140px] shrink-0">{label}</span>
       <span className="text-sm text-slate-700 break-words">{String(value)}</span>
     </div>
   );

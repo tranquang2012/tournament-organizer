@@ -102,7 +102,7 @@ const EditTeamInlineModal = ({ open, team, onClose, onSave }) => {
       {/* Dialog */}
       <div className="fixed inset-0 z-[301] flex items-center justify-center p-4 pointer-events-none">
         <div
-          className="bg-white rounded-2xl shadow-2xl w-full max-w-[380px] pointer-events-auto animate-[fadeIn_0.2s_ease-out] overflow-hidden"
+          className="bg-white rounded-2xl shadow-2xl w-full max-w-[calc(100vw-2rem)] sm:max-w-[380px] mx-4 pointer-events-auto animate-[fadeIn_0.2s_ease-out] overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}

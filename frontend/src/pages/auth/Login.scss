@@ -2,6 +2,7 @@
     padding: 0;
     margin: 0px;
     display: flex;
+    min-height: 100vh;
 
     .login-background {
         background-image: url('../../assets/loginbackground.png');
@@ -16,8 +17,7 @@
         display: flex;
         flex-direction: column;
         width: 35%;
-        flex-direction: column;
-        padding-left: 5px;
+        padding: 20px;
         align-items: center;
         justify-content: center;
 
@@ -33,6 +33,7 @@
             font-size: 20px;
             font-family: "Arial", sans-serif;
             margin-bottom: 20px;
+            text-align: center;
         }
 
         .login-error {
@@ -81,6 +82,7 @@
 
         .back-home {
             margin-top: 30px;
+            text-align: center;
 
             a {
                 font-family: "Arial", sans-serif;
@@ -100,6 +102,47 @@
                     text-decoration: underline;
                     color: blue;
                     opacity: 100%;
+                }
+            }
+        }
+    }
+
+    @media (max-width: 767px) {
+        flex-direction: column;
+
+        .login-background {
+            display: none;
+        }
+
+        .login-content {
+            width: 100%;
+            min-height: 100vh;
+            padding: 32px 24px;
+
+            .title {
+                font-size: 42px;
+                margin-bottom: 16px;
+            }
+
+            .login-title {
+                font-size: 16px;
+            }
+
+            .social-login {
+                .social-icon-gg,
+                .social-icon-fa {
+                    font-size: 40px;
+
+                    &:hover {
+                        font-size: 44px;
+                    }
+                }
+            }
+
+            .back-home {
+                a,
+                .back-home-link {
+                    font-size: 16px;
                 }
             }
         }

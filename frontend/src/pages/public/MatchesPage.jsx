@@ -281,27 +281,27 @@ const MatchesPage = () => {
 
   return (
     <div className="flex flex-col">
-      <div className='min-h-screen w-full bg-cover bg-center flex items-center justify-center' style={{ backgroundImage: `url(${bannerUrl})` }}>
-        <div className='bg-white p-5 w-[70%] border border-white shadow-xl rounded-[15px]'>
+      <div className='min-h-screen w-full bg-cover bg-center flex items-center justify-center px-4 py-6' style={{ backgroundImage: `url(${bannerUrl})` }}>
+        <div className='bg-white p-4 md:p-5 w-full max-w-5xl md:w-[70%] border border-white shadow-xl rounded-[15px]'>
           <div className='flex gap-2'>
-            <div className='flex flex-col gap-3'>
-              <span className='text-[#123836] font-semibold text-[30px]'>{matchData.tournamentName}</span>
-              <span className='text-[22px] font-semibold'>{matchData.name} - {matchData.roundText}</span>
-              <span className='text-[17px] font-thin text-gray-500'>
+            <div className='flex flex-col gap-3 flex-1 min-w-0'>
+              <span className='text-[#123836] font-semibold text-xl md:text-[30px] truncate'>{matchData.tournamentName}</span>
+              <span className='text-base md:text-[22px] font-semibold'>{matchData.name} - {matchData.roundText}</span>
+              <span className='text-sm md:text-[17px] font-thin text-gray-500'>
                 {matchData.date && <><FontAwesomeIcon icon={faCalendarDays} /> {matchData.date} </>}
                 {matchData.time && <><FontAwesomeIcon icon={faClock} /> {matchData.time}</>}
               </span>
               {matchData.status === 'ongoing' || matchData.status === 'running' || matchData.status === 'pausing' || matchData.status === 'paused' ? (
-                <button className='font-semibold text-red-500 border border-gray-300 rounded-[10px] p-1 shadow-sm cursor-pointer 
+                <button className='font-semibold text-red-500 border border-gray-300 rounded-[10px] p-1 shadow-sm cursor-pointer w-fit
                 transition-transform duration-300 ease-in-out hover:scale-105 hover:border-gray-500'>Live now!</button>
               ) : (
-                <button className='font-semibold text-white rounded-[10px] bg-[#123836] p-1 shadow-sm'>Match End</button>
+                <button className='font-semibold text-white rounded-[10px] bg-[#123836] p-1 shadow-sm w-fit'>Match End</button>
               )}
             </div>
-            <span className='ml-auto text-[#123836] font-semibold text-[50px]'>{matchData.tournamentName}</span>
+            <span className='hidden md:block ml-auto text-[#123836] font-semibold text-[50px] shrink-0'>{matchData.tournamentName}</span>
           </div>
           <div className='flex items-center justify-center'>
-            <div className='w-[70%] pt-15'>
+            <div className='w-full md:w-[70%] pt-6 md:pt-15'>
               {isRoundScoring
                 ? <RoundScoringTable match={matchData} scoreMode={scoreMode} />
                 : <MatchDetailCard match={matchData} />
@@ -327,13 +327,14 @@ const MatchesPage = () => {
             </div>
           )}
 
-          <div className='flex gap-10 mt-10'>
+          <div className='flex flex-col md:flex-row gap-6 md:gap-10 mt-10'>
             {isTeamMode && (
-              <div className='border border-gray-200 rounded-[10px] overflow-hidden shadow-sm w-[35%] self-start'>
+              <div className='border border-gray-200 rounded-[10px] overflow-hidden shadow-sm w-full md:w-[35%] self-start'>
                 <div className='bg-[#123836] text-white text-[15px] font-semibold px-4 py-2'>
                   Match Participants
                 </div>
-                <table className='w-full text-[14px]'>
+                <div className='overflow-x-auto'>
+                <table className='w-full text-[14px] min-w-[280px]'>
                   <thead>
                     <tr className='bg-gray-50'>
                       <th className='text-left px-4 py-2 text-[#123836] font-semibold border-b border-r border-gray-200'>{matchData.team1}</th>
@@ -349,12 +350,14 @@ const MatchesPage = () => {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             )}
             {isRoundScoring ? (
               matchData.stats?.length > 0 && (
-                <div className='flex-1 border border-gray-200 rounded-[10px] overflow-hidden shadow-sm self-start'>
-                  <table className='w-full text-[14px]'>
+                <div className='flex-1 border border-gray-200 rounded-[10px] overflow-hidden shadow-sm self-start w-full'>
+                  <div className='overflow-x-auto'>
+                  <table className='w-full text-[14px] min-w-[300px]'>
                     <thead>
                       <tr className='bg-gray-50'>
                         <th className='text-left px-4 py-3 text-[#123836] font-semibold border-b border-gray-200'>Overall</th>
@@ -376,15 +379,17 @@ const MatchesPage = () => {
                       </tr>
                     </tbody>
                   </table>
+                  </div>
                 </div>
               )
             ) : (
               matchData.teamStats?.length > 0 && (
-                <div className='flex-1 border border-gray-200 rounded-[10px] overflow-hidden shadow-sm self-start'>
+                <div className='flex-1 border border-gray-200 rounded-[10px] overflow-hidden shadow-sm self-start w-full'>
                   <div className='bg-[#123836] text-white text-[15px] font-semibold px-4 py-2'>
                     Team Stats
                   </div>
-                  <table className='w-full text-[14px]'>
+                  <div className='overflow-x-auto'>
+                  <table className='w-full text-[14px] min-w-[300px]'>
                     <thead>
                       <tr className='bg-gray-50'>
                         <th className='text-left px-4 py-3 text-[#123836] font-semibold border-b border-gray-200'>Teams</th>
@@ -411,6 +416,7 @@ const MatchesPage = () => {
 
                     </tbody>
                   </table>
+                  </div>
                 </div>
               )
             )}

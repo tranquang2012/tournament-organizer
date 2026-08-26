@@ -615,7 +615,7 @@ const TournamentCreatePage = () => {
 
       {/* Navigation buttons */}
       {currentStep < STEPS.length - 1 && (
-        <div className="flex items-center justify-between mt-10 pt-6 border-t border-slate-100">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-10 pt-6 border-t border-slate-100">
           <button
             type="button"
             onClick={handleBack}

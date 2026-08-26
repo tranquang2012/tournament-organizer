@@ -83,10 +83,10 @@ const TournamentStatTemplatesPage = () => {
 
   return (
     <div className="max-w-4xl mx-auto p-6 md:p-10">
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-slate-800">Stat Templates</h1>
-          <p className="text-slate-500">Define global statistics that will be automatically added to all new matches.</p>
+          <h1 className="text-xl md:text-2xl font-bold text-slate-800">Stat Templates</h1>
+          <p className="text-sm text-slate-500">Define global statistics that will be automatically added to all new matches.</p>
         </div>
         <Button variant="secondary" onClick={() => navigate('/admin/tournaments/list')}>
           Back to Manage
@@ -102,8 +102,8 @@ const TournamentStatTemplatesPage = () => {
       <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden mb-8">
         <div className="p-6 border-b border-slate-100 bg-slate-50">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">Create New Template</h2>
-          <form onSubmit={handleCreate} className="flex gap-4 items-end">
-            <div className="flex-1">
+          <form onSubmit={handleCreate} className="flex flex-col sm:flex-row gap-4 sm:items-end">
+            <div className="flex-1 w-full">
               <label className="block text-sm font-medium text-slate-700 mb-1">Stat Name</label>
               <input
                 type="text"
@@ -114,7 +114,7 @@ const TournamentStatTemplatesPage = () => {
                 required
               />
             </div>
-            <div className="w-48">
+            <div className="w-full sm:w-48">
               <label className="block text-sm font-medium text-slate-700 mb-1">Type</label>
               <select
                 value={type}
@@ -140,7 +140,8 @@ const TournamentStatTemplatesPage = () => {
               No templates defined yet. Add one above.
             </div>
           ) : (
-            <table className="w-full text-left border-collapse">
+            <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse min-w-[400px]">
               <thead>
                 <tr className="bg-white border-b border-slate-200 text-sm text-slate-500 uppercase tracking-wider">
                   <th className="px-6 py-4 font-medium">Name</th>
@@ -169,6 +170,7 @@ const TournamentStatTemplatesPage = () => {
                 ))}
               </tbody>
             </table>
+            </div>
           )}
         </div>
       </div>

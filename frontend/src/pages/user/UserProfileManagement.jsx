@@ -9,7 +9,6 @@ import clsx from 'clsx';
 import { uploadCurrentUserAvatar } from '../../services/AuthService';
 
 //import component
-import TopNavBar from '../../components/layout/TopNavbar';
 import AccountManageSetting from '../../components/user_dashboard/AccountManageSetting';
 import NotificationSetting from '../../components/user_dashboard/NotificationSettings';
 import FollowedTournaments from '../../components/user_dashboard/FollowedTournaments';
@@ -99,7 +98,7 @@ const UserProfileManagement = () => {
                                     <img src={avatarUrl} alt="avatar" className='w-full h-full object-cover' />
                                 ) : (
                                     <div
-                                        className="w-full h-full rounded-full flex items-center justify-center text-[50px] font-bold shrink-0 uppercase tracking-wide"
+                                        className="w-full h-full rounded-full flex items-center justify-center text-2xl md:text-[50px] font-bold shrink-0 uppercase tracking-wide"
                                         style={{
                                             background: `linear-gradient(135deg, ${role.color}30, ${role.color}18)`,
                                             color: role.color,
@@ -136,8 +135,8 @@ const UserProfileManagement = () => {
                             </div>
                         </div>
                     </div>
-                    <div className='w-500 md:w-[70%]'>
-                        <div className='rounded-[15px] shadow-md h-[500px]'>
+                    <div className='w-full md:w-[70%]'>
+                        <div className='rounded-[15px] shadow-md min-h-[400px] md:h-[500px]'>
                             <div className='flex flex-col justify-center border-b border-gray-300 mx-4 md:mx-7 pl-3 md:pl-5 py-4 h-[20%]'>
                                 <div className='text-[20px] md:text-[25px]'>
                                     <b>{sectionChoose === 'profile' ? 'My Account' : sectionChoose === 'notification' ? 'Notifications' : 'My Favorite Events'}</b>

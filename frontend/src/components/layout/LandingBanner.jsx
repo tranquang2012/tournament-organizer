@@ -98,7 +98,7 @@ const LandingBanner = () => {
     const showControls = slides.length > 1
 
     return (
-        <div className='relative w-full overflow-hidden h-[400px] md:h-[50vh] bg-[#123836]'>
+        <div className='relative w-full overflow-hidden h-[220px] sm:h-[300px] md:h-[50vh] bg-[#123836]'>
             {showControls && (
                 <button
                     onClick={handlePrev}
