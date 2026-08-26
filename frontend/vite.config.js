@@ -8,6 +8,9 @@ export default defineConfig({
     tailwindcss(),
   ],
   server: {
+    // Listen on all interfaces so phones/tablets on the same Wi‑Fi can reach the dev server.
+    host: true,
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:5001',

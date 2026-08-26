@@ -12,7 +12,8 @@ services:
       SUPABASE_URL: ${SUPABASE_URL:?Set SUPABASE_URL to your Supabase project URL}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?Set SUPABASE_ANON_KEY to your Supabase anon or publishable key}
     ports:
-      - "5000:5000"
+      # API is reached via nginx /api — do not expose 5000 publicly in production unless needed for debugging
+      - "127.0.0.1:5000:5000"
 
   frontend:
     build:
@@ -25,6 +26,7 @@ services:
     container_name: tournament-frontend
     restart: unless-stopped
     ports:
-      - "3000:80"
+      # Port 80 — mobile carriers often block 3000/8080; use http://<EC2_IP>/ (no port suffix)
+      - "80:80"
     depends_on:
       - backend
