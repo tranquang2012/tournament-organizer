@@ -161,7 +161,7 @@ const TournamentCreatePage = () => {
 
     const handleUnload = () => {
       if (isDirty && tournamentId && tokenRef.current) {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
         const url = `${baseUrl}/api/tournaments/${tournamentId}/discard`;
         fetch(url, {
           method: 'DELETE',

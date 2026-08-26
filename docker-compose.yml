@@ -20,7 +20,8 @@ services:
       args:
         VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:?Set VITE_SUPABASE_URL to your Supabase project URL}
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:?Set VITE_SUPABASE_ANON_KEY to your Supabase publishable or anon key}
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000}
+        # Leave unset in production — nginx proxies /api to the backend container.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
     container_name: tournament-frontend
     restart: unless-stopped
     ports:
