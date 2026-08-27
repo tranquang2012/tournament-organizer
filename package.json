@@ -1,4 +1,11 @@
 {
+  "name": "tournament-organizer",
+  "private": true,
+  "scripts": {
+    "env:status": "node scripts/env-mode.mjs status",
+    "env:local": "node scripts/env-mode.mjs local",
+    "env:deploy": "node scripts/env-mode.mjs deploy"
+  },
   "dependencies": {
     "@supabase/supabase-js": "^2.106.2"
   }

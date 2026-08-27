@@ -11,6 +11,20 @@ services:
       DB_SSL_REJECT_UNAUTHORIZED: ${DB_SSL_REJECT_UNAUTHORIZED:-false}
       SUPABASE_URL: ${SUPABASE_URL:?Set SUPABASE_URL to your Supabase project URL}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?Set SUPABASE_ANON_KEY to your Supabase anon or publishable key}
+      EMAIL_REMINDERS_ENABLED: ${EMAIL_REMINDERS_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_SERVICE: ${SMTP_SERVICE:-}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      REMINDER_DAYS_BEFORE: ${REMINDER_DAYS_BEFORE:-1}
+      REMINDER_TIME_ZONE: ${REMINDER_TIME_ZONE:-Asia/Ho_Chi_Minh}
+      EMAIL_REMINDER_INTERVAL_MS: ${EMAIL_REMINDER_INTERVAL_MS:-900000}
+      EMAIL_REMINDER_BATCH_SIZE: ${EMAIL_REMINDER_BATCH_SIZE:-100}
+      REMINDER_CLAIM_STALE_MINUTES: ${REMINDER_CLAIM_STALE_MINUTES:-30}
     ports:
       # API is reached via nginx /api — do not expose 5000 publicly in production unless needed for debugging
       - "127.0.0.1:5000:5000"

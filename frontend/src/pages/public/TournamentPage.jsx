@@ -23,8 +23,7 @@ import {
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
 import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fcllhdeiknlthwqpafiy.supabase.co';
-const PLAYER_DEFAULT_LOGO = `${supabaseUrl}/storage/v1/object/public/tournament-banners/default/playerLogo.png`;
+const PLAYER_DEFAULT_LOGO = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/tournament-banners/default/playerLogo.png`;
 
 const transformBackendMatchesToBracket = (backendMatches, format, isIndividual) => {
   if (!backendMatches || !Array.isArray(backendMatches)) return format === 'double_elimination' ? { upper: [], lower: [] } : [];
