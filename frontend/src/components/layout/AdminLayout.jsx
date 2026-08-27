@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faBars } from '@fortawesome/free-solid-svg-icons'
 import AdminSidebar from './AdminSidebar'
+import AdminAIChatbot from '../admin_dashboard/AdminAIChatbot'
 
 const AdminLayout = () => {
   const [collapsed, setCollapsed] = useState(false)
@@ -37,6 +38,7 @@ const AdminLayout = () => {
           <Outlet />
         </main>
       </div>
+      <AdminAIChatbot />
     </div>
   )
 }
