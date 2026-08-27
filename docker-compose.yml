@@ -39,8 +39,34 @@ services:
         VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
     container_name: tournament-frontend
     restart: unless-stopped
+    environment:
+      PUBLIC_IP: ${PUBLIC_IP:-}
     ports:
-      # Port 80 — mobile carriers often block 3000/8080; use http://<EC2_IP>/ (no port suffix)
       - "80:80"
+      - "443:443"
+    volumes:
+      - nginx-certs:/etc/nginx/certs
+      - acme-webroot:/var/www/acme
     depends_on:
       - backend
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: tournament-certbot
+    restart: unless-stopped
+    volumes:
+      - nginx-certs:/etc/nginx/certs
+      - acme-webroot:/var/www/acme
+      - letsencrypt:/etc/letsencrypt
+      - ./scripts/certbot-loop.sh:/certbot-loop.sh:ro
+    environment:
+      PUBLIC_IP: ${PUBLIC_IP:-}
+      CERTBOT_EMAIL: ${CERTBOT_EMAIL:-}
+    entrypoint: ["/bin/sh", "/certbot-loop.sh"]
+    depends_on:
+      - frontend
+
+volumes:
+  nginx-certs:
+  acme-webroot:
+  letsencrypt:
