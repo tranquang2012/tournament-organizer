@@ -195,22 +195,6 @@ async startMatch(matchId) {
     throw new AppError(`Cannot start a match with status '${match.status}'.`, 400);
   }
 
-  //cannot start before scheduled_start time
-  if (match.scheduled_start) {
-    const now       = new Date();
-    const startTime = new Date(match.scheduled_start);
-
-    if (now < startTime) {
-      const diffMinutes = Math.ceil((startTime - now) / (1000 * 60));
-      throw new AppError(
-        `Match is scheduled to start at ${startTime.toISOString()}. ` +
-        `It is still ${diffMinutes} minute(s) away. ` +
-        `Please adjust the scheduled start time if you want to begin earlier.`,
-        400
-      );
-    }
-  }
-
   const updated = await matchesRepository.startMatch(matchId);
   if (!updated) throw new AppError('Failed to start match.', 500);
 
@@ -609,6 +593,8 @@ async resumeMatch(matchId, body) {
       competitors,
       scheduled_start: m.scheduled_start,
       scheduled_end: m.scheduled_end,
+      elapsed_ms: m.elapsed_ms != null ? Number(m.elapsed_ms) : 0,
+      running_since: m.running_since || null,
       results,
       round_scores: m.round_scores || null,
       winning_competitor_id: m.winning_competitor_id,

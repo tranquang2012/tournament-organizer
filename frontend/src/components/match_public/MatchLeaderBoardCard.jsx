@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircle } from '@fortawesome/free-solid-svg-icons';
-import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom';
+import { useMatchPlayClock } from '../../hooks/useMatchPlayClock';
 
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
 
@@ -13,41 +13,13 @@ import { formatDuration } from '../../utils/duration';
 
 const MatchLeaderBoardCard = ({ match, scoreMode = 'points' }) => {
     const isCompleted = match.status === 'completed';
-    const isOngoing = match.status === 'ongoing';
-    const isPausing = match.status === 'pausing' || match.status === 'paused';
+    const isPaused = match.status === 'paused';
     const navigate = useNavigate();
-
-    const [elapsedSeconds, setElapsedSeconds] = useState(0);
-    const pausedElapsedSeconds = (() => {
-        if (!isPausing || !match.startTime || !match.pausedTime) return 0;
-        const start = new Date(match.startTime).getTime();
-        const pausedAt = new Date(match.pausedTime).getTime();
-        const diff = Math.floor((pausedAt - start) / 1000);
-        return Number.isFinite(diff) && diff > 0 ? diff : 0;
-    })();
-
-    useEffect(() => {
-        if (!match.startTime || !isOngoing) return;
-
-        const updateElapsed = () => {
-            const start = new Date(match.startTime).getTime();
-            const diff = Math.floor((Date.now() - start) / 1000);
-            setElapsedSeconds(diff > 0 ? diff : 0);
-        };
-
-        const timeout = setTimeout(updateElapsed, 0);
-        const interval = setInterval(updateElapsed, 1000);
-        return () => {
-            clearTimeout(timeout);
-            clearInterval(interval);
-        };
-    }, [isOngoing, match.startTime]);
-
-    const formatTime = (totalSeconds) => {
-        const mins = Math.floor(totalSeconds / 60);
-        const secs = totalSeconds % 60;
-        return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}'`;
-    };
+    const playClock = useMatchPlayClock({
+        status: match.status,
+        elapsedMs: match.elapsedMs,
+        runningSince: match.runningSince,
+    });
 
     const visibleParticipants = (match.participants || []).slice(0, 5);
     const hasMoreParticipants = (match.participants || []).length > 5;
@@ -70,13 +42,13 @@ const MatchLeaderBoardCard = ({ match, scoreMode = 'points' }) => {
                     <span className='text-[20px] text-right flex items-center ml-auto'>
                         {isCompleted ? (
                             <FontAwesomeIcon icon={faCircle} className='text-[15px] text-green-400 mr-1' />
-                        ) : isPausing ? (
+                        ) : isPaused ? (
                             <FontAwesomeIcon icon={faCircle} className='text-[15px] text-yellow-500 mr-1 animate-pulse' />
                         ) : (
                             <FontAwesomeIcon icon={faCircle} className='text-[15px] text-red-500 mr-1 animate-pulse' />
                         )}
                         <span className='text-[10px] md:text-[13px] md:text-[16px]'>
-                            {isCompleted ? 'Finished' : isPausing ? (match.status === 'paused' ? 'Paused' : 'Pausing') : formatTime(isPausing ? pausedElapsedSeconds : elapsedSeconds)}
+                            {isCompleted ? 'Finished' : playClock}
                         </span>
                     </span>
                 </div>

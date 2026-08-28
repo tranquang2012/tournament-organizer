@@ -82,7 +82,8 @@ const mapVersusMatch = (match) => {
     score1: r1?.score ?? 0,
     score2: r2?.score ?? 0,
     status: mapCardStatus(match.status),
-    startTime: match.scheduled_start,
+    elapsedMs: match.elapsed_ms,
+    runningSince: match.running_since,
     isRoundScoring: false,
   };
 };
@@ -100,7 +101,8 @@ const mapRoundScoringMatch = (match) => {
     date: formatScheduledDate(match.scheduled_start),
     time: formatScheduledTime(match.scheduled_start),
     status: mapCardStatus(match.status),
-    startTime: match.scheduled_start,
+    elapsedMs: match.elapsed_ms,
+    runningSince: match.running_since,
     isRoundScoring: true,
     isIndividual,
     participants: (match.round_scores || []).map((row) => ({
@@ -247,22 +249,31 @@ const SportsPage = () => {
   };
 
   useEffect(() => {
+    let cancelled = false;
+
     const fetchMatches = async () => {
       try {
         const res = await getPublicMatchesBySport(id);
+        if (cancelled) return;
         const rows = res.data || res || [];
         const mapped = rows.map((match) => (
           isRoundScoringMatch(match) ? mapRoundScoringMatch(match) : mapVersusMatch(match)
         ));
         setMatches(mapped);
       } catch (err) {
+        if (cancelled) return;
         console.error('Failed to fetch recent matches:', err);
-        setMatches([]);
       }
     };
-    if (id) {
-      fetchMatches();
-    }
+
+    if (!id) return undefined;
+
+    fetchMatches();
+    const poll = setInterval(fetchMatches, 15000);
+    return () => {
+      cancelled = true;
+      clearInterval(poll);
+    };
   }, [id]);
 
   useEffect(() => {

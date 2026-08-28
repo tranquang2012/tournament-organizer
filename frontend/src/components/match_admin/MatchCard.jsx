@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faCalendarDays, faCheckCircle } from '@fortawesome/free-regular-svg-icons';
 import InputField from '../common/InputField';
 import ConfirmationModal from '../common/ConfirmationModal';
-import { scheduleMatch, updateMatch } from '../../services/MatchService';
+import { scheduleMatch, startMatch, updateMatch } from '../../services/MatchService';
 import MatchStatModal from './MatchStatModal';
 import { faChartBar } from '@fortawesome/free-solid-svg-icons';
 
@@ -14,6 +14,7 @@ const MatchCard = ({ match, onUpdate, variant = 'versus' }) => {
   const isLive = status === 'Live';
   const isUpcoming = status === 'Upcoming';
   const isCompleted = status === 'Completed';
+  const isPaused = status === 'Paused';
 
   const [scheduleDate, setScheduleDate] = useState(date || '');
   const [scheduleStart, setScheduleStart] = useState(startTime || '');
@@ -23,6 +24,17 @@ const MatchCard = ({ match, onUpdate, variant = 'versus' }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [modalContent, setModalContent] = useState(null); 
   const [showStatsModal, setShowStatsModal] = useState(false);
+
+  useEffect(() => {
+    setScheduleDate(date || '');
+    setScheduleStart(startTime || '');
+    setScheduleEnd(endTime || '');
+  }, [id, date, startTime, endTime]);
+
+  useEffect(() => {
+    setLocalScore1(team1?.score || 0);
+    setLocalScore2(team2?.score || 0);
+  }, [id, team1?.score, team2?.score]);
 
   const handleScoreBlur = async () => {
     if (isScoring) return;
@@ -42,7 +54,7 @@ const MatchCard = ({ match, onUpdate, variant = 'versus' }) => {
   const handleStartMatch = async () => {
     try {
       setIsUpdating(true);
-      await updateMatch(id, { status: 'running' });
+      await startMatch(id);
       if (onUpdate) onUpdate();
     } catch (err) {
       const msg = err.response?.data?.error?.message || err.response?.data?.message || 'Error starting match';
@@ -145,6 +157,11 @@ const MatchCard = ({ match, onUpdate, variant = 'versus' }) => {
     leftBorderColor = 'border-l-blue-400';
     badgeColor = 'bg-blue-50 text-blue-700';
     badgeDot = 'bg-blue-500';
+  } else if (isPaused) {
+    borderColor = 'border-amber-300/70';
+    leftBorderColor = 'border-l-amber-400';
+    badgeColor = 'bg-amber-50 text-amber-700';
+    badgeDot = 'bg-amber-500';
   } else if (isCompleted) {
     borderColor = 'border-slate-200';
     leftBorderColor = 'border-l-slate-300';

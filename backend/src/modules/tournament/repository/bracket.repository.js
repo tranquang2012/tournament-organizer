@@ -207,6 +207,10 @@ async saveRoundScoresDraft(matchId, roundScores, executor = pool) {
     `UPDATE matches
      SET round_scores = $1,
          status = CASE WHEN status = 'ready' THEN 'running' ELSE status END,
+         running_since = CASE
+           WHEN running_since IS NULL AND status IN ('ready', 'running') THEN NOW()
+           ELSE running_since
+         END,
          updated_at = NOW()
      WHERE match_id = $2
        AND status <> 'completed'

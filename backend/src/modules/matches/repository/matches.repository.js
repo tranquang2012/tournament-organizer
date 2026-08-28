@@ -6,6 +6,7 @@ class MatchesRepository {
     const { rows } = await executor.query(
       `SELECT 
         m.match_id, m.tour_id, m.round, m.stage, m.group_name, m.status, m.scheduled_start, m.scheduled_end,
+        m.elapsed_ms, m.running_since,
         m.competitor1_id, m.competitor2_id, m.score1, m.score2,
         m.winning_competitor_id, m.is_draw, m.next_winner_match_id, m.next_loser_match_id,
         m.round_scores,
@@ -37,7 +38,11 @@ class MatchesRepository {
     await executor.query(
       `UPDATE matches
        SET score1 = $1, score2 = $2, winning_competitor_id = $3,
-           result1 = $4, result2 = $5, is_draw = $6, status = $7, updated_at = NOW()
+           result1 = $4, result2 = $5, is_draw = $6, status = $7::varchar, updated_at = NOW(),
+           running_since = CASE
+             WHEN $7::varchar = 'running' AND running_since IS NULL THEN NOW()
+             ELSE running_since
+           END
        WHERE match_id = $8`,
       [score1, score2, winning_competitor_id, result1, result2, is_draw, status, matchId]
     );
@@ -100,10 +105,12 @@ async getScheduleConflicts(tourId, scheduled_start, scheduled_end, excludeMatchI
 async startMatch(matchId, executor = pool) {
   const { rows } = await executor.query(
     `UPDATE matches
-     SET status     = 'running',
-         updated_at = NOW()
+     SET status        = 'running',
+         running_since = NOW(),
+         updated_at    = NOW()
      WHERE match_id = $1
-     RETURNING match_id, status, scheduled_start, scheduled_end, tour_id`,
+     RETURNING match_id, status, scheduled_start, scheduled_end, tour_id,
+               elapsed_ms, running_since`,
     [matchId]
   );
   return rows[0] || null;
@@ -138,7 +145,8 @@ async resumeMatch(matchId, newScheduledEnd, executor = pool) {
 
 async getMatchTiming(matchId, executor = pool) {
   const { rows } = await executor.query(
-    `SELECT match_id, tour_id, status, scheduled_start, scheduled_end, tour_pausedate
+    `SELECT match_id, tour_id, status, scheduled_start, scheduled_end, tour_pausedate,
+            elapsed_ms, running_since
      FROM matches
      WHERE match_id = $1`,
     [matchId]
@@ -166,10 +174,20 @@ async pauseAllMatchesByTournament(tourId, pausedAt, executor = pool) {
     `UPDATE matches
      SET status         = 'paused',
          tour_pausedate = $1,
+         elapsed_ms     = CASE
+                            WHEN status = 'running' AND running_since IS NOT NULL
+                              THEN elapsed_ms + (EXTRACT(EPOCH FROM (NOW() - running_since)) * 1000)::bigint
+                            ELSE elapsed_ms
+                          END,
+         running_since  = CASE
+                            WHEN status = 'running' THEN NULL
+                            ELSE running_since
+                          END,
          updated_at     = NOW()
      WHERE tour_id = $2
        AND status IN ('ready', 'waiting', 'running')
-     RETURNING match_id, status, scheduled_start, scheduled_end, tour_pausedate`,
+     RETURNING match_id, status, scheduled_start, scheduled_end, tour_pausedate,
+               elapsed_ms, running_since`,
     [pausedAt, tourId]
   );
   return rows;
@@ -208,6 +226,7 @@ async resumeAndShiftAllMatchesByTournament(tourId, daysPaused, executor = pool) 
       `SELECT
         m.match_id, m.tour_id, m.round, m.stage, m.group_name, m.status,
         m.scheduled_start, m.scheduled_end, m.tour_pausedate, m.updated_at,
+        m.elapsed_ms, m.running_since,
         m.competitor1_id, m.competitor2_id, m.score1, m.score2,
         m.winning_competitor_id, m.is_draw, m.round_scores,
         c1.comp_name as c1_name, c1.comp_logo as c1_logo, c1.comp_size as c1_size,

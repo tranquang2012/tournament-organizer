@@ -35,6 +35,14 @@ export const updateMatch = async (matchId, payload) => {
   return response;
 };
 
+export const startMatch = async (matchId) => {
+  const token = await getAccessToken();
+  const authConfig = withAuthHeader(token);
+
+  const response = await axiosInstance.patch(`/api/matches/${matchId}/start`, {}, authConfig);
+  return response;
+};
+
 // --- MATCH STATS ---
 
 export const getMatchStats = async (matchId) => {

@@ -37,6 +37,7 @@ const RoundRobinMatchTemplate = ({ tournament, stage }) => {
           let status = 'Upcoming';
           if (m.status === 'completed' || m.status === 'resolved' || m.status === 'bye') status = 'Completed';
           else if (m.status === 'running') status = 'Live';
+          else if (m.status === 'paused') status = 'Paused';
 
           const comp1 = m.competitors?.find(c => c.comp_id === m.competitor1_id);
           const comp2 = m.competitors?.find(c => c.comp_id === m.competitor2_id);
@@ -295,6 +296,7 @@ const RoundRobinMatchTemplate = ({ tournament, stage }) => {
               >
                 <option value="All Status">All Status</option>
                 <option value="Live">Live</option>
+                <option value="Paused">Paused</option>
                 <option value="Upcoming">Upcoming</option>
                 <option value="Completed">Completed</option>
               </select>

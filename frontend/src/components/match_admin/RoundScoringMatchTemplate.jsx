@@ -16,6 +16,7 @@ const TABS = [
 
 const mapRoundStatus = (status) => {
   if (status === 'completed') return 'Completed';
+  if (status === 'paused') return 'Paused';
   if (status === 'ready' || status === 'running') return 'In Progress';
   return 'Upcoming';
 };
@@ -23,6 +24,7 @@ const mapRoundStatus = (status) => {
 const mapMatchCardStatus = (status) => {
   if (status === 'completed') return 'Completed';
   if (status === 'running') return 'Live';
+  if (status === 'paused') return 'Paused';
   return 'Upcoming';
 };
 
