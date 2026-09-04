@@ -103,12 +103,6 @@ const PublicSidebar = ({ isOpen, onClose }) => {
                             </div>
                         </div>
                     </div>
-                    <div className={section} onClick={() => navigateAndClose('/tournaments')}>
-                        Tournaments
-                    </div>
-                    <div className={section} onClick={() => navigateAndClose('/matches')}>
-                        Matches
-                    </div>
                     <div className={section} onClick={() => navigateAndClose('/calendar')}>
                         Calendar
                     </div>

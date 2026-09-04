@@ -59,17 +59,6 @@ const CalendarPage = () => {
                 }))
 
                 setEvents(calendarEvents)
-
-                // Navigate to the nearest upcoming event, or most recent past event
-                if (calendarEvents.length > 0) {
-                    const now = new Date()
-                    const upcoming = calendarEvents.filter(e => e.start >= now)
-                    if (upcoming.length > 0) {
-                        setCurrentDate(upcoming[0].start)
-                    } else {
-                        setCurrentDate(calendarEvents[calendarEvents.length - 1].start)
-                    }
-                }
             } catch (err) {
                 console.error('Failed to fetch calendar data:', err)
             } finally {
@@ -146,6 +135,7 @@ const CalendarPage = () => {
                     }
                     .rbc-event-label { display: none; }
                     .rbc-today { background: #f0fdf4 !important; }
+                    .rbc-month-view .rbc-event { padding: 1px 4px !important; }
 
                     /* Hover on day cells in month view */
                     .rbc-month-row .rbc-day-bg {
@@ -186,6 +176,7 @@ const CalendarPage = () => {
                             setCurrentView('day')
                         }}
                         dayLayoutAlgorithm='no-overlap'
+                        style={{ height: '70vh' }}
                         eventPropGetter={(event) => ({
                             style: {
                                 backgroundColor: getColor(event),
@@ -193,7 +184,8 @@ const CalendarPage = () => {
                             }
                         })}
                         components={{
-                            event: EventComponent
+                            event: EventComponent,
+                            month: { event: ({ event }) => event.title },
                         }}
                         onSelectEvent={(event) => console.log('Clicked:', event.title)}
                         formats={{

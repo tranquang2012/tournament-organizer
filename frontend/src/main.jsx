@@ -28,12 +28,16 @@ import TournamentEditPage from './pages/admin/TournamentEditPage.jsx'
 import MatchConfigPage from './pages/admin/MatchConfigPage.jsx'
 import UserManagementPage from './pages/admin/UserManagementPage.jsx'
 import CalendarPage from './pages/public/CalendarPage.jsx'
+import { useDocumentTitle } from './hooks/useDocumentTitle.js'
 
-const AuthProviderWrapper = () => (
-  <AuthProvider>
-    <Outlet />
-  </AuthProvider>
-)
+const AuthProviderWrapper = () => {
+  useDocumentTitle()
+  return (
+    <AuthProvider>
+      <Outlet />
+    </AuthProvider>
+  )
+}
 
 const router = createBrowserRouter(
   createRoutesFromElements(

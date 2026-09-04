@@ -1,5 +1,5 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { faBars, faHeadset, faUser, faRightFromBracket, faRightToBracket } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react'
 import { supabase } from '../../config/supabaseClient';
@@ -42,18 +42,18 @@ const TopNavBar = () => {
           />
         </div>
         <div className='hidden md:flex w-[50%] justify-between items-center'>
-          <Link to="/" className='text-[18px] text-[#123826] no-underline'>
+          <div className='text-[18px] text-[#123826]'>
             <div><b>Sports</b></div>
             <div className='font-medium text-[12px]'>Opportunities to explore sports world</div>
-          </Link>
-          <Link to="/tournaments" className='text-[18px] text-[#123826] no-underline'>
+          </div>
+          <div className='text-[18px] text-[#123826]'>
             <div><b>Tournaments</b></div>
             <div className='font-medium text-[12px]'>Enjoy many exciting tournaments</div>
-          </Link>
-          <Link to="/matches" className='text-[18px] text-[#123826] no-underline'>
+          </div>
+          <div className='text-[18px] text-[#123826]'>
             <div><b>Matches</b></div>
             <div className='font-medium text-[12px]'>Watching many thrilling matches</div>
-          </Link>
+          </div>
         </div>
         <div className='hidden md:flex w-[25%] justify-end items-center'>
           <div className='flex items-center justify-center mx-[15%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'>
