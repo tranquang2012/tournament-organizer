@@ -25,6 +25,13 @@ services:
       EMAIL_REMINDER_INTERVAL_MS: ${EMAIL_REMINDER_INTERVAL_MS:-900000}
       EMAIL_REMINDER_BATCH_SIZE: ${EMAIL_REMINDER_BATCH_SIZE:-100}
       REMINDER_CLAIM_STALE_MINUTES: ${REMINDER_CLAIM_STALE_MINUTES:-30}
+      AI_BASE_URL: ${AI_BASE_URL:-https://modelapi.vn/v1}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-gpt-5.6-sol}
+      AI_REASONING_EFFORT: ${AI_REASONING_EFFORT:-none}
+      AI_MAX_OUTPUT_TOKENS: ${AI_MAX_OUTPUT_TOKENS:-800}
+      AI_MAX_INPUT_CHARS: ${AI_MAX_INPUT_CHARS:-12000}
+      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-90000}
     ports:
       # API is reached via nginx /api — do not expose 5000 publicly in production unless needed for debugging
       - "127.0.0.1:5000:5000"
