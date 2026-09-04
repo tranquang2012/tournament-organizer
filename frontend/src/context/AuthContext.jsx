@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../config/supabaseClient'
-import { getAuthErrorMessage, getCurrentUserProfile, isDisabledAccountError, normalizeRole } from '../services/AuthService'
+import { getCurrentUserProfile, isDisabledAccountError, normalizeRole } from '../services/AuthService'
 import { AuthContext } from './authContext'
 
 const disabledAccountLoginPath = '/login?error_description=Your%20account%20has%20been%20disabled'
@@ -18,8 +18,7 @@ export const AuthProvider = ({ children }) => {
     setLoginRedirectPath(null)
   }, [])
 
-  const redirectDisabledAccount = useCallback((error) => {
-    console.log(getAuthErrorMessage(error))
+  const redirectDisabledAccount = useCallback(() => {
     setLoginRedirectPath(disabledAccountLoginPath)
     navigate(disabledAccountLoginPath, { replace: true })
     setSession(null)

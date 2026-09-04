@@ -38,7 +38,3 @@ export const fieldsToMs = (min, sec, cs) => {
   if (!Number.isFinite(c) || c < 0 || c > 99) throw new Error('Hundredths must be between 0 and 99.');
   return ((m * 60 + s) * 100 + c) * 10;
 };
-
-export const formatScore = (value, scoreMode = 'points') => (
-  scoreMode === 'time' ? formatDuration(value) : String(value ?? '—')
-);

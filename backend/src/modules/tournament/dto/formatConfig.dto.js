@@ -191,7 +191,6 @@ function validateFormatConfigDto(body, sp_id, participantCount = null) {
 
 module.exports = {
   validateFormatConfigDto,
-  isRoundScoringSport,
   getLobbyPreset,
   LOBBY_TOURNAMENT_SIZES,
 };

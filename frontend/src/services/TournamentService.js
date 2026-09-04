@@ -19,15 +19,6 @@ export const getSportRules = async () => {
   return cachedSportRules;
 };
 
-export const getLobbySizeForSportName = async (sportName) => {
-  if (!sportName) return null;
-  const rules = await getSportRules();
-  const match = Object.values(rules).find(
-    (rule) => rule.sport_name?.toLowerCase() === sportName.toLowerCase()
-  );
-  return match?.lobby_size || null;
-};
-
 const normalizeExperience = (experience) => EXPERIENCE_MAP[experience] || 'Beginner';
 
 const toAbsoluteUrl = (src) => {
@@ -265,11 +256,6 @@ export const saveFormatConfig = async (tournamentId, data) => {
     buildFormatConfigPayload(data),
     authConfig,
   );
-};
-
-export const getReview = async (tournamentId) => {
-  const authConfig = await withTournamentAuth();
-  return axios.get(`/api/tournaments/${tournamentId}/review`, authConfig);
 };
 
 export const publishTournament = async (tournamentId) => {

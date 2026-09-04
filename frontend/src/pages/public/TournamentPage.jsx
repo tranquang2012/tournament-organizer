@@ -661,7 +661,6 @@ const TournamentPage = () => {
                   matches={tournament.format === 'double_elimination' ? undefined : bracketData}
                   doubleMatches={tournament.format === 'double_elimination' ? bracketData : undefined}
                   showTabs={false}
-                  onMatchClick={(match) => console.log('Clicked:', match)}
                 />
               ) : (
                 <div className='flex flex-col py-[5%] items-center justify-center text-gray-500'>
@@ -795,7 +794,6 @@ const TournamentPage = () => {
               matches={tournament.second_stage_format === 'double_elimination' ? undefined : bracketData}
               doubleMatches={tournament.second_stage_format === 'double_elimination' ? bracketData : undefined}
               showTabs={false}
-              onMatchClick={(match) => console.log('Clicked:', match)}
             />
           ) : (
             <div className='flex flex-col py-[5%] items-center justify-center text-gray-500'>

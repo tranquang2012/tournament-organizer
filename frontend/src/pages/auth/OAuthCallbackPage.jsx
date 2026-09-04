@@ -2,7 +2,6 @@ import { useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../../config/supabaseClient'
 import {
-  getAuthErrorMessage,
   getCurrentUserProfile,
   isDisabledAccountError,
   normalizeRole,
@@ -53,7 +52,6 @@ const OAuthCallbackPage = () => {
         })
       } catch (profileError) {
         if (isDisabledAccountError(profileError)) {
-          console.log(getAuthErrorMessage(profileError))
           navigate(disabledAccountLoginPath, { replace: true })
 
           void supabase.auth.signOut({ scope: 'local' }).catch((signOutError) => {

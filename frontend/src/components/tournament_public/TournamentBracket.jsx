@@ -1,189 +1,12 @@
 import { useState, useEffect } from 'react'
-import { SingleEliminationBracket, DoubleEliminationBracket, SVGViewer, createTheme } from 'react-tournament-brackets'
+import { SingleEliminationBracket, DoubleEliminationBracket, SVGViewer } from 'react-tournament-brackets'
 
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
 import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
 import trophy from '../../assets/trophy.png'
 
-const SINGLE_ELIM_DATA = [
-    {
-        id: 260004, name: 'Match 10', nextMatchId: 260006,
-        tournamentRoundText: 'Quarter-Final', startTime: '2024-01-01', state: 'DONE',
-        participants: [
-            { id: 'gen', name: 'GEN', isWinner: true, resultText: '3', status: 'PLAYED' },
-            { id: 't1', name: 'T1', isWinner: false, resultText: '0', status: 'PLAYED' },
-        ],
-    },
-    {
-        id: 260003, name: 'Match 11', nextMatchId: 260006,
-        tournamentRoundText: 'Quarter-Final', startTime: '2024-01-01', state: 'DONE',
-        participants: [
-            { id: 'dk', name: 'DK', isWinner: true, resultText: '3', status: 'PLAYED' },
-            { id: 'bfx', name: 'BFX', isWinner: false, resultText: '1', status: 'PLAYED' },
-        ],
-    },
-    {
-        id: 260002, name: 'Match 12', nextMatchId: 260005,
-        tournamentRoundText: 'Quarter-Final', startTime: '2024-01-01', state: 'DONE',
-        participants: [
-            { id: 'kt', name: 'KT', isWinner: false, resultText: '1', status: 'PLAYED' },
-            { id: 'hle', name: 'HLE', isWinner: true, resultText: '3', status: 'PLAYED' },
-        ],
-    },
-    {
-        id: 260001, name: 'Match 13', nextMatchId: 260005,
-        tournamentRoundText: 'Quarter-Final', startTime: '2024-01-01', state: 'DONE',
-        participants: [
-            { id: 'ns', name: 'NS', isWinner: false, resultText: '0', status: 'PLAYED' },
-            { id: 'bro', name: 'BRO', isWinner: true, resultText: '3', status: 'PLAYED' },
-        ],
-    },
-    {
-        id: 260006, name: 'Match 14', nextMatchId: 260007,
-        tournamentRoundText: 'Semi-Final', startTime: '2024-01-02', state: 'DONE',
-        participants: [
-            { id: 'gen', name: 'GEN', isWinner: true, resultText: '3', status: 'PLAYED' },
-            { id: 'dk', name: 'DK', isWinner: false, resultText: '2', status: 'PLAYED' },
-        ],
-    },
-    {
-        id: 260005, name: 'Match 15', nextMatchId: 260007,
-        tournamentRoundText: 'Semi-Final', startTime: '2024-01-02', state: 'DONE',
-        participants: [
-            { id: 'hle', name: 'HLE', isWinner: true, resultText: '3', status: 'PLAYED' },
-            { id: 'bro', name: 'BRO', isWinner: false, resultText: '1', status: 'PLAYED' },
-        ],
-    },
-    {
-        id: 260007, name: 'Match 16', nextMatchId: null,
-        tournamentRoundText: 'Grand Final', startTime: '2024-01-03', state: 'DONE',
-        participants: [
-            { id: 'gen', name: 'GEN', isWinner: true, resultText: '3', status: 'PLAYED' },
-            { id: 'hle', name: 'HLE', isWinner: false, resultText: '1', status: 'PLAYED' },
-        ],
-    },
-]
+const EMPTY_DOUBLE = { upper: [], lower: [] }
 
-const DOUBLE_ELIM_DATA = {
-    upper: [
-        {
-            id: 'W1', name: 'WB Match 1', nextMatchId: 'W5', nextLooserMatchId: 'L1',
-            tournamentRoundText: 'WB Round 1', startTime: '2024-01-01', state: 'DONE',
-            participants: [
-                { id: 'gen', name: 'GEN', isWinner: true, resultText: '2', status: 'PLAYED' },
-                { id: 't1', name: 'T1', isWinner: false, resultText: '0', status: 'PLAYED' },
-            ],
-        },
-        {
-            id: 'W2', name: 'WB Match 2', nextMatchId: 'W5', nextLooserMatchId: 'L1',
-            tournamentRoundText: 'WB Round 1', startTime: '2024-01-01', state: 'DONE',
-            participants: [
-                { id: 'dk', name: 'DK', isWinner: true, resultText: '2', status: 'PLAYED' },
-                { id: 'bfx', name: 'BFX', isWinner: false, resultText: '1', status: 'PLAYED' },
-            ],
-        },
-        {
-            id: 'W3', name: 'WB Match 3', nextMatchId: 'W6', nextLooserMatchId: 'L2',
-            tournamentRoundText: 'WB Round 1', startTime: '2024-01-01', state: 'DONE',
-            participants: [
-                { id: 'kt', name: 'KT', isWinner: false, resultText: '1', status: 'PLAYED' },
-                { id: 'hle', name: 'HLE', isWinner: true, resultText: '2', status: 'PLAYED' },
-            ],
-        },
-        {
-            id: 'W4', name: 'WB Match 4', nextMatchId: 'W6', nextLooserMatchId: 'L2',
-            tournamentRoundText: 'WB Round 1', startTime: '2024-01-01', state: 'DONE',
-            participants: [
-                { id: 'ns', name: 'NS', isWinner: false, resultText: '0', status: 'PLAYED' },
-                { id: 'bro', name: 'BRO', isWinner: true, resultText: '2', status: 'PLAYED' },
-            ],
-        },
-        {
-            id: 'W5', name: 'WB Semi 1', nextMatchId: 'W7', nextLooserMatchId: 'L3',
-            tournamentRoundText: 'WB Semi-Final', startTime: '2024-01-02', state: 'DONE',
-            participants: [
-                { id: 'gen', name: 'GEN', isWinner: true, resultText: '2', status: 'PLAYED' },
-                { id: 'dk', name: 'DK', isWinner: false, resultText: '1', status: 'PLAYED' },
-            ],
-        },
-        {
-            id: 'W6', name: 'WB Semi 2', nextMatchId: 'W7', nextLooserMatchId: 'L4',
-            tournamentRoundText: 'WB Semi-Final', startTime: '2024-01-02', state: 'DONE',
-            participants: [
-                { id: 'hle', name: 'HLE', isWinner: true, resultText: '2', status: 'PLAYED' },
-                { id: 'bro', name: 'BRO', isWinner: false, resultText: '0', status: 'PLAYED' },
-            ],
-        },
-        {
-            id: 'W7', name: 'WB Final', nextMatchId: 'GF', nextLooserMatchId: 'L6',
-            tournamentRoundText: 'WB Final', startTime: '2024-01-03', state: 'DONE',
-            participants: [
-                { id: 'gen', name: 'GEN', isWinner: true, resultText: '2', status: 'PLAYED' },
-                { id: 'hle', name: 'HLE', isWinner: false, resultText: '1', status: 'PLAYED' },
-            ],
-        },
-        {
-            id: 'GF', name: 'Grand Final', nextMatchId: null, nextLooserMatchId: null,
-            tournamentRoundText: 'Grand Final', startTime: '2024-01-04', state: 'DONE',
-            participants: [
-                { id: 'gen', name: 'GEN', isWinner: true, resultText: '3', status: 'PLAYED' },
-                { id: 'dk', name: 'DK', isWinner: false, resultText: '1', status: 'PLAYED' },
-            ],
-        },
-    ],
-    lower: [
-        {
-            id: 'L1', name: 'LB Match 1', nextMatchId: 'L3', nextLooserMatchId: null,
-            tournamentRoundText: 'LB Round 1', startTime: '2024-01-02', state: 'DONE',
-            participants: [
-                { id: 't1', name: 'T1', isWinner: true, resultText: '2', status: 'PLAYED' },
-                { id: 'bfx', name: 'BFX', isWinner: false, resultText: '0', status: 'PLAYED' },
-            ],
-        },
-        {
-            id: 'L2', name: 'LB Match 2', nextMatchId: 'L4', nextLooserMatchId: null,
-            tournamentRoundText: 'LB Round 1', startTime: '2024-01-02', state: 'DONE',
-            participants: [
-                { id: 'kt', name: 'KT', isWinner: true, resultText: '2', status: 'PLAYED' },
-                { id: 'ns', name: 'NS', isWinner: false, resultText: '1', status: 'PLAYED' },
-            ],
-        },
-        {
-            id: 'L3', name: 'LB Match 3', nextMatchId: 'L5', nextLooserMatchId: null,
-            tournamentRoundText: 'LB Round 2', startTime: '2024-01-03', state: 'DONE',
-            participants: [
-                { id: 'dk', name: 'DK', isWinner: true, resultText: '2', status: 'PLAYED' },
-                { id: 't1', name: 'T1', isWinner: false, resultText: '0', status: 'PLAYED' },
-            ],
-        },
-        {
-            id: 'L4', name: 'LB Match 4', nextMatchId: 'L5', nextLooserMatchId: null,
-            tournamentRoundText: 'LB Round 2', startTime: '2024-01-03', state: 'DONE',
-            participants: [
-                { id: 'kt', name: 'KT', isWinner: true, resultText: '2', status: 'PLAYED' },
-                { id: 'bro', name: 'BRO', isWinner: false, resultText: '0', status: 'PLAYED' },
-            ],
-        },
-        {
-            id: 'L5', name: 'LB Match 5', nextMatchId: 'L6', nextLooserMatchId: null,
-            tournamentRoundText: 'LB Final', startTime: '2024-01-03', state: 'DONE',
-            participants: [
-                { id: 'kt', name: 'KT', isWinner: false, resultText: '1', status: 'PLAYED' },
-                { id: 'dk', name: 'DK', isWinner: true, resultText: '2', status: 'PLAYED' },
-            ],
-        },
-        {
-            id: 'L6', name: 'LB Final', nextMatchId: 'GF', nextLooserMatchId: null,
-            tournamentRoundText: 'LB Final', startTime: '2024-01-03', state: 'DONE',
-            participants: [
-                { id: 'hle', name: 'HLE', isWinner: false, resultText: '1', status: 'PLAYED' },
-                { id: 'dk', name: 'DK', isWinner: true, resultText: '2', status: 'PLAYED' },
-            ],
-        },
-    ],
-}
-
-//get window size
 const useWindowSize = () => {
     const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight })
     useEffect(() => {
@@ -257,8 +80,8 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
 
 const TournamentBracket = ({
     mode: initialMode = 'single',
-    matches = SINGLE_ELIM_DATA,
-    doubleMatches = DOUBLE_ELIM_DATA,
+    matches = [],
+    doubleMatches = EMPTY_DOUBLE,
     onMatchClick,
     showTabs = true
 }) => {
@@ -268,12 +91,14 @@ const TournamentBracket = ({
     }, [initialMode])
     const { width } = useWindowSize()
     const matchHeight = 120
+    const doubleData = doubleMatches || EMPTY_DOUBLE
 
     const singleMatchCount = matches.length
     const doubleMatchCount = Math.max(
-        doubleMatches.upper.length,
-        doubleMatches.lower.length
+        doubleData.upper?.length || 0,
+        doubleData.lower?.length || 0
     )
+    const hasBracket = mode === 'double' ? doubleMatchCount > 0 : singleMatchCount > 0
 
     const svgWidth = Math.max(Math.min(width - 32, width * 0.95), 280)
     const svgHeight = mode === 'double' ? Math.max(doubleMatchCount * matchHeight * 2.5, 400) : Math.max(singleMatchCount * matchHeight * 2.5, 300)
@@ -323,7 +148,11 @@ const TournamentBracket = ({
                     ))}
                 </div>
             )}
-            {mode === 'single' && (
+            {!hasBracket ? (
+                <div className="flex justify-center py-10 text-gray-500">
+                    No bracket matches generated yet.
+                </div>
+            ) : mode === 'single' ? (
                 <SingleEliminationBracket
                     matches={matches}
                     matchComponent={CustomMatch}
@@ -331,10 +160,9 @@ const TournamentBracket = ({
                     svgWrapper={svgWrapper}
                     onMatchClick={({ match }) => onMatchClick?.(match)}
                 />
-            )}
-            {mode === 'double' && (
+            ) : (
                 <DoubleEliminationBracket
-                    matches={doubleMatches}
+                    matches={doubleData}
                     matchComponent={CustomMatch}
                     options={bracketOptions}
                     svgWrapper={svgWrapper}
@@ -345,4 +173,4 @@ const TournamentBracket = ({
     )
 }
 
-export default TournamentBracket;
+export default TournamentBracket

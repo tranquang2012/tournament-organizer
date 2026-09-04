@@ -159,14 +159,6 @@ class TournamentService {
     return updated;
   }
 
-  //Step 4
-  async getReviewData(tourId, organizerId) {
-    const tournament = await repo.getFullTournament(tourId, organizerId);
-    if (!tournament) throw new AppError('Tournament not found.', 404);
-    delete tournament.competitors;
-    return tournament;
-  }
-
   async publishTournament(tourId, organizerId) {
     const tournament = await repo.getFullTournament(tourId, organizerId);
     if (!tournament) throw new AppError('Tournament not found.', 404);

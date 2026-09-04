@@ -187,7 +187,6 @@ const CalendarPage = () => {
                             event: EventComponent,
                             month: { event: ({ event }) => event.title },
                         }}
-                        onSelectEvent={(event) => console.log('Clicked:', event.title)}
                         formats={{
                             timeGutterFormat: (date, culture, loc) =>
                                 loc.format(date, 'h A', culture),

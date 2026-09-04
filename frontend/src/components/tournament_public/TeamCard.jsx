@@ -1,9 +1,6 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom';
+import { useState } from 'react'
 
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
-
 
 const TeamCard = ({ team }) => {
     const [isShowMember, setIsShowMember] = useState(false)

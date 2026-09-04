@@ -14,11 +14,7 @@ router.get('/public', ctrl.getPublicMatchesBySport.bind(ctrl));
 router.get('/:matchId', ctrl.getMatch.bind(ctrl));
 
 // Admin-only routes to update scores and results
-router.put('/:matchId', auth, requireAdminUser, ctrl.updateMatch.bind(ctrl));
 router.patch('/:matchId', auth, requireAdminUser, ctrl.updateMatch.bind(ctrl));
-
-// Support contract-defined result endpoint for compatibility
-router.put('/:matchId/result', auth, requireAdminUser, ctrl.updateMatch.bind(ctrl));
 
 // schedule a match
 router.patch('/:matchId/schedule', auth, requireAdminUser, ctrl.scheduleMatch.bind(ctrl));

@@ -1,10 +1,4 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircle } from '@fortawesome/free-solid-svg-icons';
-import { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom';
-
-import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
-
 
 const MatchCard = ({ match }) => {
     const navigate = useNavigate()

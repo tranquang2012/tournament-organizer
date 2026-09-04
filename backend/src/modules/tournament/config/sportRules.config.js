@@ -92,4 +92,4 @@ function getSportRules(sp_id) {
   return rules;
 }
 
-module.exports = { SPORT_RULES, FORMATS, getSportRules };
+module.exports = { SPORT_RULES, getSportRules };

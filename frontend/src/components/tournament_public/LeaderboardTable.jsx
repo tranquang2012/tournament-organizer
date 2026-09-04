@@ -1,9 +1,3 @@
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircle } from '@fortawesome/free-solid-svg-icons';
-import { useState, useEffect, useCallback } from 'react'
-import { useNavigate } from 'react-router-dom';
-
-
 const LeaderboardTable = ({ group, advanceCount }) => {
 
     return (

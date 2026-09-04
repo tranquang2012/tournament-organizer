@@ -1,7 +1,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUser, faPencil, faBell, faCalendarCheck, faShieldHalved, faUserShield } from '@fortawesome/free-solid-svg-icons';
 import { faFacebook, faGoogle } from '@fortawesome/free-brands-svg-icons'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuth } from '../../hooks/useAuth';
 import clsx from 'clsx';
 
@@ -29,7 +29,6 @@ const UserProfileManagement = () => {
     const [isLoading, setIsLoading] = useState(true)
     const [toast, setToast] = useState(null)
     const role = roleMeta[userData?.role] || roleMeta.USER
-    const identities = session?.user?.identities
     const currentProvider = session?.user?.identities?.reduce((latest, identity) => {
         return new Date(identity.updated_at) > new Date(latest.updated_at) ? identity : latest
     })?.provider

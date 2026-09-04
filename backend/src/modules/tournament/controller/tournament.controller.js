@@ -34,14 +34,6 @@ class TournamentController {
     } catch (err) { next(err); }
   }
 
-  //Step 4
-  async getReview(req, res, next) {
-    try {
-      const data = await service.getReviewData(req.params.id, req.auth.userId);
-      res.status(200).json({ success: true, data });
-    } catch (err) { next(err); }
-  }
-
   async publish(req, res, next) {
     try {
       const data = await service.publishTournament(req.params.id, req.auth.userId);

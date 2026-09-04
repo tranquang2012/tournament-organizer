@@ -10,15 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
     "@fortawesome/fontawesome-svg-core": "^7.2.0",
     "@fortawesome/free-brands-svg-icons": "^7.2.0",
     "@fortawesome/free-regular-svg-icons": "^7.2.0",
     "@fortawesome/free-solid-svg-icons": "^7.2.0",
     "@fortawesome/react-fontawesome": "^3.3.1",
-    "@mui/icons-material": "^9.0.1",
-    "@mui/material": "^9.0.1",
     "@supabase/supabase-js": "^2.106.1",
     "@tailwindcss/vite": "^4.2.4",
     "axios": "^1.16.0",
@@ -30,7 +26,6 @@
     "react-router-dom": "^7.15.1",
     "react-svg-pan-zoom": "^3.13.1",
     "react-tournament-brackets": "^1.0.41",
-    "sass": "^1.99.0",
     "styled-components": "^6.4.3",
     "tailwindcss": "^4.2.4"
   },
