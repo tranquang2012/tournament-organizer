@@ -8,6 +8,8 @@ import {
   faLightbulb,
   faMinus,
 } from '@fortawesome/free-solid-svg-icons'
+import axios from '../../config/apiEndpoints'
+import { getAccessToken, withAuthHeader } from '../../services/AuthService'
 
 const PREDEFINED_QUESTIONS = [
   {
@@ -32,26 +34,30 @@ const PREDEFINED_QUESTIONS = [
   },
 ]
 
-// Simulated AI responses (PLACEHODLER ONLY)
-const SIMULATED_RESPONSES = {
-  'What are the available tournament formats?':
-    'We currently support several tournament formats:\n\n• **Single Elimination** – Teams are eliminated after one loss. Fast and decisive.\n• **Double Elimination** – Teams must lose twice to be eliminated. More forgiving.\n• **Round Robin** – Every team plays every other team. Best for smaller groups.\n• **Hybrid (Group Stage + Knockout)** – Combines Round Robin groups with a knockout stage.\n\nThe best format depends on the number of teams and time available.',
+const chatErrorMessage = (error) =>
+  error?.response?.data?.error?.message
+  || error?.message
+  || 'The assistant is unavailable. Please try again.'
 
-  'What is the Hybrid tournament format and how does it work?':
-    'The **Hybrid** format combines the best of both worlds:\n\n1. **Group Stage** – Teams are divided into groups and play Round Robin within their group.\n2. **Knockout Stage** – Top teams from each group advance to a Single/Double Elimination bracket.\n\nThis is ideal for **12+ teams** as it ensures every team plays multiple matches while still having a dramatic knockout finish.',
+const toChatPayload = (history) =>
+  history
+    .filter((m) => !m.isError && (m.role === 'user' || m.role === 'assistant'))
+    .map((m) => ({ role: m.role, content: m.content }))
 
-  'What format should I use for a sport with 8 teams?':
-    'For **8 teams**, here are my recommendations:\n\n• **Single Elimination** – Only 7 matches, quick tournament (1 day)\n• **Double Elimination** – 14-15 matches, gives teams a second chance (1-2 days)\n• **Round Robin** – 28 matches, every team plays every other (2-3 days)\n\n**My recommendation:** Single or Double Elimination for time efficiency. Round Robin if fairness is the priority.',
-
-  'Can you explain how Round Robin format works?':
-    'In **Round Robin**, every participant plays against every other participant exactly once.\n\n• **Total matches** = n(n-1)/2 where n = number of teams\n• Rankings are determined by **points** (typically 3 for win, 1 for draw, 0 for loss)\n• Tiebreakers can include head-to-head record, goal difference, etc.\n\n**Best for:** 4-8 teams when fairness matters and time permits.',
-
-  'What is the difference between Single and Double Elimination?':
-    '**Single Elimination:**\n• One loss = eliminated\n• Fast, high-stakes matches\n• Total matches: n-1\n\n**Double Elimination:**\n• Teams must lose twice to be eliminated\n• Has a Winners Bracket and Losers Bracket\n• More matches, more fair\n• Total matches: 2(n-1) to 2(n-1)+1\n\nChoose **Single** for speed, **Double** for fairness.',
+const sendChat = async (history) => {
+  const token = await getAccessToken()
+  const result = await axios.post(
+    '/api/admin/chat',
+    { messages: toChatPayload(history) },
+    withAuthHeader(token)
+  )
+  return result.data
 }
 
-const DEFAULT_RESPONSE =
-  "I'm your tournament assistant! I can help you with questions about tournament formats, scheduling, and best practices. Ask me anything or choose from the suggested questions above."
+const formatDuration = (ms) => {
+  if (ms == null || Number.isNaN(ms)) return null
+  return ms >= 1000 ? `${(ms / 1000).toFixed(1)}s` : `${Math.round(ms)}ms`
+}
 
 const AdminAIChatbot = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -67,6 +73,7 @@ const AdminAIChatbot = () => {
   ])
   const [inputValue, setInputValue] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const isAskingRef = useRef(false)
   const messagesEndRef = useRef(null)
   const inputRef = useRef(null)
   const chatPanelRef = useRef(null)
@@ -126,54 +133,65 @@ const AdminAIChatbot = () => {
     }
   }, [handleMouseMove, handleMouseUp])
 
-  const simulateAIResponse = (question) => {
+  const askAssistant = async (history) => {
+    if (isAskingRef.current) return
+    isAskingRef.current = true
     setIsTyping(true)
-    const delay = 600 + Math.random() * 1000
-
-    setTimeout(() => {
-      const response = SIMULATED_RESPONSES[question] || DEFAULT_RESPONSE
+    const started = Date.now()
+    try {
+      const { reply, durationMs } = await sendChat(history)
       setMessages((prev) => [
         ...prev,
         {
           id: Date.now(),
           role: 'assistant',
-          content: response,
+          content: reply || 'I could not generate a reply. Please try again.',
           timestamp: new Date(),
+          durationMs: durationMs ?? Date.now() - started,
         },
       ])
+    } catch (err) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          id: Date.now(),
+          role: 'assistant',
+          content: chatErrorMessage(err),
+          timestamp: new Date(),
+          isError: true,
+          durationMs: Date.now() - started,
+        },
+      ])
+    } finally {
+      isAskingRef.current = false
       setIsTyping(false)
-    }, delay)
+    }
+  }
+
+  const appendUserMessage = (content) => {
+    if (!content || isAskingRef.current || isTyping) return
+    const next = [
+      ...messages,
+      {
+        id: Date.now(),
+        role: 'user',
+        content,
+        timestamp: new Date(),
+      },
+    ]
+    setMessages(next)
+    askAssistant(next)
   }
 
   const handleSend = () => {
     const trimmed = inputValue.trim()
     if (!trimmed || isTyping) return
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        role: 'user',
-        content: trimmed,
-        timestamp: new Date(),
-      },
-    ])
     setInputValue('')
-    simulateAIResponse(trimmed)
+    appendUserMessage(trimmed)
   }
 
   const handleQuickQuestion = (question) => {
-    if (isTyping) return
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now(),
-        role: 'user',
-        content: question,
-        timestamp: new Date(),
-      },
-    ])
-    simulateAIResponse(question)
+    appendUserMessage(question)
   }
 
   const handleKeyDown = (e) => {
@@ -311,30 +329,41 @@ const AdminAIChatbot = () => {
               key={msg.id}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div
-                className="max-w-[85%] px-4 py-3 text-[13px] leading-[1.6]"
-                style={{
-                  borderRadius:
-                    msg.role === 'user'
-                      ? '16px 16px 4px 16px'
-                      : '16px 16px 16px 4px',
-                  background:
-                    msg.role === 'user'
-                      ? 'linear-gradient(135deg, #2dd4a8 0%, #22c59c 100%)'
-                      : '#ffffff',
-                  color: msg.role === 'user' ? '#0a2e2b' : '#2d3748',
-                  border:
-                    msg.role === 'user'
-                      ? 'none'
-                      : '1px solid #e8ecef',
-                  fontWeight: msg.role === 'user' ? 500 : 400,
-                  boxShadow:
-                    msg.role === 'user'
-                      ? '0 2px 8px rgba(18, 56, 54, 0.2)'
-                      : '0 1px 3px rgba(0,0,0,0.04)',
-                }}
-              >
-                {formatContent(msg.content)}
+              <div className="max-w-[85%] flex flex-col">
+                <div
+                  className="px-4 py-3 text-[13px] leading-[1.6]"
+                  style={{
+                    borderRadius:
+                      msg.role === 'user'
+                        ? '16px 16px 4px 16px'
+                        : '16px 16px 16px 4px',
+                    background:
+                      msg.role === 'user'
+                        ? 'linear-gradient(135deg, #2dd4a8 0%, #22c59c 100%)'
+                        : msg.isError
+                          ? '#fff7f7'
+                          : '#ffffff',
+                    color: msg.role === 'user' ? '#0a2e2b' : '#2d3748',
+                    border:
+                      msg.role === 'user'
+                        ? 'none'
+                        : msg.isError
+                          ? '1px solid #f0c7c7'
+                          : '1px solid #e8ecef',
+                    fontWeight: msg.role === 'user' ? 500 : 400,
+                    boxShadow:
+                      msg.role === 'user'
+                        ? '0 2px 8px rgba(18, 56, 54, 0.2)'
+                        : '0 1px 3px rgba(0,0,0,0.04)',
+                  }}
+                >
+                  {formatContent(msg.content)}
+                </div>
+                {msg.durationMs != null && (
+                  <span className="mt-1 px-1 text-[10px] text-[#8aa3a1]">
+                    {formatDuration(msg.durationMs)}
+                  </span>
+                )}
               </div>
             </div>
           ))}
