@@ -69,13 +69,26 @@ const UserProfileManagement = () => {
         const file = event.target.files[0]
         if (!file) return
 
+        const previousServerUrl = userData?.avatarUrl || null
+        const previewUrl = URL.createObjectURL(file)
+        setAvatarUrl(previewUrl)
+        setIsLoading(true)
+
         try {
             const result = await uploadCurrentUserAvatar(file, accessToken)
-            await setAvatarUrl(result.data.avatarUrl)
+            const nextAvatarUrl = result?.data?.avatarUrl
+            setAvatarUrl(nextAvatarUrl)
+            URL.revokeObjectURL(previewUrl)
+            await refreshProfile()
             setToast({ type: 'success', message: 'Avatar updated successfully!' })
         } catch (error) {
             console.error('upload error:', error)
+            URL.revokeObjectURL(previewUrl)
+            setAvatarUrl(previousServerUrl)
             setToast({ type: 'error', message: 'Failed to update avatar!' })
+        } finally {
+            setIsLoading(false)
+            event.target.value = ''
         }
     }
 
@@ -94,7 +107,7 @@ const UserProfileManagement = () => {
                         <div className='flex items-center mb-5 gap-4'>
                             <div className='profile-image rounded-full h-[80px] w-[80px] md:h-[120px] md:w-[120px] flex items-center justify-center overflow-hidden shrink-0'>
                                 {avatarUrl ? (
-                                    <img src={avatarUrl} alt="avatar" className='w-full h-full object-cover' />
+                                    <img key={avatarUrl} src={avatarUrl} alt="avatar" className='w-full h-full object-cover' />
                                 ) : (
                                     <div
                                         className="w-full h-full rounded-full flex items-center justify-center text-2xl md:text-[50px] font-bold shrink-0 uppercase tracking-wide"

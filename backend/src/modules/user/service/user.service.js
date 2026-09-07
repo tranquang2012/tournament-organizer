@@ -196,7 +196,7 @@ const parseAvatarUpload = (avatarUploadDto) => {
 const uploadAvatarToSupabase = async ({ userId, accessToken, contentType, buffer }) => {
   const bucket = process.env.SUPABASE_AVATAR_BUCKET || "avatars";
   const extension = SUPPORTED_AVATAR_TYPES.get(contentType);
-  const objectPath = `${userId}/avatar.${extension}`;
+  const objectPath = `${userId}/avatar_${Date.now()}.${extension}`;
   const encodedPath = objectPath.split("/").map(encodeURIComponent).join("/");
   const uploadUrl = `${process.env.SUPABASE_URL}/storage/v1/object/${bucket}/${encodedPath}`;
 
@@ -217,7 +217,104 @@ const uploadAvatarToSupabase = async ({ userId, accessToken, contentType, buffer
     throw new AppError(`Failed to upload avatar. Storage responded with ${response.status}.`, 502);
   }
 
-  return `${process.env.SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodedPath}`;
+  return {
+    objectPath,
+    avatarUrl: `${process.env.SUPABASE_URL}/storage/v1/object/public/${bucket}/${encodedPath}`,
+  };
+};
+
+const parseAvatarObjectPath = (avatarUrl, userId) => {
+  const bucket = process.env.SUPABASE_AVATAR_BUCKET || "avatars";
+
+  if (!avatarUrl || !process.env.SUPABASE_URL) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(avatarUrl);
+    const marker = `/storage/v1/object/public/${bucket}/`;
+    const markerIndex = parsed.pathname.indexOf(marker);
+
+    if (markerIndex === -1) {
+      return null;
+    }
+
+    const objectPath = decodeURIComponent(parsed.pathname.slice(markerIndex + marker.length));
+
+    if (!objectPath.startsWith(`${userId}/`)) {
+      return null;
+    }
+
+    return objectPath;
+  } catch {
+    return null;
+  }
+};
+
+const deleteAvatarObjects = async ({ accessToken, objectPaths }) => {
+  const bucket = process.env.SUPABASE_AVATAR_BUCKET || "avatars";
+
+  if (!objectPaths.length) {
+    return;
+  }
+
+  const response = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/${bucket}`, {
+    method: "DELETE",
+    headers: {
+      apikey: process.env.SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ prefixes: objectPaths }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error("Supabase avatar cleanup failed:", errorText);
+  }
+};
+
+const cleanupOldAvatars = async ({ userId, accessToken, keepObjectPath, previousObjectPath }) => {
+  const bucket = process.env.SUPABASE_AVATAR_BUCKET || "avatars";
+  const pathsToDelete = new Set();
+
+  if (previousObjectPath && previousObjectPath !== keepObjectPath) {
+    pathsToDelete.add(previousObjectPath);
+  }
+
+  const listResponse = await fetch(`${process.env.SUPABASE_URL}/storage/v1/object/list/${bucket}`, {
+    method: "POST",
+    headers: {
+      apikey: process.env.SUPABASE_ANON_KEY,
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ prefix: `${userId}/`, limit: 100 }),
+  });
+
+  if (listResponse.ok) {
+    const files = await listResponse.json();
+    const entries = Array.isArray(files) ? files : [];
+
+    for (const file of entries) {
+      const fileName = file?.name;
+
+      if (!fileName || fileName.endsWith("/")) {
+        continue;
+      }
+
+      const objectPath = fileName.includes("/") ? fileName : `${userId}/${fileName}`;
+
+      if (objectPath !== keepObjectPath) {
+        pathsToDelete.add(objectPath);
+      }
+    }
+  }
+
+  await deleteAvatarObjects({
+    accessToken,
+    objectPaths: [...pathsToDelete],
+  });
 };
 
 const uploadCurrentUserAvatar = async ({ userId, accessToken, avatarUploadDto }) => {
@@ -235,7 +332,9 @@ const uploadCurrentUserAvatar = async ({ userId, accessToken, avatarUploadDto })
     throw new AppError("Avatar image must be smaller than 2 MB.", 400);
   }
 
-  const avatarUrl = await uploadAvatarToSupabase({
+  const existingUser = await userRepository.findById(userId);
+  const previousObjectPath = parseAvatarObjectPath(existingUser?.avatarUrl, userId);
+  const { objectPath, avatarUrl } = await uploadAvatarToSupabase({
     userId,
     accessToken,
     contentType,
@@ -247,6 +346,13 @@ const uploadCurrentUserAvatar = async ({ userId, accessToken, avatarUploadDto })
   if (!user) {
     throw new AppError("User profile not found.", 404);
   }
+
+  await cleanupOldAvatars({
+    userId,
+    accessToken,
+    keepObjectPath: objectPath,
+    previousObjectPath,
+  }).catch(() => {});
 
   return toUserProfileDto(user);
 };
