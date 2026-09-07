@@ -499,7 +499,11 @@ const TournamentPage = () => {
       name: r.comp_name,
       logo: r.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo1),
       win: r.wins,
-      lose: r.losses
+      lose: r.losses,
+      wins: r.wins,
+      draws: r.draws,
+      losses: r.losses,
+      points: r.points,
     }))
   })) || [];
   const isHybridScoring = tournament.format === 'hybrid' && tournament.first_stage_format === 'round_scoring';
@@ -546,26 +550,26 @@ const TournamentPage = () => {
   );
 
   const renderScoringStandingsTable = (standingsRows) => (
-    <div className='w-full overflow-x-auto'>
-    <div className='w-full min-w-[320px] flex flex-col rounded-[15px] border border-[#123836]/20 shadow-sm text-xs md:text-[18px]'>
+    <div className='w-full min-w-0 overflow-x-auto'>
+    <div className='w-full min-w-[32rem] flex flex-col rounded-[15px] border border-[#123836]/20 shadow-sm text-xs md:text-[18px]'>
       <div className='flex bg-[#123836] text-white px-[1%] py-[1%] font-semibold text-center'>
-        <span className='w-[10%] border-r border-gray-300'>RANK</span>
-        <span className='w-[60%] border-r border-gray-300'>PARTICIPANTS</span>
-        <span className='w-[15%] border-r border-gray-300'>SCORE</span>
-        <span className='w-[15%]'>STATUS</span>
+        <span className='w-[10%] min-w-[3.5rem] shrink-0 border-r border-gray-300'>RANK</span>
+        <span className='w-[60%] min-w-[8rem] border-r border-gray-300'>PARTICIPANTS</span>
+        <span className='w-[15%] min-w-[4.5rem] shrink-0 whitespace-nowrap border-r border-gray-300'>SCORE</span>
+        <span className='w-[15%] min-w-[6.5rem] shrink-0 whitespace-nowrap'>STATUS</span>
       </div>
       {standingsRows.map((row, index) => (
         <div
           key={index}
           className={`flex mx-[1%] py-[1%] text-center items-center border-t border-gray-300 ${row.status === 'eliminated' ? 'text-gray-400' : 'font-semibold'}`}
         >
-          <span className='w-[10%]'>{row.rank}</span>
-          <div className='w-[60%] flex gap-2 text-start items-center pl-[1%] min-w-0'>
+          <span className='w-[10%] min-w-[3.5rem] shrink-0'>{row.rank}</span>
+          <div className='w-[60%] min-w-0 flex gap-2 text-start items-center pl-[1%]'>
             <img src={row.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo1)} className={`h-4 w-4 md:h-7 md:w-7 object-contain shrink-0 ${row.status === 'eliminated' && 'opacity-40'}`} />
             <span className='truncate'>{row.comp_name}</span>
           </div>
-          <span className='w-[15%]'>{row.score}</span>
-          <span className={`w-[15%] uppercase ${row.status === 'active' ? 'text-green-600' : 'text-red-500'}`}>{row.status}</span>
+          <span className='w-[15%] min-w-[4.5rem] shrink-0 whitespace-nowrap'>{row.score}</span>
+          <span className={`w-[15%] min-w-[6.5rem] shrink-0 whitespace-nowrap uppercase ${row.status === 'active' ? 'text-green-600' : 'text-red-500'}`}>{row.status}</span>
         </div>
       ))}
     </div>
@@ -624,7 +628,7 @@ const TournamentPage = () => {
         </div>
       </div>
 
-      <div className='flex mx-[5%] md:mx-[10%] py-[1%] gap-5 border-b border-gray-300'>
+      <div className='flex flex-wrap mx-[5%] md:mx-[10%] py-[1%] gap-2 md:gap-5 border-b border-gray-300'>
         {(tournament.format === 'hybrid'
           ? [
             { id: 'group_stage', name: isHybridScoring ? 'Scoring Lobbies' : 'Group Stage' },
@@ -674,9 +678,14 @@ const TournamentPage = () => {
             <div className='flex flex-col mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10 border-b border-gray-300'>
               <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Group Stage</span>
               {groups.length > 0 ? (
-                <div className='grid grid-cols-1 md:grid-cols-2 gap-10 items-start'>
+                <div className='grid grid-cols-1 xl:grid-cols-2 gap-10 items-start'>
                   {groups.map((group) => (
-                    <LeaderboardTable key={group.id} group={group} advanceCount={tournament.advance_per_group} />
+                    <LeaderboardTable
+                      key={group.id}
+                      group={group}
+                      advanceCount={tournament.advance_per_group}
+                      standingsMode={rankingsData?.standings_mode}
+                    />
                   ))}
                 </div>
               ) : (
@@ -695,30 +704,7 @@ const TournamentPage = () => {
                   <div className="w-8 h-8 border-4 border-slate-200 border-t-[#123836] rounded-full animate-spin" />
                 </div>
               ) : roundScoringData && roundScoringData.standings && roundScoringData.standings.length > 0 ? (
-                <div className='w-full overflow-x-auto'>
-                <div className='w-full min-w-[320px] flex flex-col rounded-[15px] border border-[#123836]/20 shadow-sm text-xs md:text-[18px]'>
-                  <div className='flex bg-[#123836] text-white px-[1%] py-[1%] font-semibold text-center'>
-                    <span className='w-[10%] border-r border-gray-300'>RANK</span>
-                    <span className='w-[60%] border-r border-gray-300'>PARTICIPANTS</span>
-                    <span className='w-[15%] border-r border-gray-300'>SCORE</span>
-                    <span className='w-[15%]'>STATUS</span>
-                  </div>
-                  {roundScoringData.standings.map((row, index) => (
-                    <div
-                      key={index}
-                      className={`flex mx-[1%] py-[1%] text-center items-center border-t border-gray-300 ${row.status === 'eliminated' ? 'text-gray-400' : 'font-semibold'}`}
-                    >
-                      <span className='w-[10%]'>{row.rank}</span>
-                      <div className='w-[60%] flex gap-2 text-start items-center pl-[1%] min-w-0'>
-                        <img src={row.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo1)} className={`h-4 w-4 md:h-7 md:w-7 object-contain shrink-0 ${row.status === 'eliminated' && 'opacity-40'}`} />
-                        <span className='truncate'>{row.comp_name}</span>
-                      </div>
-                      <span className='w-[15%]'>{row.score}</span>
-                      <span className={`w-[15%] uppercase ${row.status === 'active' ? 'text-green-600' : 'text-red-500'}`}>{row.status}</span>
-                    </div>
-                  ))}
-                </div>
-                </div>
+                renderScoringStandingsTable(roundScoringData.standings)
               ) : (
                 <div className='flex flex-col py-[5%] items-center justify-center text-gray-500'>
                   <span>No standings available yet.</span>
@@ -757,9 +743,14 @@ const TournamentPage = () => {
               </div>
             )
           ) : groups.length > 0 ? (
-            <div className='grid grid-cols-1 md:grid-cols-2 gap-10 items-start'>
+            <div className='grid grid-cols-1 xl:grid-cols-2 gap-10 items-start'>
               {groups.map((group) => (
-                <LeaderboardTable key={group.id} group={group} advanceCount={tournament.advance_per_group} />
+                <LeaderboardTable
+                  key={group.id}
+                  group={group}
+                  advanceCount={tournament.advance_per_group}
+                  standingsMode={rankingsData?.standings_mode}
+                />
               ))}
             </div>
           ) : (
@@ -808,7 +799,7 @@ const TournamentPage = () => {
           <span className='text-[#123836] font-semibold text-[18px] md:text-[32px]'>Matches List</span>
           {tournament.format === 'hybrid' ? (
             <div>
-              <div className='flex gap-4 mb-6'>
+              <div className='flex flex-wrap gap-2 md:gap-4 mb-6'>
                 <button
                   onClick={() => setHybridMatchesTab('group')}
                   className={`px-4 py-1.5 rounded-[15px] text-[13px] md:text-[18px] font-semibold transition-colors cursor-pointer ${hybridMatchesTab === 'group'
@@ -909,15 +900,15 @@ const TournamentPage = () => {
         </div>
       )}
 
-      <div className='flex flex-col md:flex-row mx-[5%] md:mx-[10%] py-[1%] gap-5 md:gap-10'>
-        <div className='flex flex-col w-full md:w-1/2 md:pr-[1%] gap-5 md:border-r border-gray-300'>
+      <div className='flex flex-col xl:flex-row mx-[5%] md:mx-[10%] py-[1%] gap-5 xl:gap-10'>
+        <div className='flex flex-col w-full xl:w-1/2 min-w-0 xl:pr-[1%] gap-5 xl:border-r border-gray-300'>
           <span className='text-[#123836] font-semibold text-[18px] md:text-[32px] py-[1%]'>Tournament Participants</span>
           {loadingParticipants ? (
             <div className="flex justify-center items-center py-10">
               <div className="w-8 h-8 border-4 border-slate-200 border-t-[#123836] rounded-full animate-spin" />
             </div>
           ) : !isIndividual ? (
-            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 md:gap-10 items-start'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-2 gap-5 md:gap-10 items-start'>
               {participants.map((team) => (
                 <TeamCard key={team.id} team={team} />
               ))}
@@ -926,7 +917,7 @@ const TournamentPage = () => {
             <ParticipantTable participants={participants} />
           )}
         </div>
-        <div className='flex flex-col w-full md:w-1/2 md:pr-[1%] gap-5'>
+        <div className='flex flex-col w-full xl:w-1/2 min-w-0 gap-5'>
           <span className='text-[#123836] font-semibold text-[18px] md:text-[32px] py-[1%]'>Tournament Recent Matches</span>
           {loadingMatches ? (
             <div className="flex justify-center items-center py-10">
@@ -954,7 +945,7 @@ const TournamentPage = () => {
               <span className='text-[14px] text-gray-400'>No recent matches.</span>
             )
           ) : recentMatchesList.length > 0 ? (
-            <div className='grid grid-cols-1 sm:grid-cols-2 gap-5 md:gap-10 items-start'>
+            <div className='grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2 gap-5 md:gap-10 items-start'>
               {recentMatchesList.slice(0, 8).map((match) => (
                 <MatchCard key={match.id} match={match}/>
               ))}

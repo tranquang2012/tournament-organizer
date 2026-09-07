@@ -177,6 +177,68 @@ test('ranks only completed round-robin results and applies deterministic group t
   assert.equal(group.rankings[2].played, 1);
 });
 
+test('football standings award 3/1/0 table points instead of goal totals', async () => {
+  const service = createService({
+    tournament: tournament({ sp_id: 1, advance_per_group: 1 }),
+    competitors: competitors.slice(0, 3),
+    matches: [
+      match({
+        match_id: 'football-win',
+        score1: 5,
+        score2: 1,
+        result1: 'win',
+        result2: 'loss',
+        winning_competitor_id: COMP_A,
+      }),
+      match({
+        match_id: 'football-draw',
+        competitor2_id: COMP_C,
+        score1: 2,
+        score2: 2,
+        result1: 'draw',
+        result2: 'draw',
+        winning_competitor_id: null,
+        is_draw: true,
+      }),
+    ],
+  });
+
+  const result = await service.getTournamentRankings(TOUR_ID);
+  const alpha = result.groups[0].rankings.find(row => row.comp_id === COMP_A);
+  const charlie = result.groups[0].rankings.find(row => row.comp_id === COMP_C);
+  const beta = result.groups[0].rankings.find(row => row.comp_id === COMP_B);
+
+  assert.equal(result.standings_mode, 'league_table');
+  assert.deepEqual(result.ranking_points, { win: 3, draw: 1, loss: 0 });
+  assert.equal(alpha.points, 4);
+  assert.equal(alpha.score_for, 7);
+  assert.equal(charlie.points, 1);
+  assert.equal(charlie.draws, 1);
+  assert.equal(beta.points, 0);
+  assert.equal(beta.losses, 1);
+});
+
+test('basketball standings keep win-loss display mode and do not expose football table points', async () => {
+  const service = createService({
+    tournament: tournament({ sp_id: 2, advance_per_group: 1 }),
+    competitors: competitors.slice(0, 2),
+    matches: [
+      match({
+        score1: 98,
+        score2: 90,
+        winning_competitor_id: COMP_A,
+      }),
+    ],
+  });
+
+  const result = await service.getTournamentRankings(TOUR_ID);
+
+  assert.equal(result.standings_mode, null);
+  assert.equal(result.ranking_points, undefined);
+  assert.equal(result.groups[0].rankings[0].points, 3);
+  assert.equal(result.groups[0].rankings[0].score_for, 98);
+});
+
 test('breaks equal round-robin records by competitor name without advancing extra competitors', async () => {
   const service = createService({
     tournament: tournament({ advance_per_group: 1 }),

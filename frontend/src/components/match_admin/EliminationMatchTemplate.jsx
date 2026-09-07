@@ -175,7 +175,7 @@ const EliminationMatchTemplate = ({ tournament, stage }) => {
                  {statusBadge}
               </div>
             </div>
-            <div className="flex items-center gap-6 text-sm font-medium text-slate-500">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-slate-500">
               <span className="flex items-center gap-2">
                 <FontAwesomeIcon icon={faTrophy} className="text-slate-400" />
                 {sportName} - {formatName}
@@ -229,7 +229,7 @@ const EliminationMatchTemplate = ({ tournament, stage }) => {
       </div>
 
       {/* 2. Tab Bar */}
-      <div className="flex items-center gap-1 mb-6 bg-white rounded-xl border border-slate-200 p-1 self-start w-fit shadow-sm">
+      <div className="flex items-center gap-1 mb-6 bg-white rounded-xl border border-slate-200 p-1 self-start w-fit max-w-full overflow-x-auto shadow-sm">
         {TABS.map((tab) => (
           <button
             key={tab.id}

@@ -19,6 +19,7 @@ const RoundRobinMatchTemplate = ({ tournament, stage }) => {
   const [roundFilter, setRoundFilter] = useState('All Rounds');
   const [matches, setMatches] = useState([]);
   const [standingsGroups, setStandingsGroups] = useState([]);
+  const [standingsMode, setStandingsMode] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [refreshTrigger, setRefreshTrigger] = useState(0);
 
@@ -90,12 +91,15 @@ const RoundRobinMatchTemplate = ({ tournament, stage }) => {
               team: { name: r.comp_name, logo: r.comp_logo },
               played,
               wins: r.wins || 0,
+              draws: r.draws || 0,
               losses: r.losses || 0,
+              points: r.points || 0,
               winRate: played > 0 ? `${Math.round((r.wins / played) * 100)}%` : '0%',
             };
           }),
         }));
         setStandingsGroups(mappedGroups);
+        setStandingsMode(rankData?.standings_mode || null);
 
       } catch (err) {
         console.error('Failed to fetch round robin data:', err);
@@ -202,7 +206,7 @@ const RoundRobinMatchTemplate = ({ tournament, stage }) => {
                  {statusBadge}
               </div>
             </div>
-            <div className="flex items-center gap-6 text-sm font-medium text-slate-500">
+            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm font-medium text-slate-500">
               <span className="flex items-center gap-2">
                 <FontAwesomeIcon icon={faTrophy} className="text-slate-400" />
                 {sportName} - {formatName}
@@ -256,7 +260,7 @@ const RoundRobinMatchTemplate = ({ tournament, stage }) => {
       </div>
 
       {/* 2. Tab Bar */}
-      <div className="flex items-center gap-1 mb-6 bg-white rounded-xl border border-slate-200 p-1 self-start w-fit shadow-sm">
+      <div className="flex items-center gap-1 mb-6 bg-white rounded-xl border border-slate-200 p-1 self-start w-fit max-w-full overflow-x-auto shadow-sm">
         {TABS.map((tab) => (
           <button
             key={tab.id}
@@ -361,6 +365,7 @@ const RoundRobinMatchTemplate = ({ tournament, stage }) => {
                   key={group.groupName}
                   title={standingsGroups.length > 1 ? `${group.groupName} Standings` : 'Group Standings'}
                   standings={group.standings}
+                  standingsMode={standingsMode}
                   totalRoundRobinMatches={
                     matches.filter((m) => !group.groupName || m.groupName === group.groupName).length
                   }

@@ -32,6 +32,7 @@ router.patch('/:id/sport-participants',       ctrl.saveSportAndParticipants.bind
 //Step 3
 router.patch('/:id/format-config',            ctrl.saveFormatConfig.bind(ctrl));
 
+router.get('/:id/review',                     ctrl.getReview.bind(ctrl));
 router.patch('/:id/publish',                   ctrl.publish.bind(ctrl));
 
 //Discard Draft When Leave Page

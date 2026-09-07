@@ -14,6 +14,34 @@ const FORMAT_TYPES = {
   hybrid: 'hybrid',
 };
 
+const DEFAULT_RANKING_POINTS = Object.freeze({ win: 3, draw: 1, loss: 0 });
+
+const getRankingPoints = (spId) => {
+  const configured = getSportRules(spId)?.ranking_points;
+  if (!configured) return DEFAULT_RANKING_POINTS;
+  const win = Number(configured.win);
+  const draw = Number(configured.draw);
+  const loss = Number(configured.loss);
+  return {
+    win: Number.isFinite(win) ? win : DEFAULT_RANKING_POINTS.win,
+    draw: Number.isFinite(draw) ? draw : DEFAULT_RANKING_POINTS.draw,
+    loss: Number.isFinite(loss) ? loss : DEFAULT_RANKING_POINTS.loss,
+  };
+};
+
+const getStandingsMode = (spId) => getSportRules(spId)?.standings_mode || null;
+
+const attachStandingsMeta = (response, tournament) => {
+  const standingsMode = getStandingsMode(tournament.sp_id);
+  return {
+    ...response,
+    standings_mode: standingsMode,
+    ...(standingsMode === 'league_table'
+      ? { ranking_points: getRankingPoints(tournament.sp_id) }
+      : {}),
+  };
+};
+
 const getParticipantType = (tournament, competitors) => {
   if (['individual', 'team'].includes(tournament.participant_type)) {
     return tournament.participant_type;
@@ -201,7 +229,7 @@ const getResult = (match) => {
   return null;
 };
 
-const applyMatch = (records, match) => {
+const applyMatch = (records, match, rankingPoints = DEFAULT_RANKING_POINTS) => {
   const comp1 = records.get(match.competitor1_id);
   const comp2 = records.get(match.competitor2_id);
   const result = getResult(match);
@@ -220,14 +248,15 @@ const applyMatch = (records, match) => {
   if (result.type === 'draw') {
     comp1.draws += 1;
     comp2.draws += 1;
-    comp1.points += 1;
-    comp2.points += 1;
+    comp1.points += rankingPoints.draw;
+    comp2.points += rankingPoints.draw;
   } else {
     const winner = result.winnerId === comp1.comp_id ? comp1 : comp2;
     const loser = winner === comp1 ? comp2 : comp1;
     winner.wins += 1;
-    winner.points += 3;
+    winner.points += rankingPoints.win;
     loser.losses += 1;
+    loser.points += rankingPoints.loss;
   }
 
   return true;
@@ -284,21 +313,21 @@ const assignCompetitionRanks = (records, metricSelector, { unrankPending = true 
   });
 };
 
-const buildRecords = (competitors, matches) => {
+const buildRecords = (competitors, matches, rankingPoints = DEFAULT_RANKING_POINTS) => {
   const records = new Map(competitors.map(competitor => [
     competitor.comp_id,
     createRecord(competitor),
   ]));
 
   for (const match of matches) {
-    applyMatch(records, match);
+    applyMatch(records, match, rankingPoints);
   }
 
   return records;
 };
 
-const rankStandings = (competitors, matches, { includeAll = true } = {}) => {
-  const records = buildRecords(competitors, matches);
+const rankStandings = (competitors, matches, { includeAll = true, rankingPoints = DEFAULT_RANKING_POINTS } = {}) => {
+  const records = buildRecords(competitors, matches, rankingPoints);
   let standings = Array.from(records.values())
     .map(finalizeRecord)
     .sort(compareStandings);
@@ -329,8 +358,8 @@ const compareGroupStandings = (a, b) => (
   a.comp_id.localeCompare(b.comp_id)
 );
 
-const rankGroupStandings = (competitors, matches) => {
-  const records = Array.from(buildRecords(competitors, matches).values())
+const rankGroupStandings = (competitors, matches, rankingPoints = DEFAULT_RANKING_POINTS) => {
+  const records = Array.from(buildRecords(competitors, matches, rankingPoints).values())
     .map(finalizeRecord)
     .map(record => ({
       ...record,
@@ -356,7 +385,7 @@ const rankGroupStandings = (competitors, matches) => {
     const directMatches = matches.filter(match => (
       tiedIds.has(match.competitor1_id) && tiedIds.has(match.competitor2_id)
     ));
-    const headToHead = buildRecords(tiedCompetitors, directMatches);
+    const headToHead = buildRecords(tiedCompetitors, directMatches, rankingPoints);
 
     for (const record of tiedRecords) {
       const directRecord = finalizeRecord(headToHead.get(record.comp_id));
@@ -381,7 +410,7 @@ const rankGroupStandings = (competitors, matches) => {
   return [...ranked, ...pending];
 };
 
-const buildGroupStandings = (competitors, matches, advancePerGroup) => {
+const buildGroupStandings = (competitors, matches, advancePerGroup, rankingPoints = DEFAULT_RANKING_POINTS) => {
   const competitorMap = new Map(competitors.map(c => [c.comp_id, c]));
   const groupedMatches = new Map();
 
@@ -402,7 +431,7 @@ const buildGroupStandings = (competitors, matches, advancePerGroup) => {
 
       const groupCompetitors = Array.from(groupCompetitorIds)
         .map(compId => competitorMap.get(compId));
-      const rankings = rankGroupStandings(groupCompetitors, groupMatches)
+      const rankings = rankGroupStandings(groupCompetitors, groupMatches, rankingPoints)
         .map(record => ({
           ...record,
           group_name: groupName,
@@ -475,10 +504,10 @@ const compareElimination = (a, b) => {
   return a.comp_name.localeCompare(b.comp_name) || a.comp_id.localeCompare(b.comp_id);
 };
 
-const rankElimination = (competitors, matches, format, { includeAll = true } = {}) => {
+const rankElimination = (competitors, matches, format, { includeAll = true, rankingPoints = DEFAULT_RANKING_POINTS } = {}) => {
   const championId = getChampionId(format, matches);
   const lossLimit = format === 'double_elimination' ? 2 : 1;
-  let rankings = rankStandings(competitors, matches, { includeAll })
+  let rankings = rankStandings(competitors, matches, { includeAll, rankingPoints })
     .map(record => {
       let status = 'pending';
       if (record.comp_id === championId) status = 'champion';
@@ -573,7 +602,10 @@ class TournamentRankingService {
 
     if (tournament.tour_format === 'hybrid') {
       const response = this._buildHybridResponse(tournament, competitors, matches, state);
-      return decorateRankingResponse(applyRankingFilters(response, filters), participantType);
+      return decorateRankingResponse(
+        applyRankingFilters(attachStandingsMeta(response, tournament), filters),
+        participantType
+      );
     }
 
     const stage = tournament.tour_format || null;
@@ -595,7 +627,10 @@ class TournamentRankingService {
       groups: stageResponse.groups,
       stages: stage ? [stageResponse] : [],
     };
-    return decorateRankingResponse(applyRankingFilters(response, filters), participantType);
+    return decorateRankingResponse(
+      applyRankingFilters(attachStandingsMeta(response, tournament), filters),
+      participantType
+    );
   }
 
   _buildHybridResponse(tournament, competitors, matches, state) {
@@ -617,7 +652,9 @@ class TournamentRankingService {
     const currentStageMap = new Map(
       (currentStageResponse?.rankings || []).map(record => [record.comp_id, record])
     );
-    const overallRankings = rankStandings(competitors, matches)
+    const overallRankings = rankStandings(competitors, matches, {
+      rankingPoints: getRankingPoints(tournament.sp_id),
+    })
       .map(record => {
         const reachedStageTwo = matches.some(match => (
           match.stage === 'stage_2' &&
@@ -679,6 +716,7 @@ class TournamentRankingService {
     const stageCompetitors = tournament.tour_format === 'hybrid' && stage === 'stage_2'
       ? competitors.filter(competitor => participantIds.has(competitor.comp_id))
       : competitors;
+    const rankingPoints = getRankingPoints(tournament.sp_id);
     const state = getTournamentState(stageCompetitors, matches);
 
     if (format === 'round_scoring') {
@@ -699,7 +737,8 @@ class TournamentRankingService {
       const groups = buildGroupStandings(
         stageCompetitors,
         matches,
-        tournament.advance_per_group
+        tournament.advance_per_group,
+        rankingPoints
       );
       return {
         stage,
@@ -707,7 +746,7 @@ class TournamentRankingService {
         state,
         rankings: groups.length > 0
           ? groups.flatMap(group => group.rankings)
-          : rankStandings(stageCompetitors, matches),
+          : rankStandings(stageCompetitors, matches, { rankingPoints }),
         groups,
       };
     }
@@ -717,7 +756,7 @@ class TournamentRankingService {
         stage,
         format,
         state,
-        rankings: rankElimination(stageCompetitors, matches, format),
+        rankings: rankElimination(stageCompetitors, matches, format, { rankingPoints }),
         groups: [],
       };
     }
@@ -726,7 +765,7 @@ class TournamentRankingService {
       stage,
       format,
       state,
-      rankings: rankStandings(stageCompetitors, matches),
+      rankings: rankStandings(stageCompetitors, matches, { rankingPoints }),
       groups: [],
     };
   }

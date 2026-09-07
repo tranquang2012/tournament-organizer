@@ -30,3 +30,9 @@ export const eSports = [
 ]
 
 export const allSports = [...commonSports, ...eSports]
+
+export const FOOTBALL_SPORT_ID = 1
+export const LEAGUE_TABLE_STANDINGS = 'league_table'
+
+export const isLeagueTableStandings = (standingsMode) =>
+  standingsMode === LEAGUE_TABLE_STANDINGS

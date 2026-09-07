@@ -28,7 +28,7 @@ const TopNavBar = () => {
   return (
     <div className='sticky top-0 bg-white h-14 md:h-[80px] w-full px-3 md:px-[3%] flex items-center z-50 shadow-sm'>
       <div className='w-full h-full flex items-center font-[Poppins,sans-serif]'>
-        <div className='flex items-center gap-2 md:gap-0 md:w-[25%] shrink-0'>
+        <div className='flex items-center gap-2 md:gap-0 shrink-0 xl:w-[25%]'>
           <FontAwesomeIcon
             icon={faBars}
             className='text-xl md:text-[30px] cursor-pointer shrink-0'
@@ -37,11 +37,11 @@ const TopNavBar = () => {
           <img
             src={logo}
             alt="logo"
-            className='h-10 md:h-auto max-w-[120px] md:max-w-none md:w-[50%] max-h-[60px] md:max-h-[80px] object-contain cursor-pointer'
+            className='h-10 md:h-auto max-w-[120px] md:max-w-none xl:w-[50%] max-h-[60px] md:max-h-[80px] object-contain cursor-pointer'
             onClick={() => navigate('/')}
           />
         </div>
-        <div className='hidden md:flex w-[50%] justify-between items-center'>
+        <div className='hidden xl:flex w-[50%] justify-between items-center'>
           <div className='text-[18px] text-[#123826]'>
             <div><b>Sports</b></div>
             <div className='font-medium text-[12px]'>Opportunities to explore sports world</div>
@@ -55,14 +55,14 @@ const TopNavBar = () => {
             <div className='font-medium text-[12px]'>Watching many thrilling matches</div>
           </div>
         </div>
-        <div className='hidden md:flex w-[25%] justify-end items-center'>
-          <div className='flex items-center justify-center mx-[15%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'>
+        <div className='hidden md:flex ml-auto xl:w-[25%] justify-end items-center gap-2'>
+          <div className='flex items-center justify-center cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'>
             <FontAwesomeIcon icon={faHeadset} className='text-[28px]' />
             <span className='text-[12px] text-[#123826] ml-1'>Support</span>
           </div>
 
           <div
-            className='flex flex-col items-center w-[26%] cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'
+            className='flex flex-col items-center cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'
             onClick={() => navigate('/account-management')}
           >
             <FontAwesomeIcon icon={faUser} className='text-[28px]' />

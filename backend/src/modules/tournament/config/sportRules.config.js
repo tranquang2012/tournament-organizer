@@ -22,6 +22,8 @@ const SPORT_RULES = {
     sport_name:        'Football',
     participant_types: ['team'],
     formats:           ALL_EXCEPT_ROUND_SCORING,
+    standings_mode:    'league_table',
+    ranking_points:    { win: 3, draw: 1, loss: 0 },
   },
   2: {
     sport_name:        'Basketball',
