@@ -24,9 +24,11 @@ test('SYSTEM_PROMPT is built once at module load', () => {
 
 test('prompt has ALLOWED and SUGGESTED headers and required instructions', () => {
   const prompt = buildSystemPrompt();
+  assert.match(prompt, /^You are the Tournament Organizer assistant\./m);
+  assert.match(prompt, /If the user asks anything else, refuse in one or two sentences/);
+  assert.match(prompt, /Do not answer the off-topic question at all/);
   assert.match(prompt, /^ALLOWED \(enforced by the app\)/m);
   assert.match(prompt, /^SUGGESTED \(guidance, not enforced\)/m);
-  assert.match(prompt, /You advise on sports, formats, participant counts, hybrid settings, and the four wizard steps/);
   assert.match(prompt, /You cannot fill in or submit the form\. Never say you have set, selected, or saved anything\./);
   assert.match(prompt, /If a specific value isn't in ALLOWED or SUGGESTED above, say you're not certain rather than guessing\./);
   assert.match(prompt, /When recommending from SUGGESTED, say it is a suggestion\./);

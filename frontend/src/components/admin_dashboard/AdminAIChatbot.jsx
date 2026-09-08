@@ -41,7 +41,7 @@ const chatErrorMessage = (error) =>
 
 const toChatPayload = (history) =>
   history
-    .filter((m) => !m.isError && (m.role === 'user' || m.role === 'assistant'))
+    .filter((m) => !m.isError && !m.isGreeting && (m.role === 'user' || m.role === 'assistant'))
     .map((m) => ({ role: m.role, content: m.content }))
 
 const sendChat = async (history) => {
@@ -67,7 +67,8 @@ const AdminAIChatbot = () => {
       id: 1,
       role: 'assistant',
       content:
-        "Hi! I'm your Tournament AI Assistant. I can help you understand tournament formats, suggest the best setup for your needs, and answer questions about organizing tournaments.\n\nFeel free to ask anything or pick a question below!",
+        "Hi! I'm your Tournament AI Assistant. I can help you understand tournament formats, suggest the best setup for your needs, and answer questions about organizing tournaments.\n\nAsk about tournament setup or pick a question below!",
+      isGreeting: true,
       timestamp: new Date(),
     },
   ])
