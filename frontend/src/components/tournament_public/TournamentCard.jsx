@@ -15,7 +15,7 @@ const TournamentCard = ({ tournament, isFavorite, onFavoriteChange }) => {
                 onClick={() => navigate(`/tournaments/${tournamentId}`, { state: { tournament } })}
             >
                 <img src={tournament.image || banner1} alt={tournament.name} className='w-[45%] sm:w-[50%] h-[130px] md:h-[150px] object-cover object-center rounded-tl-lg rounded-bl-lg shrink-0' />
-                <div className='flex flex-col flex-1 min-w-0 py-2 pr-1'>
+                <div className='flex flex-col flex-1 min-w-0 py-2 pl-3 pr-1 md:pl-4'>
                     <div className='flex flex-col'>
                         <span className='text-sm md:text-[20px] text-[#123836] font-semibold line-clamp-2'>{tournament.name}</span>
                         <span className='text-[10px] md:text-[13px] text-gray-500'>Start Date: {tournament.startDate}</span>
