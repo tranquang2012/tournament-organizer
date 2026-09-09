@@ -283,11 +283,11 @@ const SportsPage = () => {
   return (
     <div>
       <TopLoadingBar isLoading={isLoading} />
-      <div className='h-40 md:h-auto md:aspect-[3/1] md:max-h-[480px] w-full overflow-hidden bg-[#123836]'>
+      <div className='relative w-full overflow-hidden bg-[#123836]'>
         <img
           src={sportInfo?.data?.banner}
           alt={id}
-          className='h-full w-full object-cover object-center'
+          className='block w-full h-auto'
           onLoad={() => setImageLoaded(true)}
         />
       </div>
