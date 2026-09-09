@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { SingleEliminationBracket, DoubleEliminationBracket, SVGViewer } from 'react-tournament-brackets'
+import { SingleEliminationBracket, DoubleEliminationBracket } from 'react-tournament-brackets'
 
 import logo1 from '../../assets/defaultTeamLogos/logo1.jpg'
 import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
@@ -7,37 +7,33 @@ import trophy from '../../assets/trophy.png'
 
 const EMPTY_DOUBLE = { upper: [], lower: [] }
 
-const useWindowSize = () => {
-    const [size, setSize] = useState({ width: window.innerWidth, height: window.innerHeight })
-    useEffect(() => {
-        const handler = () => setSize({ width: window.innerWidth, height: window.innerHeight })
-        window.addEventListener('resize', handler)
-        return () => window.removeEventListener('resize', handler)
-    }, [])
-    return size
-}
-
+// WebKit paints foreignObject content at the root SVG origin as soon as that
+// content creates a render layer, which stacks every match at the top-left on
+// iOS. Nothing in this card may use position, opacity, transform or transition;
+// losing sides are dimmed with colour alpha instead. See webkit.org bug 23113.
 const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyClick, onMouseEnter, onMouseLeave }) => {
     const hasResult = match.state === 'DONE'
+    const topLost = hasResult && !topWon
+    const bottomLost = hasResult && !bottomWon
 
     return (
-        <div className="w-full h-full flex flex-col justify-center relative">
-            <div className="absolute -top-1.5 left-0 right-0 flex items-center justify-between px-1">
+        <div className="w-full h-full flex flex-col justify-center">
+            <div className="flex items-center justify-between px-1 pb-0.5">
                 <span className="text-[13px] text-[#123836] font-medium ">{match.name}</span>
                 <span className="text-[13px] text-gray-400">{match.startTime}</span>
             </div>
             <div className="flex flex-col border border-gray-300 rounded-[5px] shadow-md">
-                <div className={`flex items-center cursor-pointer hover:bg-gray-50 transition-opacity h-[50%] border-b border-gray-300
-                    ${hasResult && !topWon ? 'opacity-40' : 'opacity-100'}`}
+                <div className={`flex items-center cursor-pointer hover:bg-gray-50 border-b border-gray-300
+                    ${topLost ? 'bg-gray-50' : ''}`}
                     onClick={() => onPartyClick?.(topParty, topWon)}
                     onMouseEnter={() => onMouseEnter?.(topParty?.id)}
                     onMouseLeave={onMouseLeave}
                 >
-                    <div className='flex px-2 py-1.5 h-full items-center gap-2'>
+                    <div className='flex px-2 py-1.5 items-center gap-2'>
                         {topParty?.name !== 'BYE' && (
                             <img src={topParty?.logo || logo1} className='h-7 w-7 flex-shrink-0 object-contain' />
                         )}
-                        <span className={`text-[16px] ${topWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
+                        <span className={`text-[16px] ${topWon ? 'font-semibold text-gray-800' : topLost ? 'font-normal text-gray-400' : 'font-normal text-gray-700'}`}>
                             {topParty?.name || 'TBD'}
                         </span>
                     </div>
@@ -45,22 +41,23 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
                         <img src={trophy} alt='trophy' className='h-6 w-6' />
                     )}
                     {topParty?.resultText != null && (
-                        <div className='text-[16px] font-bold px-3 self-stretch flex items-center bg-[#123836] text-white ml-auto rounded-tr-[5px]'>
+                        <div className={`text-[16px] font-bold px-3 self-stretch flex items-center text-white ml-auto rounded-tr-[5px]
+                            ${topLost ? 'bg-[#123836]/40' : 'bg-[#123836]'}`}>
                             {topParty.resultText}
                         </div>
                     )}
                 </div>
-                <div className={`flex items-center cursor-pointer hover:bg-gray-50 transition-opacity h-[50%]
-                    ${hasResult && !bottomWon ? 'opacity-40' : 'opacity-100'}`}
+                <div className={`flex items-center cursor-pointer hover:bg-gray-50
+                    ${bottomLost ? 'bg-gray-50' : ''}`}
                     onClick={() => onPartyClick?.(bottomParty, bottomWon)}
                     onMouseEnter={() => onMouseEnter?.(bottomParty?.id)}
                     onMouseLeave={onMouseLeave}
                 >
-                    <div className='flex px-2 h-full items-center gap-2'>
+                    <div className='flex px-2 py-1.5 items-center gap-2'>
                         {bottomParty?.name !== 'BYE' && (
                             <img src={bottomParty?.logo || logo2} className='h-7 w-7 flex-shrink-0 object-contain' />
                         )}
-                        <span className={`text-[16px] ${bottomWon ? 'font-semibold text-gray-800' : 'font-normal text-gray-700'}`}>
+                        <span className={`text-[16px] ${bottomWon ? 'font-semibold text-gray-800' : bottomLost ? 'font-normal text-gray-400' : 'font-normal text-gray-700'}`}>
                             {bottomParty?.name || 'TBD'}
                         </span>
                     </div>
@@ -68,7 +65,8 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
                         <img src={trophy} alt='trophy' className='h-6 w-6' />
                     )}
                     {bottomParty?.resultText != null && (
-                        <div className='text-[16px] font-bold px-3 self-stretch flex items-center bg-[#123836] text-white ml-auto rounded-br-[5px]'>
+                        <div className={`text-[16px] font-bold px-3 self-stretch flex items-center text-white ml-auto rounded-br-[5px]
+                            ${bottomLost ? 'bg-[#123836]/40' : 'bg-[#123836]'}`}>
                             {bottomParty.resultText}
                         </div>
                     )}
@@ -89,8 +87,6 @@ const TournamentBracket = ({
     useEffect(() => {
         setMode(initialMode)
     }, [initialMode])
-    const { width } = useWindowSize()
-    const matchHeight = 120
     const doubleData = doubleMatches || EMPTY_DOUBLE
 
     const singleMatchCount = matches.length
@@ -100,23 +96,13 @@ const TournamentBracket = ({
     )
     const hasBracket = mode === 'double' ? doubleMatchCount > 0 : singleMatchCount > 0
 
-    const svgWidth = Math.max(Math.min(width - 32, width * 0.95), 280)
-    const svgHeight = mode === 'double' ? Math.max(doubleMatchCount * matchHeight * 2.5, 400) : Math.max(singleMatchCount * matchHeight * 2.5, 300)
-
-    const svgWrapper = ({ children, ...props }) => (
-        <SVGViewer
-            width={svgWidth}
-            height={svgHeight}
-            background="#ffffff"
-            SVGBackground="#ffffff"
-            detectWheel={false}
-            detectPinchGesture={true}
-            disableDoubleClickZoomWithToolAuto={true}
-            miniatureProps={{ position: 'none' }}
-            {...props}
-        >
+    // SVGViewer pans and zooms via a transform on a <g>, which WebKit ignores when
+    // positioning foreignObject content. Native scrolling keeps the bracket usable
+    // on iOS and still lets wide brackets be dragged into view everywhere else.
+    const svgWrapper = ({ children }) => (
+        <div className="w-full overflow-x-auto bg-white">
             {children}
-        </SVGViewer>
+        </div>
     )
 
     const bracketOptions = {
