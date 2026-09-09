@@ -1,6 +1,6 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { useNavigate } from 'react-router-dom';
-import { faBars, faHeadset, faUser, faRightFromBracket, faRightToBracket } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faCalendarDays, faUser, faRightFromBracket, faRightToBracket } from '@fortawesome/free-solid-svg-icons';
 import { useState } from 'react'
 import { supabase } from '../../config/supabaseClient';
 import { useAuth } from '../../hooks/useAuth';
@@ -56,9 +56,12 @@ const TopNavBar = () => {
           </div>
         </div>
         <div className='hidden md:flex ml-auto xl:w-[25%] justify-end items-center gap-2'>
-          <div className='flex items-center justify-center cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'>
-            <FontAwesomeIcon icon={faHeadset} className='text-[28px]' />
-            <span className='text-[12px] text-[#123826] ml-1'>Support</span>
+          <div
+            className='flex flex-col items-center cursor-pointer hover:bg-gray-300 rounded-[5px] p-1'
+            onClick={() => navigate('/calendar')}
+          >
+            <FontAwesomeIcon icon={faCalendarDays} className='text-[28px]' />
+            <span className='text-[12px] text-[#123826]'>Calendar</span>
           </div>
 
           <div
