@@ -10,12 +10,12 @@ import {
   faChevronUp,
   faXmark,
   faImage,
-  faFileArrowUp,
 } from '@fortawesome/free-solid-svg-icons';
 import InputField from '../../common/InputField';
-import SelectField from '../../common/SelectField';
 import Button from '../../common/Button';
 import { commonSports, eSports } from '../../../constants/sports';
+import { EXPERIENCE_OPTIONS, EXP_COLORS } from '../../../constants/participantConstants';
+import IndividualParticipantsEntry from './participants/IndividualParticipantsEntry';
 
 /* Default team logos */
 import teamLogo1 from '../../../assets/defaultTeamLogos/logo1.jpg';
@@ -28,32 +28,16 @@ const DEFAULT_TEAM_LOGOS = [
   { id: 'logo3', src: teamLogo3 },
 ];
 
-const EXPERIENCE_OPTIONS = [
-  { value: 'Beginner', label: 'Beginner' },
-  { value: 'Intermediate', label: 'Intermediate' },
-  { value: 'Advanced', label: 'Advanced' },
-  { value: 'Pro', label: 'Pro' },
-];
-
-const EXP_COLORS = {
-  Beginner: { text: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
-  Intermediate: { text: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  Advanced: { text: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
-  Pro: { text: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-};
-
 /**
  * Step 2 
  */
 const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
-  const [newParticipant, setNewParticipant] = useState({ name: '', experience: 'Beginner' });
   const [newTeamName, setNewTeamName] = useState('');
   const [newTeamLogoMode, setNewTeamLogoMode] = useState('default');
   const [newTeamLogoDefault, setNewTeamLogoDefault] = useState(null);
   const [newTeamLogoFile, setNewTeamLogoFile] = useState(null);
   const [newTeamMember, setNewTeamMember] = useState({});
   const [expandedTeams, setExpandedTeams] = useState({});
-  const csvInputRef = useRef(null);
   const teamLogoInputRef = useRef(null);
 
   const update = (field, value) => {
@@ -93,19 +77,6 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
     };
     reader.readAsText(file);
     e.target.value = '';
-  };
-
-  /*  Participant helpers  */
-  const addParticipant = () => {
-    if (!newParticipant.name.trim()) return;
-    const id = `p-${Date.now()}`;
-    const participants = [...(data.participants || []), { id, ...newParticipant }];
-    update('participants', participants);
-    setNewParticipant({ name: '', experience: 'Beginner' });
-  };
-
-  const removeParticipant = (id) => {
-    update('participants', (data.participants || []).filter((p) => p.id !== id));
   };
 
   /*  Team helpers  */
@@ -307,120 +278,19 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
 
         {/*  INDIVIDUAL MODE  */}
         {data.participantType === 'individual' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* LEFT */}
-            <div className="flex flex-col gap-5">
-              {/* CSV Upload */}
-              <div
-                onClick={() => csvInputRef.current?.click()}
-                className="
-                  flex flex-col items-center justify-center gap-2 px-6 py-8
-                  rounded-xl border-2 border-dashed border-slate-200
-                  cursor-pointer transition-all duration-200
-                  hover:border-slate-300 bg-slate-50/50
-                "
-              >
-                <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
-                  <FontAwesomeIcon icon={faFileArrowUp} className="text-slate-400 text-xl" />
-                </div>
-                <span className="text-sm font-semibold text-slate-700">Upload CSV</span>
-                <span className="text-xs text-slate-400">Browse or drag file here</span>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  className="mt-1 rounded-full"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    csvInputRef.current?.click();
-                  }}
-                >
-                  Browse File
-                </Button>
-              </div>
-
-              {/* Manual Entry */}
-              <div className="bg-slate-50/80 rounded-xl border border-slate-100 p-5">
-                <h4 className="text-sm font-bold text-slate-800 m-0 mb-4">Manual Entry</h4>
-                <div className="flex flex-col gap-3">
-                  <InputField
-                    label="Participant Name"
-                    placeholder="e.g. Nguyen Van A or Team A"
-                    value={newParticipant.name}
-                    onChange={(e) => setNewParticipant((p) => ({ ...p, name: e.target.value }))}
-                  />
-                  <SelectField
-                    label="Experience"
-                    options={EXPERIENCE_OPTIONS}
-                    value={newParticipant.experience}
-                    onChange={(e) => setNewParticipant((p) => ({ ...p, experience: e.target.value }))}
-                  />
-                  <Button
-                    onClick={addParticipant}
-                    disabled={!newParticipant.name.trim()}
-                    fullWidth
-                  >
-                    Add Participant
-                  </Button>
-                </div>
-              </div>
-            </div>
-
-            {/* RIGHT  */}
-            <div className="bg-slate-50/50 rounded-xl border border-slate-100 overflow-hidden overflow-x-auto">
-              <table className="w-full border-collapse text-left min-w-[400px]">
-                <thead>
-                  <tr className="border-b border-slate-200/60">
-                    <th className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-5 py-3 w-10">
-                      #
-                    </th>
-                    <th className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-5 py-3">
-                      Name
-                    </th>
-                    <th className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-5 py-3 text-center">
-                      Experience
-                    </th>
-                    <th className="w-10" />
-                  </tr>
-                </thead>
-                <tbody>
-                  {(data.participants || []).length === 0 ? (
-                    <tr>
-                      <td colSpan={4} className="px-5 py-10 text-center text-sm text-slate-300">
-                        No participants added yet
-                      </td>
-                    </tr>
-                  ) : (
-                    (data.participants || []).map((p, idx) => {
-                      const exp = EXP_COLORS[p.experience] || EXP_COLORS.Beginner;
-                      return (
-                        <tr key={p.id} className="border-b border-slate-100/60 last:border-b-0">
-                          <td className="px-5 py-3 text-sm text-slate-400">{idx + 1}</td>
-                          <td className="px-5 py-3 text-sm font-medium text-slate-700">{p.name}</td>
-                          <td className="px-5 py-3 text-center">
-                            <span
-                              className="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-                              style={{ color: exp.text, background: exp.bg }}
-                            >
-                              {p.experience}
-                            </span>
-                          </td>
-                          <td className="px-3 py-3">
-                            <button
-                              type="button"
-                              onClick={() => removeParticipant(p.id)}
-                              className="w-6 h-6 rounded flex items-center justify-center text-slate-300 hover:text-red-500 border-none bg-transparent cursor-pointer transition-colors"
-                            >
-                              <FontAwesomeIcon icon={faXmark} className="text-xs" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
+          <IndividualParticipantsEntry
+            participants={data.participants || []}
+            onAddParticipant={(p) =>
+              update('participants', [...(data.participants || []), { id: `p-${Date.now()}`, ...p }])
+            }
+            onRemoveParticipant={(idx) => {
+              const next = [...(data.participants || [])];
+              next.splice(idx, 1);
+              update('participants', next);
+            }}
+            onCSVUpload={handleCSVUpload}
+            entryType="participant"
+          />
         )}
 
         {/*  TEAM MODE  */}
@@ -722,112 +592,19 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
                   Player Pool (will be randomized into teams)
                 </p>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  {/* LEFT — CSV + Manual */}
-                  <div className="flex flex-col gap-5">
-                    {/* CSV Upload */}
-                    <div
-                      onClick={() => csvInputRef.current?.click()}
-                      className="
-                        flex flex-col items-center justify-center gap-2 px-6 py-6
-                        rounded-xl border-2 border-dashed border-slate-200
-                        cursor-pointer transition-all duration-200
-                        hover:border-slate-300 bg-slate-50/50
-                      "
-                    >
-                      <FontAwesomeIcon icon={faFileArrowUp} className="text-slate-400 text-lg" />
-                      <span className="text-sm font-semibold text-slate-700">Upload CSV</span>
-                      <span className="text-xs text-slate-400">Browse or drag file here</span>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="mt-1 rounded-full"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          csvInputRef.current?.click();
-                        }}
-                      >
-                        Browse File
-                      </Button>
-                    </div>
-
-                    {/* Manual Entry */}
-                    <div className="bg-slate-50/80 rounded-xl border border-slate-100 p-5">
-                      <h4 className="text-sm font-bold text-slate-800 m-0 mb-4">Manual Entry</h4>
-                      <div className="flex flex-col gap-3">
-                        <InputField
-                          label="Player Name"
-                          placeholder="e.g. Nguyen Van A"
-                          value={newParticipant.name}
-                          onChange={(e) => setNewParticipant((p) => ({ ...p, name: e.target.value }))}
-                        />
-                        <SelectField
-                          label="Experience"
-                          options={EXPERIENCE_OPTIONS}
-                          value={newParticipant.experience}
-                          onChange={(e) => setNewParticipant((p) => ({ ...p, experience: e.target.value }))}
-                        />
-                        <Button
-                          onClick={addParticipant}
-                          disabled={!newParticipant.name.trim()}
-                          fullWidth
-                        >
-                          Add Player
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* RIGHT — Player Table */}
-                  <div className="bg-slate-50/50 rounded-xl border border-slate-100 overflow-hidden overflow-x-auto">
-                    <table className="w-full border-collapse text-left min-w-[400px]">
-                      <thead>
-                        <tr className="border-b border-slate-200/60">
-                          <th className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-5 py-3 w-10">#</th>
-                          <th className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-5 py-3">Name</th>
-                          <th className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-5 py-3 text-center">Experience</th>
-                          <th className="w-10" />
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(data.participants || []).length === 0 ? (
-                          <tr>
-                            <td colSpan={4} className="px-5 py-10 text-center text-sm text-slate-300">
-                              No players added yet
-                            </td>
-                          </tr>
-                        ) : (
-                          (data.participants || []).map((p, idx) => {
-                            const exp = EXP_COLORS[p.experience] || EXP_COLORS.Beginner;
-                            return (
-                              <tr key={p.id} className="border-b border-slate-100/60 last:border-b-0">
-                                <td className="px-5 py-3 text-sm text-slate-400">{idx + 1}</td>
-                                <td className="px-5 py-3 text-sm font-medium text-slate-700">{p.name}</td>
-                                <td className="px-5 py-3 text-center">
-                                  <span
-                                    className="inline-block px-3 py-1 rounded-full text-xs font-semibold"
-                                    style={{ color: exp.text, background: exp.bg }}
-                                  >
-                                    {p.experience}
-                                  </span>
-                                </td>
-                                <td className="px-3 py-3">
-                                  <button
-                                    type="button"
-                                    onClick={() => removeParticipant(p.id)}
-                                    className="w-6 h-6 rounded flex items-center justify-center text-slate-300 hover:text-red-500 border-none bg-transparent cursor-pointer transition-colors"
-                                  >
-                                    <FontAwesomeIcon icon={faXmark} className="text-xs" />
-                                  </button>
-                                </td>
-                              </tr>
-                            );
-                          })
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
+                <IndividualParticipantsEntry
+                  participants={data.participants || []}
+                  onAddParticipant={(p) =>
+                    update('participants', [...(data.participants || []), { id: `p-${Date.now()}`, ...p }])
+                  }
+                  onRemoveParticipant={(idx) => {
+                    const next = [...(data.participants || [])];
+                    next.splice(idx, 1);
+                    update('participants', next);
+                  }}
+                  onCSVUpload={handleCSVUpload}
+                  entryType="player"
+                />
 
                 <p className="text-xs text-slate-400 mt-3 m-0">
                   {(data.participants || []).length} player{(data.participants || []).length !== 1 ? 's' : ''} added
@@ -840,13 +617,6 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
           </div>
         )}
       </div>
-      <input
-        ref={csvInputRef}
-        type="file"
-        accept=".csv"
-        onChange={handleCSVUpload}
-        className="hidden"
-      />
     </div>
   );
 };

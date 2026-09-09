@@ -1,4 +1,3 @@
-import React from 'react';
 
 const DashboardBarChart = ({ data, title }) => {
   const maxValue = Math.max(...data.map(d => d.value), 1);

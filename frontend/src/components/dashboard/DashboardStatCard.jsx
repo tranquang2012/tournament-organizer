@@ -1,4 +1,3 @@
-import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 
 const DashboardStatCard = ({ icon, label, value, subtitle, accentColor = '#123836' }) => {

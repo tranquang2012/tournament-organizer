@@ -7,7 +7,6 @@ const SetupWizardStepper = ({ steps = [], currentStep = 0, onStepClick, isStepCo
       {steps.map((step, idx) => {
         const isCompleted = isStepCompleted ? isStepCompleted(idx) : idx < currentStep;
         const isActive = idx === currentStep;
-        const isUpcoming = idx > currentStep;
 
         return (
           <div key={idx} className="flex items-center flex-1 last:flex-none">

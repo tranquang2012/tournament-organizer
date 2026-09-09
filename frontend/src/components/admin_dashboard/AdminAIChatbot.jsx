@@ -4,7 +4,6 @@ import {
   faRobot,
   faXmark,
   faPaperPlane,
-  faChevronDown,
   faLightbulb,
   faMinus,
 } from '@fortawesome/free-solid-svg-icons'
@@ -202,11 +201,20 @@ const AdminAIChatbot = () => {
     }
   }
 
+  const escapeHtml = (str) =>
+    str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+
   const formatContent = (content) => {
     // Simple markdown-ish rendering
     return content.split('\n').map((line, i) => {
       // Bold
-      const formatted = line.replace(
+      const safeLine = escapeHtml(line)
+      const formatted = safeLine.replace(
         /\*\*(.*?)\*\*/g,
         '<strong>$1</strong>'
       )

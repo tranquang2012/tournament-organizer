@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faClock, faCalendarDays, faCheckCircle } from '@fortawesome/free-regular-svg-icons';
 import InputField from '../common/InputField';

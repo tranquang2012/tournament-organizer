@@ -64,7 +64,7 @@ const EditTeamInlineModal = ({ open, team, onClose, onSave }) => {
         const fileExt = logoFile.name.split('.').pop();
         const fileName = `logos/${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
         
-        const { data, error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('tournament-banners')
           .upload(fileName, logoFile, {
             cacheControl: '3600',

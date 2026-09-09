@@ -165,13 +165,6 @@ const SportsPage = () => {
   const filteredUpcoming = filterTournaments(upcomingTournaments);
   const filteredCompleted = filterTournaments(completedTournaments);
 
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      setIsOpenOngoing(true);
-      setIsOpenUpcoming(true);
-      setIsOpenCompleted(true);
-    }
-  }, [searchQuery]);
 
   useEffect(() => {
     if (searchQuery.trim() || dateFrom || dateTo) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { getStatTemplates, createStatTemplate, deleteStatTemplate } from '../../services/TournamentService';
 import Button from '../../components/common/Button';
@@ -19,21 +19,21 @@ const TournamentStatTemplatesPage = () => {
   // Modal State
   const [modalContent, setModalContent] = useState(null);
 
-  useEffect(() => {
-    loadTemplates();
-  }, [id]);
-
-  const loadTemplates = async () => {
+  const loadTemplates = useCallback(async () => {
     try {
       setLoading(true);
       const data = await getStatTemplates(id);
       setTemplates(data);
-    } catch (err) {
+    } catch {
       setError('Failed to load stat templates.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    loadTemplates();
+  }, [loadTemplates]);
 
   const handleCreate = async (e) => {
     e.preventDefault();
@@ -72,7 +72,7 @@ const TournamentStatTemplatesPage = () => {
       setError(null);
       await deleteStatTemplate(id, templateId);
       await loadTemplates();
-    } catch (err) {
+    } catch {
       setError('Failed to delete template.');
     } finally {
       setModalContent(null);

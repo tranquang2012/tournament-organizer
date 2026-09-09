@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faChartColumn, faTableCells, faTrophy, faCalendarDays, faBolt, faClock, faCheck, faChartBar } from '@fortawesome/free-solid-svg-icons';
 import GlobalLeaderboard from './GlobalLeaderboard';

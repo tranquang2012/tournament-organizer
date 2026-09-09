@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import RoundRobinMatchTemplate from './RoundRobinMatchTemplate';
 import EliminationMatchTemplate from './EliminationMatchTemplate';
 import RoundScoringMatchTemplate from './RoundScoringMatchTemplate';

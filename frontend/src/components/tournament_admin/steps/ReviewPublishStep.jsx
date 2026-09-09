@@ -2,11 +2,9 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faCircleInfo,
   faFutbol,
-  faUsers,
   faGear,
   faPen,
   faRocket,
-  faImage,
 } from '@fortawesome/free-solid-svg-icons';
 
 const FORMAT_LABELS = {

@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTableCells, faRankingStar, faFilter, faTrophy, faCalendarDays, faBolt, faClock, faCheck } from '@fortawesome/free-solid-svg-icons';
 import MatchCard from './MatchCard';

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCircleCheck, faClock, faScissors, faChartBar, faFloppyDisk } from '@fortawesome/free-solid-svg-icons';
 import ConfirmationModal from '../common/ConfirmationModal';
@@ -84,14 +84,14 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
     setScores(nextScores);
     if (isTimeMode) setTimeFields(nextTimeFields);
     setValidationError(null);
-  }, [selectedRoundId, participants, isCompleted, gameCount, isTimeMode]);
+  }, [selectedRoundId, entryParticipants, gameCount, isTimeMode]);
 
   useEffect(() => {
     setSaveMessage(null);
   }, [selectedRoundId]);
 
-  let statusBadgeColor = 'bg-slate-100 text-slate-600';
-  let statusDotColor = 'bg-slate-400';
+  let statusBadgeColor;
+  let statusDotColor;
   let statusLabel = selectedRound?.status || 'Unknown';
 
   if (selectedRound?.status === 'In Progress') {

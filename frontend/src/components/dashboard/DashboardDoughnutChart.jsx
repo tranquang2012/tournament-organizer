@@ -1,5 +1,3 @@
-import React from 'react';
-
 const DashboardDoughnutChart = ({ data, title }) => {
   const total = data.reduce((sum, d) => sum + d.value, 0);
   const size = 180;
@@ -9,21 +7,23 @@ const DashboardDoughnutChart = ({ data, title }) => {
   const center = size / 2;
 
   // Build segments
-  let cumulativeOffset = 0;
-  const segments = data.map((item) => {
+  const segments = data.reduce((acc, item) => {
+    const prevOffset = acc.length > 0 ? acc[acc.length - 1].nextOffset : 0;
     const pct = total > 0 ? item.value / total : 0;
     const dashLength = pct * circumference;
     const gap = circumference - dashLength;
-    const offset = -cumulativeOffset;
-    cumulativeOffset += dashLength;
+    const offset = -prevOffset;
+    const nextOffset = prevOffset + dashLength;
 
-    return {
+    acc.push({
       ...item,
       dashArray: `${dashLength} ${gap}`,
       dashOffset: offset,
+      nextOffset,
       pct,
-    };
-  });
+    });
+    return acc;
+  }, []);
 
   return (
     <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_12px_rgba(0,0,0,0.04)] p-6 flex flex-col h-full">

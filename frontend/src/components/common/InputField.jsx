@@ -35,7 +35,7 @@ export function InputField({
           if (type === 'date' || type === 'time' || type === 'datetime-local') {
             try {
               e.target.showPicker();
-            } catch (err) {
+            } catch {
               // ignore if not supported
             }
           }

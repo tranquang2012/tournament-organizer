@@ -21,6 +21,13 @@ import {
 } from '../../services/TournamentService';
 import { getAccessToken } from '../../services/AuthService';
 import { getAllSports } from '../../services/SportService';
+import {
+  LOBBY_TOURNAMENT_SIZES,
+  isValidLobbyCount,
+  getParticipantCount,
+  validateWizardStep,
+  isWizardStepCompleted,
+} from '../../utils/wizardValidation';
 
 const STEPS = [
   { label: 'General Details' },
@@ -57,18 +64,12 @@ const INITIAL_DATA = {
   setsPerMatch: '1',
 };
 
-const LOBBY_TOURNAMENT_SIZES = [8, 16, 32, 64];
-
 const getLobbyPreset = (playerCount, lobbySize = 8) => {
   if (!LOBBY_TOURNAMENT_SIZES.includes(playerCount)) return null;
   const groupCount = playerCount / lobbySize;
   const advancePerGroup = lobbySize / groupCount;
   return { groupCount, advancePerGroup };
 };
-
-const isValidLobbyCount = (count, lobbySize) => (
-  lobbySize ? LOBBY_TOURNAMENT_SIZES.includes(count) : true
-);
 
 const getErrorMessage = (error) => (
   error?.response?.data?.error?.message || error?.message || 'Something went wrong'
@@ -101,9 +102,8 @@ const TournamentCreatePage = () => {
   const enrichedSportConfig = currentSportConfig
     ? { ...currentSportConfig, lobby_size: lobbySize, score_mode: scoreMode }
     : currentSportConfig;
-  const participantCount = formData.participantType === 'team'
-    ? (formData.teamMode === 'predefine' ? (formData.teams || []).length : (formData.participants || []).length)
-    : (formData.participants || []).length;
+  const participantCount = getParticipantCount(formData);
+  const validationOptions = { lobbySize, isScoringSport };
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
@@ -176,11 +176,11 @@ const TournamentCreatePage = () => {
     };
 
     window.addEventListener('beforeunload', handleBeforeUnload);
-    window.addEventListener('unload', handleUnload);
+    window.addEventListener('pagehide', handleUnload);
 
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
-      window.removeEventListener('unload', handleUnload);
+      window.removeEventListener('pagehide', handleUnload);
     };
   }, [isDirty, tournamentId]);
 
@@ -285,35 +285,7 @@ const TournamentCreatePage = () => {
   }, [lobbySize, participantCount]);
 
   /* Validation */
-  const isStepCompleted = (idx) => {
-    if (idx === 0) {
-      return !!(formData.name.trim() && formData.startDate && formData.endDate);
-    }
-    if (idx === 1) {
-      if (!formData.sport) return false;
-      if (lobbySize && !isValidLobbyCount(participantCount, lobbySize)) return false;
-      if (formData.participantType === 'individual') {
-        return formData.participants?.length > 0;
-      }
-      if (formData.participantType === 'team') {
-        if (formData.teamMode === 'randomize') {
-          if (!formData.membersPerTeam || formData.membersPerTeam <= 0) return false;
-          return formData.participants?.length > 0;
-        } else {
-          return formData.teams?.length > 0;
-        }
-      }
-      return false;
-    }
-    if (idx === 2) {
-      if (formData.format === 'hybrid') {
-        const hybridSecondRound = formData.hybridSecondRound || (isScoringSport ? 'round_scoring' : '');
-        return !!hybridSecondRound && !!formData.hybridGroups && !!formData.hybridAdvancing;
-      }
-      return !!formData.format;
-    }
-    return false; // Step 3 (Review) is not marked as complete
-  };
+  const isStepCompleted = (idx) => isWizardStepCompleted(formData, idx, validationOptions);
 
   const canGoToStep = (idx) => {
     if (idx === currentStep) return true;
@@ -335,121 +307,31 @@ const TournamentCreatePage = () => {
     }
   };
 
+  /**
+   * Returns the form data to persist (validated, with derived fields applied),
+   * or null when the step is invalid. State updates are async, so callers must
+   * use the returned object rather than re-reading formData.
+   */
   const validateCurrentStep = () => {
-    /* Validate required fields for current step */
-    if (currentStep === 0) {
-      if (!formData.name.trim()) {
-        setToast({ message: 'Tournament name is required', type: 'error' });
-        return false;
-      }
-      if (!formData.startDate) {
-        setToast({ message: 'Start date is required', type: 'error' });
-        return false;
-      }
-      if (!formData.endDate) {
-        setToast({ message: 'End date is required', type: 'error' });
-        return false;
-      }
+    const { isValid, error, updates } = validateWizardStep(formData, currentStep, validationOptions);
+
+    if (!isValid) {
+      setToast({ message: error, type: 'error' });
+      return null;
     }
 
-    if (currentStep === 1) {
-      if (!formData.sport) {
-        setToast({ message: 'Sport is required', type: 'error' });
-        return false;
-      }
-
-      if (formData.participantType === 'individual' && !formData.participants.length) {
-        setToast({ message: 'At least one participant is required', type: 'error' });
-        return false;
-      }
-
-      if (formData.participantType === 'team' && formData.teamMode === 'predefine') {
-        if (!formData.teams.length) {
-          setToast({ message: 'At least one team is required', type: 'error' });
-          return false;
-        }
-
-        if (formData.teams.some((team) => !team.members.length)) {
-          setToast({ message: 'Every team needs at least one member', type: 'error' });
-          return false;
-        }
-      }
-
-      if (formData.participantType === 'team' && formData.teamMode === 'randomize') {
-        const playerPoolCount = formData.participants?.length || 0;
-        const membersPerTeam = Number(formData.membersPerTeam) || 0;
-
-        if (membersPerTeam <= 0) {
-          setToast({ message: 'Number of members in a team must be greater than 0', type: 'error' });
-          return false;
-        }
-
-        if (playerPoolCount === 0) {
-          setToast({ message: 'Player pool cannot be empty', type: 'error' });
-          return false;
-        }
-
-        if (playerPoolCount % membersPerTeam !== 0) {
-          setToast({
-            message: `Player pool (${playerPoolCount} players) cannot be divided equally into teams of ${membersPerTeam}.`,
-            type: 'error',
-          });
-          return false;
-        }
-
-        // Set calculated numberOfTeams on the form data
-        formData.numberOfTeams = playerPoolCount / membersPerTeam;
-      }
-
-      if (lobbySize) {
-        if (!isValidLobbyCount(participantCount, lobbySize)) {
-          setToast({
-            message: `${formData.sport} requires 8, 16, 32, or 64 players (lobbies of ${lobbySize}). You currently have ${participantCount}.`,
-            type: 'error',
-          });
-          return false;
-        }
-      }
+    if (updates) {
+      setFormData((prev) => ({ ...prev, ...updates }));
     }
 
-    if (currentStep === 2) {
-      if (!formData.format) {
-        setToast({ message: 'Tournament format is required', type: 'error' });
-        return false;
-      }
-      if (formData.format === 'hybrid') {
-        if (!formData.hybridGroups || !formData.hybridAdvancing) {
-          setToast({ message: 'Please configure the first round groups', type: 'error' });
-          return false;
-        }
-        const hybridSecondRound = formData.hybridSecondRound || (isScoringSport ? 'round_scoring' : '');
-        if (!hybridSecondRound) {
-          setToast({ message: 'Please select a format for the second round', type: 'error' });
-          return false;
-        }
-      }
-
-      const usesGamesPerMatch =
-        formData.format === 'round_scoring' ||
-        formData.hybridSecondRound === 'round_scoring' ||
-        (formData.format === 'hybrid' && isScoringSport);
-      if (usesGamesPerMatch) {
-        const setsPerMatch = Number(formData.setsPerMatch || 1);
-        if (!Number.isInteger(setsPerMatch) || setsPerMatch < 1 || setsPerMatch > 20) {
-          setToast({ message: 'Games per match must be a whole number between 1 and 20', type: 'error' });
-          return false;
-        }
-      }
-    }
-
-    return true;
+    return { ...formData, ...updates };
   };
 
-  const persistCurrentStep = async () => {
+  const persistCurrentStep = async (data) => {
     if (currentStep === 0) {
       const response = tournamentId
-        ? await updateGeneralDetails(tournamentId, formData)
-        : await createGeneralDetails(formData);
+        ? await updateGeneralDetails(tournamentId, data)
+        : await createGeneralDetails(data);
 
       if (!tournamentId) {
         setTournamentId(response.data?.tour_id);
@@ -457,12 +339,12 @@ const TournamentCreatePage = () => {
     }
 
     if (currentStep === 1) {
-      await saveSportAndParticipants(tournamentId, formData);
+      await saveSportAndParticipants(tournamentId, data);
     }
 
     if (currentStep === 2) {
-      const formatData = { ...formData };
-      if (formData.format === 'hybrid' && isScoringSport && !formData.hybridSecondRound) {
+      const formatData = { ...data };
+      if (data.format === 'hybrid' && isScoringSport && !data.hybridSecondRound) {
         formatData.hybridSecondRound = 'round_scoring';
       }
       if (scoreMode === 'time') {
@@ -473,12 +355,13 @@ const TournamentCreatePage = () => {
   };
 
   const handleNext = async (bypassWarning = false) => {
-    if (!validateCurrentStep()) return;
+    const validatedData = validateCurrentStep();
+    if (!validatedData) return;
 
     const shouldBypass = bypassWarning === true;
 
-    if (currentStep === 1 && formData.participantType === 'team' && formData.teamMode === 'randomize' && !shouldBypass) {
-      const teams = buildRandomizedTeamParticipants(formData.participants, formData.numberOfTeams);
+    if (currentStep === 1 && validatedData.participantType === 'team' && validatedData.teamMode === 'randomize' && !shouldBypass) {
+      const teams = buildRandomizedTeamParticipants(validatedData.participants, validatedData.numberOfTeams);
       if (teams.finalGap > 1.0) {
         setShowBalanceWarning(true);
         return;
@@ -488,7 +371,7 @@ const TournamentCreatePage = () => {
     setShowBalanceWarning(false);
     setSavingStep(true);
     try {
-      await persistCurrentStep();
+      await persistCurrentStep(validatedData);
       setCurrentStep((step) => Math.min(step + 1, STEPS.length - 1));
     } catch (error) {
       setToast({ message: getErrorMessage(error), type: 'error' });

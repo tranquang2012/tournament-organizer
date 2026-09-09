@@ -9,8 +9,6 @@
 import axios from "../config/apiEndpoints";
 import { getAccessToken, withAuthHeader, normalizeRole } from "./AuthService";
 
-const delay = (ms = 600) => new Promise((r) => setTimeout(r, ms))
-
 /* GET /admin/users */
 export async function getUsers() {
   const token = await getAccessToken();

@@ -1,13 +1,6 @@
 import axios from '../config/apiEndpoints';
 import { getAccessToken, withAuthHeader } from './AuthService';
-
-const EXPERIENCE_MAP = {
-  Beginner: 'Beginner',
-  Intermediate: 'Intermediate',
-  Advanced: 'Advanced',
-  Pro: 'Professional',
-  Professional: 'Professional',
-};
+import { normalizeExperience } from '../constants/participantConstants';
 
 let cachedSportRules = null;
 
@@ -18,8 +11,6 @@ export const getSportRules = async () => {
   cachedSportRules = response?.data || response || {};
   return cachedSportRules;
 };
-
-const normalizeExperience = (experience) => EXPERIENCE_MAP[experience] || 'Beginner';
 
 const toAbsoluteUrl = (src) => {
   if (!src) return null;
@@ -199,8 +190,14 @@ const buildSportParticipantsPayload = async (data) => {
   let participants;
 
   if (data.participantType === 'team') {
+    const calculatedTeams =
+      Number(data.numberOfTeams) ||
+      (Number(data.membersPerTeam) > 0
+        ? Math.floor((data.participants?.length || 0) / Number(data.membersPerTeam))
+        : 0);
+
     participants = data.teamMode === 'randomize'
-      ? buildRandomizedTeamParticipants(data.participants, data.numberOfTeams)
+      ? buildRandomizedTeamParticipants(data.participants, calculatedTeams)
       : buildPredefinedTeamParticipants(data.teams);
   } else {
     participants = buildIndividualParticipants(data.participants);

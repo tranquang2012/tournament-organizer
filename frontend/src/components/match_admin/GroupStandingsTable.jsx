@@ -1,4 +1,3 @@
-import React from 'react';
 import { isLeagueTableStandings } from '../../constants/sports';
 
 const MEDAL_ICONS = ['🥇', '🥈', '🥉'];

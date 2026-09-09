@@ -55,6 +55,11 @@ const UserManagementPage = () => {
   const [modal, setModal] = useState({ open: false, user: null, action: null })
   const [modalLoading, setModalLoading] = useState(false)
 
+  /* toast */
+  const showToast = (message, type = 'success') => {
+    setToast({ message, type })
+  }
+
   /* fetch */
   const fetchUsers = useCallback(async () => {
     setLoading(true)
@@ -72,11 +77,6 @@ const UserManagementPage = () => {
   useEffect(() => {
     fetchUsers()
   }, [fetchUsers])
-
-  /* toast */
-  const showToast = (message, type = 'success') => {
-    setToast({ message, type })
-  }
 
   /* open confirmation */
   const handleAction = (user, actionType) => {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faXmark, faPlus, faMinus, faTrash, faDownload } from '@fortawesome/free-solid-svg-icons';
 import { useParams } from 'react-router-dom';
@@ -24,11 +24,7 @@ const MatchStatModal = ({ matchId, team1, team2, participants = [], subtitle, on
   // Modal State
   const [modalContent, setModalContent] = useState(null);
 
-  useEffect(() => {
-    loadStatsAndTemplates();
-  }, [matchId, tournamentId]);
-
-  const loadStatsAndTemplates = async () => {
+  const loadStatsAndTemplates = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -38,12 +34,16 @@ const MatchStatModal = ({ matchId, team1, team2, participants = [], subtitle, on
       ]);
       setStats(statsData);
       setTemplates(templatesData);
-    } catch (err) {
+    } catch {
       setError('Failed to load match stats.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [matchId, tournamentId]);
+
+  useEffect(() => {
+    loadStatsAndTemplates();
+  }, [loadStatsAndTemplates]);
 
   const handleAddStat = async (e) => {
     e.preventDefault();
@@ -77,7 +77,7 @@ const MatchStatModal = ({ matchId, team1, team2, participants = [], subtitle, on
         await createMatchStat(matchId, { name: template.name, type: template.type });
       }
       await loadStatsAndTemplates();
-    } catch (err) {
+    } catch {
       setError('Failed to add global stat.');
     }
   };
@@ -96,7 +96,7 @@ const MatchStatModal = ({ matchId, team1, team2, participants = [], subtitle, on
     try {
       await deleteMatchStat(matchId, statId);
       setStats(prev => prev.filter(s => s.id !== statId));
-    } catch (err) {
+    } catch {
       setError('Failed to delete stat.');
     } finally {
       setModalContent(null);
@@ -108,7 +108,7 @@ const MatchStatModal = ({ matchId, team1, team2, participants = [], subtitle, on
       const payload = currentType === 'INTEGER' ? { op, by } : { op: 'set', value };
       const res = await updateMatchStat(matchId, statId, payload);
       setStats(prev => prev.map(s => s.id === statId ? { ...s, value: res.value } : s));
-    } catch (err) {
+    } catch {
       setError('Failed to update stat value.');
     }
   };
