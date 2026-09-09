@@ -59,3 +59,23 @@ p {
 svg text {
   fill: #ffffff;
 }
+
+.login-oauth-btn svg {
+  transition: filter 200ms ease;
+}
+
+.login-oauth-google:hover svg,
+.login-oauth-google:focus-visible svg {
+  filter:
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.85))
+    drop-shadow(0 0 8px #ea4335)
+    drop-shadow(0 0 20px rgba(234, 67, 53, 0.85));
+}
+
+.login-oauth-facebook:hover svg,
+.login-oauth-facebook:focus-visible svg {
+  filter:
+    drop-shadow(0 0 2px rgba(255, 255, 255, 0.85))
+    drop-shadow(0 0 8px #1877f2)
+    drop-shadow(0 0 20px rgba(24, 119, 242, 0.85));
+}

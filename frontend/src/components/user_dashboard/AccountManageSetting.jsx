@@ -52,9 +52,9 @@ const AccountManageSetting = () => {
                 confirmLabel="Save Changes"
                 cancelLabel="Cancel"
             />
-            <div className='flex flex-col md:flex-row md:items-center mb-2 gap-1 md:gap-0'>
-                <div className='w-full md:w-[120px] text-[14px] md:text-[16px] font-medium'>Email</div>
-                <div className='flex-1'>
+            <div className='flex flex-col md:flex-row md:items-center mb-2 gap-1 md:gap-3'>
+                <div className='w-full md:w-[120px] shrink-0 text-[14px] md:text-[16px] font-medium'>Email</div>
+                <div className='flex-1 min-w-0'>
                     <input
                         type='text'
                         value={userData?.email || ''}
@@ -63,12 +63,12 @@ const AccountManageSetting = () => {
                     />
                 </div>
             </div>
-            <div className='text-gray-500 text-[12px] md:text-[14px] mb-6 md:mb-8 md:pl-30'>
+            <div className='text-gray-500 text-[12px] md:text-[14px] mb-6 md:mb-8 md:pl-[132px]'>
                 You cannot change your email.
             </div>
-            <div className='flex flex-col md:flex-row md:items-center mb-2 gap-1 md:gap-0'>
-                <div className='w-full md:w-[120px] text-[14px] md:text-[16px] font-medium'>Username</div>
-                <div className='flex-1'>
+            <div className='flex flex-col md:flex-row md:items-center mb-2 gap-1 md:gap-3'>
+                <div className='w-full md:w-[120px] shrink-0 text-[14px] md:text-[16px] font-medium'>Username</div>
+                <div className='flex-1 min-w-0'>
                     <input
                         type='text'
                         value={userName}
@@ -79,13 +79,14 @@ const AccountManageSetting = () => {
                 </div>
             </div>
             {userName.length >= 15 && (
-                <div className='fixed text-red-500 text-[12px] md:text-[14px] md:pl-30'>
+                <div className='text-red-500 text-[12px] md:text-[14px] mt-1 md:pl-[132px]'>
                     You can not enter over 15 character!
                 </div>
             )}
-            <div className='flex py-6 md:py-10 gap-x-[3%]'>
+            <div className='flex py-6 md:py-10'>
                 <button
-                    className='cursor-pointer w-full md:w-[20%] py-2 text-[14px] md:text-[16px] text-white bg-[#123826] rounded-[10px] hover:bg-[#3aba90]'
+                    type='button'
+                    className='cursor-pointer w-full md:w-auto px-8 py-2.5 text-[14px] md:text-[16px] whitespace-nowrap text-white bg-[#123826] rounded-[10px] hover:bg-[#3aba90]'
                     onClick={() => setShowConfirm(true)}
                 >
                     Save Changes

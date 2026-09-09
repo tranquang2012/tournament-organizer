@@ -28,7 +28,7 @@ const UserProfileManagement = () => {
     const [sectionChoose, setSectionChoose] = useState('profile')
     const [isLoading, setIsLoading] = useState(true)
     const [toast, setToast] = useState(null)
-    const role = roleMeta[userData?.role] || roleMeta.USER
+    const role = roleMeta[userData?.role] || roleMeta.user
     const currentProvider = session?.user?.identities?.reduce((latest, identity) => {
         return new Date(identity.updated_at) > new Date(latest.updated_at) ? identity : latest
     })?.provider
@@ -58,7 +58,7 @@ const UserProfileManagement = () => {
 
     //change section choose class
     const sectionClass = (section) => clsx(
-        'section py-3 my-[2px] flex items-center rounded-[5px]',
+        'px-3 py-2.5 my-[2px] flex items-center gap-2.5 rounded-[5px] shrink-0 md:w-full',
         sectionChoose === section
             ? 'text-white bg-[#123826]'
             : 'cursor-pointer hover:bg-[#123826] hover:opacity-40 hover:text-white'
@@ -98,11 +98,11 @@ const UserProfileManagement = () => {
             <NotificationToast toast={toast} onDismiss={() => setToast(null)} />
             <TopLoadingBar isLoading={isLoading} />
             <div className='account-management'>
-                <div className='flex items-center bg-[#123826] h-[60px] px-[5%] md:px-[21%] text-white text-[20px] md:text-[30px]'>
+                <div className='flex items-center bg-[#123826] h-[60px] px-[5%] md:px-[10%] text-white text-[20px] md:text-[30px]'>
                     Account Management
                 </div>
-                <div className='flex flex-col md:flex-row w-full px-[5%] md:px-[21%] py-5 gap-5'>
-                    <div className='w-full md:w-[30%]'>
+                <div className='flex flex-col md:flex-row w-full px-[5%] md:px-[10%] py-5 gap-5 md:gap-8'>
+                    <div className='w-full md:w-[280px] lg:w-[300px] shrink-0'>
                         {/* Avatar */}
                         <div className='flex items-center mb-5 gap-4'>
                             <div className='profile-image rounded-full h-[80px] w-[80px] md:h-[120px] md:w-[120px] flex items-center justify-center overflow-hidden shrink-0'>
@@ -132,24 +132,24 @@ const UserProfileManagement = () => {
                                 </div>
                             </div>
                         </div>
-                        <div className='flex md:flex-col gap-1 overflow-x-auto'>
+                        <div className='flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-1 md:pb-0'>
                             <div className={sectionClass('profile')} onClick={() => changeSection('profile')}>
-                                <FontAwesomeIcon icon={faUser} className='text-[20px] md:text-[35px] pr-2 md:pr-5' />
-                                <span className='text-[14px] md:text-[20px] whitespace-nowrap'>My Profile</span>
+                                <FontAwesomeIcon icon={faUser} className='text-[16px] md:text-[18px] w-5 shrink-0' />
+                                <span className='text-[14px] md:text-[16px] whitespace-nowrap'>My Profile</span>
                             </div>
                             <div className={sectionClass('notification')} onClick={() => changeSection('notification')}>
-                                <FontAwesomeIcon icon={faBell} className='text-[20px] md:text-[35px] pr-2 md:pr-5' />
-                                <span className='text-[14px] md:text-[20px] whitespace-nowrap'>Notification</span>
+                                <FontAwesomeIcon icon={faBell} className='text-[16px] md:text-[18px] w-5 shrink-0' />
+                                <span className='text-[14px] md:text-[16px] whitespace-nowrap'>Notification</span>
                             </div>
                             <div className={sectionClass('event')} onClick={() => changeSection('event')}>
-                                <FontAwesomeIcon icon={faCalendarCheck} className='text-[20px] md:text-[35px] pr-2 md:pr-5' />
-                                <span className='text-[14px] md:text-[20px] whitespace-nowrap'>My Favorite Events</span>
+                                <FontAwesomeIcon icon={faCalendarCheck} className='text-[16px] md:text-[18px] w-5 shrink-0' />
+                                <span className='text-[14px] md:text-[16px] whitespace-nowrap'>My Favorite Events</span>
                             </div>
                         </div>
                     </div>
-                    <div className='w-full md:w-[70%]'>
-                        <div className='rounded-[15px] shadow-md min-h-[400px] md:h-[500px]'>
-                            <div className='flex flex-col justify-center border-b border-gray-300 mx-4 md:mx-7 pl-3 md:pl-5 py-4 h-[20%]'>
+                    <div className='w-full md:flex-1 min-w-0'>
+                        <div className='rounded-[15px] shadow-md min-h-[400px] md:min-h-[500px]'>
+                            <div className='flex flex-col justify-center border-b border-gray-300 mx-4 md:mx-7 pl-3 md:pl-5 py-4'>
                                 <div className='text-[20px] md:text-[25px]'>
                                     <b>{sectionChoose === 'profile' ? 'My Account' : sectionChoose === 'notification' ? 'Notifications' : 'My Favorite Events'}</b>
                                 </div>
@@ -159,7 +159,7 @@ const UserProfileManagement = () => {
                                             'Mark your favorite tournament to recieve schedule details via email'}
                                 </span>
                             </div>
-                            <div className='mx-4 md:mx-7 p-3 md:p-5 h-[80%]'>
+                            <div className='mx-4 md:mx-7 p-3 md:p-5'>
                                 {sectionChoose === 'profile' ? <AccountManageSetting /> : sectionChoose === 'notification' ? <NotificationSetting /> : <FollowedTournaments />}
                             </div>
                         </div>

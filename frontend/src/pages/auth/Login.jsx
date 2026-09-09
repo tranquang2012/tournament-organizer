@@ -60,29 +60,33 @@ const Login = () => {
           </label>
           <div className="flex items-center gap-6 mt-2 mb-3 md:gap-5 md:mt-5">
             <button
+              type="button"
               onClick={() => handleLogin("Google")}
               aria-label="Sign in with Google"
-              className="flex items-center justify-center rounded-full bg-white shadow-lg
-                         w-14 h-14 transition-transform duration-200
-                         hover:scale-110 hover:shadow-red-400/50
-                         md:bg-transparent md:shadow-none md:w-auto md:h-auto md:rounded-none md:hover:scale-100"
+              className="login-oauth-btn login-oauth-google flex items-center justify-center rounded-full bg-white shadow-lg
+                         w-14 h-14 cursor-pointer transition-all duration-200
+                         hover:scale-110 hover:shadow-[0_0_22px_rgba(234,67,53,0.7)]
+                         md:bg-transparent md:shadow-none md:w-auto md:h-auto md:rounded-none
+                         md:hover:scale-110 md:hover:shadow-none"
             >
               <FontAwesomeIcon
                 icon={faGoogle}
-                className="text-red-500 text-2xl md:text-[50px] md:hover:[text-shadow:0_0_10px_rgba(255,0,0,0.5)]"
+                className="text-red-500 text-2xl md:text-[50px]"
               />
             </button>
             <button
+              type="button"
               onClick={() => handleLogin("Facebook")}
               aria-label="Sign in with Facebook"
-              className="flex items-center justify-center rounded-full bg-white shadow-lg
-                         w-14 h-14 transition-transform duration-200
-                         hover:scale-110 hover:shadow-blue-400/50
-                         md:bg-transparent md:shadow-none md:w-auto md:h-auto md:rounded-none md:hover:scale-100"
+              className="login-oauth-btn login-oauth-facebook flex items-center justify-center rounded-full bg-white shadow-lg
+                         w-14 h-14 cursor-pointer transition-all duration-200
+                         hover:scale-110 hover:shadow-[0_0_22px_rgba(24,119,242,0.7)]
+                         md:bg-transparent md:shadow-none md:w-auto md:h-auto md:rounded-none
+                         md:hover:scale-110 md:hover:shadow-none"
             >
               <FontAwesomeIcon
                 icon={faFacebook}
-                className="text-blue-600 text-2xl md:text-[50px] md:hover:[text-shadow:0_0_10px_rgba(0,0,255,0.5)]"
+                className="text-blue-600 text-2xl md:text-[50px]"
               />
             </button>
           </div>
