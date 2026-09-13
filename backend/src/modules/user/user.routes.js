@@ -1,38 +1,38 @@
 const express = require("express");
 const userController = require("./controller/user.controller");
 const authenticateSupabaseUser = require("../../shared/middleware/authenticateSupabaseUser");
-const requireAdminUser = require("../../shared/middleware/requireAdminUser");
+const requireSuperAdminUser = require("../../shared/middleware/requireSuperAdminUser");
 
 const router = express.Router();
 
 router.get(
   "/admin/profiles",
   authenticateSupabaseUser,
-  requireAdminUser,
+  requireSuperAdminUser,
   userController.getAllUserProfiles
 );
 router.patch(
   "/admin/:userId/disable",
   authenticateSupabaseUser,
-  requireAdminUser,
+  requireSuperAdminUser,
   userController.disableUserAccount
 );
 router.patch(
   "/admin/:userId/enable",
   authenticateSupabaseUser,
-  requireAdminUser,
+  requireSuperAdminUser,
   userController.enableUserAccount
 );
 router.patch(
   "/admin/:userId/promote",
   authenticateSupabaseUser,
-  requireAdminUser,
+  requireSuperAdminUser,
   userController.promoteUserToAdmin
 );
 router.patch(
   "/admin/:userId/demote",
   authenticateSupabaseUser,
-  requireAdminUser,
+  requireSuperAdminUser,
   userController.demoteAdminToUser
 );
 router.get("/me/profile", authenticateSupabaseUser, userController.getCurrentUserProfile);

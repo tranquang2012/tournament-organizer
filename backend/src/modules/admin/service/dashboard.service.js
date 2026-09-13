@@ -29,16 +29,20 @@ class DashboardService {
 
     if (rawData.recentTournaments) {
         rawData.recentTournaments = rawData.recentTournaments.map(item => {
-            // Treat 'published' as 'Active' as per instructions
-            let displayStatus = item.status;
-            if (item.status === 'published' || item.status === 'active') {
-                displayStatus = 'Active';
-            } else if (item.status === 'draft') {
-                displayStatus = 'Draft';
-            } else if (item.status === 'completed') {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const start = item.date ? new Date(item.date) : null;
+            if (start) start.setHours(0, 0, 0, 0);
+
+            let displayStatus;
+            if (item.status === 'completed') {
                 displayStatus = 'Completed';
-            } else if (item.status === 'upcoming') {
+            } else if (item.status === 'paused') {
+                displayStatus = 'Paused';
+            } else if (start && start > today) {
                 displayStatus = 'Upcoming';
+            } else {
+                displayStatus = 'Active';
             }
 
             let displayFormat = item.format;

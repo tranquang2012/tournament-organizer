@@ -1,10 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCircleCheck, faClock, faScissors, faChartBar, faFloppyDisk } from '@fortawesome/free-solid-svg-icons';
+import { faCircleCheck, faClock, faScissors, faChartBar, faFloppyDisk, faSearch } from '@fortawesome/free-solid-svg-icons';
 import ConfirmationModal from '../common/ConfirmationModal';
 import { fieldsToMs, formatDuration, msToFields } from '../../utils/duration';
 
 const emptySetValues = (count) => Array.from({ length: count }, () => '');
+
+const isTimePartValid = (value) => value === '' || value == null || /^\d+$/.test(String(value).trim());
 
 const parseStoredSets = (participant, roundId, count) => {
   const stored = participant.sets?.[roundId];
@@ -19,15 +21,17 @@ const parseStoredSets = (participant, roundId, count) => {
   return emptySetValues(count);
 };
 
-const scoreInputClass = (disabled, hasValue) => `
+const scoreInputClass = (disabled, hasValue, invalid = false) => `
   w-20 h-9 text-center outline-none rounded-lg border text-sm font-semibold
   transition-all
   [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none
   ${disabled
     ? 'border-slate-200 bg-slate-50 text-slate-600 cursor-not-allowed'
-    : hasValue
-      ? 'border-slate-300 bg-white text-slate-800 focus:border-[#123836] focus:ring-2 focus:ring-[#123836]/10'
-      : 'border-slate-200 bg-white text-slate-400 focus:border-[#123836] focus:ring-2 focus:ring-[#123836]/10'
+    : invalid
+      ? 'border-red-400 bg-red-50 text-red-700 focus:border-red-500 focus:ring-2 focus:ring-red-100'
+      : hasValue
+        ? 'border-slate-300 bg-white text-slate-800 focus:border-[#123836] focus:ring-2 focus:ring-[#123836]/10'
+        : 'border-slate-200 bg-white text-slate-400 focus:border-[#123836] focus:ring-2 focus:ring-[#123836]/10'
   }
 `;
 
@@ -42,6 +46,7 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [saveMessage, setSaveMessage] = useState(null);
   const [timeFields, setTimeFields] = useState({});
+  const [playerSearch, setPlayerSearch] = useState('');
 
   const selectedRound = rounds.find(r => r.id === selectedRoundId);
   const isCompleted = selectedRound?.status === 'Completed';
@@ -61,6 +66,14 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
     }
     return participants.filter(p => p.status === 'Active' && inRoster(p));
   }, [participants, selectedRoundId, isCompleted, selectedRound?.rosterCompIds]);
+
+  const visibleParticipants = useMemo(() => {
+    const query = playerSearch.trim().toLowerCase();
+    if (!query) return entryParticipants;
+    return entryParticipants.filter((participant) => (
+      String(participant.name || '').toLowerCase().includes(query)
+    ));
+  }, [entryParticipants, playerSearch]);
 
   useEffect(() => {
     const fallbackId = defaultRound?.id;
@@ -88,6 +101,7 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
 
   useEffect(() => {
     setSaveMessage(null);
+    setPlayerSearch('');
   }, [selectedRoundId]);
 
   let statusBadgeColor = 'bg-slate-100 text-slate-600';
@@ -120,16 +134,24 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
     const key = `${participantId}-${gameIndex}`;
     const current = timeFields[key] || { min: '', sec: '', cs: '' };
     const next = { ...current, [field]: raw };
-    setTimeFields((prev) => ({ ...prev, [key]: next }));
+
     if (next.min === '' && next.sec === '' && next.cs === '') {
+      setTimeFields((prev) => ({ ...prev, [key]: next }));
       handleScoreChange(participantId, gameIndex, '');
       return;
     }
-    try {
-      handleScoreChange(participantId, gameIndex, String(fieldsToMs(next.min, next.sec, next.cs)));
-    } catch {
+
+    const valid = isTimePartValid(next.min) && isTimePartValid(next.sec) && isTimePartValid(next.cs);
+    if (!valid) {
+      setTimeFields((prev) => ({ ...prev, [key]: next }));
       handleScoreChange(participantId, gameIndex, '');
+      return;
     }
+
+    const ms = fieldsToMs(next.min, next.sec, next.cs);
+    const overflow = Number(next.sec || 0) >= 60 || Number(next.cs || 0) >= 100;
+    setTimeFields((prev) => ({ ...prev, [key]: overflow ? msToFields(ms) : next }));
+    handleScoreChange(participantId, gameIndex, String(ms));
   };
 
   const parseGameValue = (raw, participantName, gameIndex) => {
@@ -229,43 +251,58 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
   return (
     <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
 
-      <div className="px-5 pt-5 pb-4 border-b border-slate-100 flex justify-between items-center">
-        <div>
-          <h2 className="text-lg font-bold text-slate-800">Round Entry</h2>
-          <p className="text-xs font-medium text-slate-400 mt-0.5">
-            {isMultiGame
-              ? isTimeMode
-                ? `Save race times as you go. Rankings use the best of ${gameCount} races.`
-                : `Save game scores as you go. Rankings and cut-off use the total of all ${gameCount} games.`
-              : isTimeMode
-                ? 'Save finish times as you go, then apply cut-off when the round is complete'
-                : 'Save scores as you go, then apply cut-off when the round is complete'}
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <select
-            value={selectedRoundId}
-            onChange={(e) => setSelectedRoundId(e.target.value)}
-            className="bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg focus:ring-[#123836] focus:border-[#123836] px-3 py-2 cursor-pointer outline-none hover:bg-slate-100 transition-colors"
-          >
-            {rounds.map(round => (
-              <option key={round.id} value={round.id}>{round.label}</option>
-            ))}
-          </select>
-          <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap ${statusBadgeColor}`}>
-            <span className={`w-1.5 h-1.5 rounded-full ${statusDotColor}`}></span>
-            {statusLabel}
-          </span>
-          {typeof onOpenStats === 'function' && selectedRound && (
-            <button
-              type="button"
-              onClick={() => onOpenStats(selectedRound)}
-              className="px-3 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer flex items-center gap-2"
+      <div className="px-5 pt-5 pb-4 border-b border-slate-100">
+        <div className="flex justify-between items-center gap-3 flex-wrap">
+          <div>
+            <h2 className="text-lg font-bold text-slate-800">Round Entry</h2>
+            <p className="text-xs font-medium text-slate-400 mt-0.5">
+              {isMultiGame
+                ? isTimeMode
+                  ? `Save race times as you go. Rankings use the best of ${gameCount} races.`
+                  : `Save game scores as you go. Rankings and cut-off use the total of all ${gameCount} games.`
+                : isTimeMode
+                  ? 'Save finish times as you go, then apply cut-off when the round is complete'
+                  : 'Save scores as you go, then apply cut-off when the round is complete'}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <select
+              value={selectedRoundId}
+              onChange={(e) => setSelectedRoundId(e.target.value)}
+              className="bg-slate-50 border border-slate-200 text-slate-700 text-sm font-semibold rounded-lg focus:ring-[#123836] focus:border-[#123836] px-3 py-2 cursor-pointer outline-none hover:bg-slate-100 transition-colors"
             >
-              <FontAwesomeIcon icon={faChartBar} />
-              Stats
-            </button>
-          )}
+              {rounds.map(round => (
+                <option key={round.id} value={round.id}>{round.label}</option>
+              ))}
+            </select>
+            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold whitespace-nowrap ${statusBadgeColor}`}>
+              <span className={`w-1.5 h-1.5 rounded-full ${statusDotColor}`}></span>
+              {statusLabel}
+            </span>
+            {typeof onOpenStats === 'function' && selectedRound && (
+              <button
+                type="button"
+                onClick={() => onOpenStats(selectedRound)}
+                className="px-3 py-2 rounded-lg text-sm font-bold text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 transition-colors shadow-sm cursor-pointer flex items-center gap-2"
+              >
+                <FontAwesomeIcon icon={faChartBar} />
+                Stats
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="relative mt-4 max-w-sm">
+          <FontAwesomeIcon
+            icon={faSearch}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm pointer-events-none"
+          />
+          <input
+            type="text"
+            value={playerSearch}
+            onChange={(e) => setPlayerSearch(e.target.value)}
+            placeholder="Search player..."
+            className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-[#123836] focus:ring-2 focus:ring-[rgba(18,56,54,0.12)]"
+          />
         </div>
       </div>
 
@@ -305,7 +342,7 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
                   </th>
                 </>
               ) : (
-                <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider w-32">
+                <th className="px-3 py-3 text-center text-xs font-bold text-slate-400 uppercase tracking-wider">
                   {isTimeMode ? 'Finish Time' : 'Score'}
                 </th>
               )}
@@ -313,13 +350,15 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
             </tr>
           </thead>
           <tbody>
-            {entryParticipants.length === 0 ? (
+            {visibleParticipants.length === 0 ? (
               <tr>
                 <td colSpan={columnCount} className="px-5 py-10 text-center text-slate-400 font-medium">
-                  No participants available for this round.
+                  {entryParticipants.length === 0
+                    ? 'No participants available for this round.'
+                    : 'No players match your search.'}
                 </td>
               </tr>
-            ) : entryParticipants.map((p, idx) => {
+            ) : visibleParticipants.map((p, idx) => {
               const values = scores[p.id] || emptySetValues(gameCount);
               const parsedValues = values.map((value) => {
                 if (value === undefined || value === '') return null;
@@ -346,29 +385,27 @@ const RoundEntryTable = ({ participants, rounds, onSubmit, onSave, isSubmitting,
                         placeholder="m"
                         disabled={inputDisabled}
                         onChange={(e) => handleTimeFieldChange(p.id, gameIndex, 'min', e.target.value)}
-                        className={`${scoreInputClass(inputDisabled, fields.min !== '')} w-12`}
+                        className={`${scoreInputClass(inputDisabled, fields.min !== '', !isTimePartValid(fields.min))} w-12`}
                       />
                       <span className="text-slate-400">:</span>
                       <input
                         type="number"
                         min="0"
-                        max="59"
                         value={fields.sec}
                         placeholder="ss"
                         disabled={inputDisabled}
                         onChange={(e) => handleTimeFieldChange(p.id, gameIndex, 'sec', e.target.value)}
-                        className={`${scoreInputClass(inputDisabled, fields.sec !== '')} w-12`}
+                        className={`${scoreInputClass(inputDisabled, fields.sec !== '', !isTimePartValid(fields.sec))} w-12`}
                       />
                       <span className="text-slate-400">.</span>
                       <input
                         type="number"
                         min="0"
-                        max="99"
                         value={fields.cs}
                         placeholder="hs"
                         disabled={inputDisabled}
                         onChange={(e) => handleTimeFieldChange(p.id, gameIndex, 'cs', e.target.value)}
-                        className={`${scoreInputClass(inputDisabled, fields.cs !== '')} w-12`}
+                        className={`${scoreInputClass(inputDisabled, fields.cs !== '', !isTimePartValid(fields.cs))} w-12`}
                       />
                     </div>
                   );

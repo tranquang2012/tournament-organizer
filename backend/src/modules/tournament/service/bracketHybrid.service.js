@@ -1,6 +1,7 @@
 const pool = require('../../../shared/database/pool');
 const AppError = require('../../../shared/errors/AppError');
 const bracketRepository = require('../repository/bracket.repository');
+const tournamentRepository = require('../repository/tournament.repository');
 const { getSportRules } = require('../config/sportRules.config');
 
 class BracketHybridService {
@@ -222,6 +223,7 @@ class BracketHybridService {
       }
 
       await client.query('COMMIT');
+      await tournamentRepository.syncCompletionFromMatches(tourId);
       return {
         format: 'hybrid',
         stage: 2,

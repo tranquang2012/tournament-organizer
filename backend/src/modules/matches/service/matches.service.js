@@ -1,6 +1,7 @@
 const pool = require('../../../shared/database/pool');
 const AppError = require('../../../shared/errors/AppError');
 const matchesRepository = require('../repository/matches.repository');
+const tournamentRepository = require('../../tournament/repository/tournament.repository');
 const bracketService = require('../../tournament/service/bracket.service');
 const {validateScheduleDto} = require('../dto/scheduleMatch.dto');
 const { validateResumeDto } = require('../dto/pauseMatch.dto');
@@ -117,6 +118,10 @@ class MatchesService {
 
     if (shouldCheckHybridStage && tournamentId) {
       await bracketService.ensureHybridStageTwoGenerated(tournamentId);
+    }
+
+    if (tournamentId) {
+      await tournamentRepository.syncCompletionFromMatches(tournamentId);
     }
 
     // Return the updated match

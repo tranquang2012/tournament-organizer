@@ -1,6 +1,7 @@
 const pool = require('../../../shared/database/pool');
 const AppError = require('../../../shared/errors/AppError');
 const bracketRepository = require('../repository/bracket.repository');
+const tournamentRepository = require('../repository/tournament.repository');
 const { getSportRules } = require('../config/sportRules.config');
 
 class BracketRoundScoringService {
@@ -293,6 +294,8 @@ class BracketRoundScoringService {
     if (match.tour_format === 'hybrid' && bracketHybridService) {
       await bracketHybridService.ensureHybridStageTwoGenerated(tourId);
     }
+
+    await tournamentRepository.syncCompletionFromMatches(tourId);
 
     // Enrich response with competitor names
     const allCompIds = ranked.map(r => r.comp_id);

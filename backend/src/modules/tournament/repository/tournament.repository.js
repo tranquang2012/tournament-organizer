@@ -1,4 +1,5 @@
 const pool = require('../../../shared/database/pool');
+const { nextTourStatusFromMatches } = require('../tournamentCompletion');
 
 class TournamentRepository {
   //Step 1
@@ -251,7 +252,7 @@ class TournamentRepository {
       return { deleted: false, reason: 'not_found' };
     }
 
-    if (tourRows[0].tour_status === 'published') {
+    if ((tourRows[0].tour_status || 'draft') !== 'draft') {
       await client.query('ROLLBACK');
       return { deleted: false, reason: 'already_published' };
     }
@@ -526,6 +527,29 @@ async getTournamentTiming(tourId, organizerId, executor = pool) {
   );
   return rows[0] || null;
 }
+
+  async syncCompletionFromMatches(tourId, executor = pool) {
+    const { rows: tourRows } = await executor.query(
+      `SELECT tour_status FROM tournament WHERE tour_id = $1`,
+      [tourId]
+    );
+    const tournament = tourRows[0];
+    if (!tournament) return null;
+
+    const { rows: matches } = await executor.query(
+      `SELECT winning_competitor_id, is_draw, status FROM matches WHERE tour_id = $1`,
+      [tourId]
+    );
+
+    const nextStatus = nextTourStatusFromMatches(tournament.tour_status, matches);
+    if (nextStatus === (tournament.tour_status || 'draft')) return tournament;
+
+    const { rows } = await executor.query(
+      `UPDATE tournament SET tour_status = $2 WHERE tour_id = $1 RETURNING tour_id, tour_status`,
+      [tourId, nextStatus]
+    );
+    return rows[0] || null;
+  }
 }
 
 module.exports = new TournamentRepository();

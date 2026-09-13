@@ -41,7 +41,8 @@ const getUserProfile = async (userId) => {
   return toUserProfileDto(user);
 };
 
-const getAllUserProfiles = async () => {
+const getAllUserProfiles = async (actorProfile) => {
+  assertSuperAdmin(actorProfile);
   const users = await userRepository.findAll();
 
   return users.map(toUserProfileDto);
@@ -68,6 +69,7 @@ const assertSuperAdmin = (actorProfile) => {
 };
 
 const disableUserAccount = async ({ actorUserId, actorProfile, targetUserId }) => {
+  assertSuperAdmin(actorProfile);
   const targetUser = await getTargetUserOrThrow(targetUserId);
 
   if (actorUserId === targetUser.id) {
@@ -86,6 +88,7 @@ const disableUserAccount = async ({ actorUserId, actorProfile, targetUserId }) =
 };
 
 const enableUserAccount = async ({ actorUserId, actorProfile, targetUserId }) => {
+  assertSuperAdmin(actorProfile);
   const targetUser = await getTargetUserOrThrow(targetUserId);
 
   if (actorUserId === targetUser.id) {

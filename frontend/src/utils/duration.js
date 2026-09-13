@@ -30,11 +30,15 @@ export const msToFields = (ms) => {
 };
 
 export const fieldsToMs = (min, sec, cs) => {
-  const m = min === '' || min == null ? 0 : Number(min);
-  const s = sec === '' || sec == null ? 0 : Number(sec);
-  const c = cs === '' || cs == null ? 0 : Number(cs);
+  let m = min === '' || min == null ? 0 : Number(min);
+  let s = sec === '' || sec == null ? 0 : Number(sec);
+  let c = cs === '' || cs == null ? 0 : Number(cs);
   if (!Number.isFinite(m) || m < 0) throw new Error('Minutes must be a non-negative number.');
-  if (!Number.isFinite(s) || s < 0 || s > 59) throw new Error('Seconds must be between 0 and 59.');
-  if (!Number.isFinite(c) || c < 0 || c > 99) throw new Error('Hundredths must be between 0 and 99.');
+  if (!Number.isFinite(s) || s < 0) throw new Error('Seconds must be a non-negative number.');
+  if (!Number.isFinite(c) || c < 0) throw new Error('Hundredths must be a non-negative number.');
+  s += Math.floor(c / 100);
+  c %= 100;
+  m += Math.floor(s / 60);
+  s %= 60;
   return ((m * 60 + s) * 100 + c) * 10;
 };

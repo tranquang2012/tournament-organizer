@@ -5,9 +5,16 @@ class DashboardRepository {
     const query = `
       WITH tournament_stats AS (
         SELECT 
-          COUNT(*) FILTER (WHERE tour_status <> 'draft') as total_tournaments,
-          COUNT(*) FILTER (WHERE tour_status IN ('active', 'published')) as active_tournaments,
-          COUNT(*) FILTER (WHERE tour_status = 'upcoming' OR (tour_status IN ('active', 'published') AND tour_startdate > NOW())) as upcoming_tournaments,
+          COUNT(*) FILTER (WHERE COALESCE(tour_status, 'draft') <> 'draft') as total_tournaments,
+          COUNT(*) FILTER (
+            WHERE COALESCE(tour_status, 'draft') NOT IN ('draft', 'completed')
+              AND (tour_startdate IS NULL OR tour_startdate::date <= CURRENT_DATE)
+          ) as active_tournaments,
+          COUNT(*) FILTER (
+            WHERE COALESCE(tour_status, 'draft') NOT IN ('draft', 'completed')
+              AND tour_startdate IS NOT NULL
+              AND tour_startdate::date > CURRENT_DATE
+          ) as upcoming_tournaments,
           COUNT(*) FILTER (WHERE tour_status = 'completed') as completed_tournaments
         FROM tournament
       ),
@@ -26,7 +33,7 @@ class DashboardRepository {
       match_stats AS (
         SELECT
           COUNT(*) FILTER (WHERE winning_competitor_id IS NOT NULL OR is_draw = true) as matches_played,
-          COUNT(*) FILTER (WHERE status = 'ready') as matches_in_progress
+          COUNT(*) FILTER (WHERE status IN ('running', 'paused')) as matches_in_progress
         FROM matches
       ),
       tournaments_by_sport AS (
