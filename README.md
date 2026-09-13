@@ -2,7 +2,7 @@
 
 Web platform for Netcompany to configure, schedule, manage, and monitor sports and esports tournaments. Administrators create events, generate brackets, enter scores, and track results. Guests browse public pages; signed-in users can favorite tournaments and receive email reminders.
 
-This README is the runbook. Architecture, roles, APIs, and operations: **[docs/TECHNICAL.md](docs/TECHNICAL.md)**. Product scope: **[Netcompany_Capstone_Project_ScopeAndDelivevrable_Document.pdf](Netcompany_Capstone_Project_ScopeAndDelivevrable_Document.pdf)**.
+This README is the runbook. Architecture, roles, APIs, and operations: **[docs/TECHNICAL.md](docs/TECHNICAL.md)**.
 
 ## Who can do what
 
