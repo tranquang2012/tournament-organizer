@@ -267,7 +267,7 @@ Frontend normalizes roles to `USER` / `ADMIN` / `SUPER_ADMIN`.
 - Open **Accounts Management** (`/admin/accounts`): promote to admin, demote to user, disable, enable
 - **Edit, discard, or delete any tournament**, including ones created by other admins
 
-The accounts sidebar item is hidden unless `isSuperAdmin`. The route `/admin/accounts` is wrapped in `AdminRoute` with `allowedRoles={['SUPER_ADMIN']}`.
+The accounts sidebar item is hidden unless `isSuperAdmin`. The route `/admin/accounts` is wrapped in `AdminRoute` with `allowedRoles={['SUPER_ADMIN']}`. Account-management APIs use `requireSuperAdminUser` and `assertSuperAdmin` (list, disable, enable, promote, demote).
 
 Tournament SQL uses:
 
@@ -283,9 +283,7 @@ Regular `admin` is **not** in that `IN` list; they rely on `created_by`.
 
 ### 9.2 Implementation note for maintainers
 
-Product rule: user management is Super Admin only.
-
-Some `/api/users/admin/:userId/disable` and `/enable` handlers are still mounted behind `requireAdminUser` (any admin). Promote/demote require Super Admin in the service layer. The **UI does not expose** user management to a regular Admin. If you harden this later, require Super Admin on every user-admin route, matching the product rule.
+Product rule: user management is Super Admin only. The UI and the `/api/users/admin/*` routes both enforce that (`requireSuperAdminUser` plus `assertSuperAdmin` in the service).
 
 Users cannot disable or demote themselves. Only a Super Admin can disable or enable **admin** accounts.
 
@@ -320,7 +318,7 @@ Redirect URLs that must be allow-listed in Supabase Auth:
 
 There is no local JWT secret verification. Each protected request calls Supabase Auth over HTTP.
 
-`requireAdminUser` allows `admin`, `super_admin`, `superadmin` (case-insensitive).
+`requireAdminUser` allows `admin`, `super_admin`, `superadmin` (case-insensitive). `requireSuperAdminUser` allows only `super_admin` / `superadmin`.
 
 ### CORS
 
@@ -409,6 +407,9 @@ stateDiagram-v2
   draft --> ongoing: PATCH publish
   ongoing --> paused: PATCH pause
   paused --> ongoing: PATCH resume
+  ongoing --> completed: all matches played
+  paused --> completed: all matches played
+  completed --> ongoing: result cleared
   draft --> [*]: DELETE discard
   ongoing --> [*]: DELETE cascade
 ```
@@ -420,12 +421,13 @@ stateDiagram-v2
 3. **Format** — `PATCH /:id/format-config`, validated against `sportRules.config.js`.
 4. **Review & publish** — `GET /:id/review`, then `PATCH /:id/publish` sets `tour_status` to **`ongoing`**.
 
-Leaving the wizard may `DELETE /:id/discard`. Discard currently refuses status `'published'`, while publish writes `'ongoing'` (see [§23](#23-known-limitations)).
+Leaving the wizard may `DELETE /:id/discard`. Discard deletes **drafts only**. Live events use cascade `DELETE /:id` (admin action modal), not discard.
 
 **After publish**
 
 - `/admin/tournaments/:id/matches` → `POST /:id/generate-bracket` (deletes existing matches, then inserts a new set — automatic pairing). The API does not itself require `ongoing` status.
-- Scoring `PATCH /api/matches/:matchId` updates the match and **propagates** winners/losers along `next_*_match_id`. Hybrid generates stage 2 when stage 1 is complete.
+- Scoring `PATCH /api/matches/:matchId` (and round-scoring / hybrid submit) updates the match and **propagates** winners/losers along `next_*_match_id`. Hybrid generates stage 2 when stage 1 is complete.
+- After a score save, `tournamentCompletion.js` sets `tour_status = 'completed'` when **every** match is played (winner, draw, or status `completed` / `resolved` / `archived` / `bye`). Zero matches does not complete. Clearing a result can revert `completed` to `ongoing`. End date alone does **not** write `completed`; public cards may still show “Ended” from `tour_enddate`.
 - Pause stores `pause_date` and sets `paused`. Resume requires `resume_date` and shifts start/end dates by the pause length.
 
 Public endpoints hide `draft` rows.
@@ -485,13 +487,11 @@ Protected routes: `Authorization: Bearer <supabase access_token>`.
 | PATCH | `/me/profile` | user | Update `fullName` (max 15 characters) |
 | POST | `/me/avatar` | user | Base64 image → `avatars` bucket |
 | GET | `/:userId/profile` | public | Profile by id |
-| GET | `/admin/profiles` | admin* | All users (UI: Super Admin only) |
-| PATCH | `/admin/:userId/disable` | admin* | Disable account |
-| PATCH | `/admin/:userId/enable` | admin* | Enable account |
+| GET | `/admin/profiles` | Super Admin | All users |
+| PATCH | `/admin/:userId/disable` | Super Admin | Disable account |
+| PATCH | `/admin/:userId/enable` | Super Admin | Enable account |
 | PATCH | `/admin/:userId/promote` | Super Admin | `role = admin` |
 | PATCH | `/admin/:userId/demote` | Super Admin | `role = user` |
-
-\*Product intent is Super Admin for all account-management APIs; see [§9.2](#92-implementation-note-for-maintainers).
 
 ### Tournaments — `/api/tournaments`
 
@@ -550,7 +550,7 @@ Requires admin or Super Admin.
 
 | Method | Path | Description |
 | --- | --- | --- |
-| GET | `/dashboard` | Dashboard aggregates |
+| GET | `/dashboard` | Aggregates (drafts excluded). Upcoming = start date in the future and not completed. Completed = `tour_status = 'completed'`. In-progress matches = `running` / `paused` |
 | POST | `/chat` | AI advisor; `{ messages: [{ role, content }] }` (last 8 turns kept) |
 
 ### Favorites — `/api/favorites`
@@ -803,6 +803,8 @@ npm test
 | `email_reminder.unit.test.js` | Reminder claiming/sending |
 | `chat.service.unit.test.js` | Chat caps / vendor errors |
 | `chat.prompt.unit.test.js` | Advisor prompt |
+| `tournament_completion.unit.test.js` | All-matches-played → `completed` |
+| `require_super_admin.unit.test.js` | Super Admin middleware |
 
 No frontend tests and no HTTP integration suite in this repository.
 
@@ -813,16 +815,13 @@ No frontend tests and no HTTP integration suite in this repository.
 Operational facts for the receiving team.
 
 1. **Schema not fully in git.** A blank database cannot be created from this repo alone.
-2. **`supabase/config.toml` may contain merge-conflict markers** (Studio URL / Google OAuth). Resolve before `supabase start`. Do not commit OAuth secrets.
-3. **`supabase/seed.sql` is missing** (referenced by config).
-4. **In-app notifications** are a placeholder (“No notification yet!”); email reminders are the notification channel.
-5. **Dashboard counters vs write path.** Publish sets `tour_status = 'ongoing'`. Dashboard SQL also looks for `active` / `published` / `upcoming` / `completed`. `completed` is shown in the UI but **never written** by the backend, so some dashboard numbers can stay at zero.
-6. **Discard vs publish.** Discard refuses status `'published'`; publish writes `'ongoing'`.
-7. **Sport catalog is hard-coded.** A new sport needs a DB row, `sportRules.config.js`, `frontend/src/constants/sports.js`, and an icon.
-8. **Auth N+1.** Every authenticated API request calls Supabase Auth over HTTP.
-9. **Open CORS** on Express if the API is exposed off-origin.
-10. **User-management API vs UI.** UI is Super Admin only; some disable/enable routes still allow any admin token ([§9.2](#92-implementation-note-for-maintainers)).
-11. **Advisor model names are environment-specific.** The code default `gpt-5.6-sol` is for the current gateway. Official OpenAI needs a different `AI_MODEL`.
+2. **`supabase/seed.sql` is missing** (referenced by `config.toml`). Do not commit OAuth secrets in that config.
+3. **In-app notifications** are a placeholder (“No notification yet!”); email reminders are the notification channel.
+4. **Sport catalog is hard-coded.** A new sport needs a DB row, `sportRules.config.js`, `frontend/src/constants/sports.js`, and an icon.
+5. **Auth N+1.** Every authenticated API request calls Supabase Auth over HTTP.
+6. **Open CORS** on Express if the API is exposed off-origin.
+7. **Advisor model names are environment-specific.** The code default `gpt-5.6-sol` is for the current gateway. Official OpenAI needs a different `AI_MODEL`.
+8. **Completion is match-driven, not backfilled.** Events that already had every match played stay `ongoing` until a later score save. Public cards can show “Ended” from `tour_enddate` while `tour_status` is still `ongoing`.
 
 ---
 
@@ -831,8 +830,8 @@ Operational facts for the receiving team.
 | If you want to… | Start here |
 | --- | --- |
 | Add an API endpoint | `backend/src/modules/<feature>/*.routes.js` then controller/service/repository |
-| Change who can call it | `authenticateSupabaseUser` / `requireAdminUser` / `created_by` SQL |
-| Restrict account APIs to Super Admin | `user.routes.js` + `user.service.js` (`assertSuperAdmin`) |
+| Change who can call it | `authenticateSupabaseUser` / `requireAdminUser` / `requireSuperAdminUser` / `created_by` SQL |
+| Change when a tournament is marked completed | `tournamentCompletion.js` (all matches played) |
 | Change sport/format rules | `sportRules.config.js` (chat prompt imports the same file) |
 | Change wizard validation | `backend/src/modules/tournament/dto/*.dto.js` and step components |
 | Change bracket generation | `bracket.service.js` and `bracketStandard` / `bracketRoundScoring` / `bracketHybrid` |
