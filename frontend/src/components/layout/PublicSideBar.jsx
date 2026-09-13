@@ -62,12 +62,12 @@ const PublicSidebar = ({ isOpen, onClose }) => {
         <>
             {isOpen && (
                 <div
-                    className="fixed inset-0 bg-black/40 z-40"
+                    className="fixed inset-0 bg-black/40 z-[60]"
                     onClick={onClose}
                 />
             )}
             <aside
-                className={`fixed top-0 left-0 h-full bg-white z-50 shadow-xl transition-transform duration-300 ease-in-out ${
+                className={`fixed top-0 left-0 h-full bg-white z-[60] shadow-xl transition-transform duration-300 ease-in-out ${
                     isOpen ? 'translate-x-0 w-[min(85vw,320px)]' : '-translate-x-full w-[min(85vw,320px)]'
                 }`}
             >
