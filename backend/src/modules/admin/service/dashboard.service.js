@@ -35,7 +35,7 @@ class DashboardService {
             if (start) start.setHours(0, 0, 0, 0);
 
             let displayStatus;
-            if (item.status === 'completed') {
+            if (item.status === 'completed' || item.status === 'ended') {
                 displayStatus = 'Completed';
             } else if (item.status === 'paused') {
                 displayStatus = 'Paused';

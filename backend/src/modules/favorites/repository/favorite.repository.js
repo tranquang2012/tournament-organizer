@@ -67,7 +67,7 @@ class FavoriteRepository {
          JOIN public.user_roles ur ON ur.id = tf.user_id
          WHERE t.tour_startdate = $1::date + $2::integer
            AND LOWER(COALESCE(t.tour_status, 'draft'))
-               NOT IN ('draft', 'completed', 'cancelled', 'canceled', 'archived')
+               NOT IN ('draft', 'completed', 'ended', 'cancelled', 'canceled', 'archived')
            AND NULLIF(TRIM(ur.email), '') IS NOT NULL
            AND COALESCE(ur.is_disable, false) = false
            AND tf.reminder_sent_for_startdate IS DISTINCT FROM t.tour_startdate

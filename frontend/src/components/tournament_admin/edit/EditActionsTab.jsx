@@ -192,7 +192,7 @@ const EditActionsTab = ({ tournamentId, tournament, onTournamentRefresh }) => {
         {!isOngoing && !isPaused && renderUnavailable(
           tourStatus === 'draft' || tourStatus === 'ready'
             ? 'Publish the tournament before you can pause it.'
-            : tourStatus === 'completed'
+            : (tourStatus === 'completed' || tourStatus === 'ended')
               ? 'Completed tournaments cannot be paused.'
               : `Pause is only available for ongoing tournaments (current status: ${tourStatus || 'unknown'}).`,
         )}

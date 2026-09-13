@@ -61,7 +61,7 @@ const TournamentManagePage = () => {
             status = 'Paused';
           } else if (tourStatus === 'ongoing' || tourStatus === 'active') {
             status = 'Active';
-          } else if (tourStatus === 'completed') {
+          } else if (tourStatus === 'completed' || tourStatus === 'ended') {
             status = 'Completed';
           } else if (tourStatus === 'draft' || tourStatus === 'ready') {
             status = 'Upcoming';

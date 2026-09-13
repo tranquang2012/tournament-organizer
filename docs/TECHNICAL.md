@@ -407,9 +407,9 @@ stateDiagram-v2
   draft --> ongoing: PATCH publish
   ongoing --> paused: PATCH pause
   paused --> ongoing: PATCH resume
-  ongoing --> completed: all matches played
-  paused --> completed: all matches played
-  completed --> ongoing: result cleared
+  ongoing --> ended: all matches played
+  paused --> ended: all matches played
+  ended --> ongoing: result cleared
   draft --> [*]: DELETE discard
   ongoing --> [*]: DELETE cascade
 ```
@@ -427,7 +427,7 @@ Leaving the wizard may `DELETE /:id/discard`. Discard deletes **drafts only**. L
 
 - `/admin/tournaments/:id/matches` → `POST /:id/generate-bracket` (deletes existing matches, then inserts a new set — automatic pairing). The API does not itself require `ongoing` status.
 - Scoring `PATCH /api/matches/:matchId` (and round-scoring / hybrid submit) updates the match and **propagates** winners/losers along `next_*_match_id`. Hybrid generates stage 2 when stage 1 is complete.
-- After a score save, `tournamentCompletion.js` sets `tour_status = 'completed'` when **every** match is played (winner, draw, or status `completed` / `resolved` / `archived` / `bye`). Zero matches does not complete. Clearing a result can revert `completed` to `ongoing`. End date alone does **not** write `completed`; public cards may still show “Ended” from `tour_enddate`.
+- After a score save, `tournamentCompletion.js` sets `tour_status = 'ended'` when **every** match is played (winner, draw, or status `completed` / `resolved` / `archived` / `bye`). Hybrid also requires at least one **stage 2** match, so finishing stage 1 does not end the event. Zero matches does not end it. Clearing a result can revert `ended` to `ongoing`. End date alone does **not** write `ended`; public cards may still show “Ended” from `tour_enddate`. Older rows with `completed` are treated the same as `ended` when reading.
 - Pause stores `pause_date` and sets `paused`. Resume requires `resume_date` and shifts start/end dates by the pause length.
 
 Public endpoints hide `draft` rows.
@@ -550,7 +550,7 @@ Requires admin or Super Admin.
 
 | Method | Path | Description |
 | --- | --- | --- |
-| GET | `/dashboard` | Aggregates (drafts excluded). Upcoming = start date in the future and not completed. Completed = `tour_status = 'completed'`. In-progress matches = `running` / `paused` |
+| GET | `/dashboard` | Aggregates (drafts excluded). Upcoming = start date in the future and not ended. Completed = `tour_status` in `ended` / `completed`. In-progress matches = `running` / `paused` |
 | POST | `/chat` | AI advisor; `{ messages: [{ role, content }] }` (last 8 turns kept) |
 
 ### Favorites — `/api/favorites`
@@ -831,7 +831,7 @@ Operational facts for the receiving team.
 | --- | --- |
 | Add an API endpoint | `backend/src/modules/<feature>/*.routes.js` then controller/service/repository |
 | Change who can call it | `authenticateSupabaseUser` / `requireAdminUser` / `requireSuperAdminUser` / `created_by` SQL |
-| Change when a tournament is marked completed | `tournamentCompletion.js` (all matches played) |
+| Change when a tournament is marked ended | `tournamentCompletion.js` (all matches played → `ended`) |
 | Change sport/format rules | `sportRules.config.js` (chat prompt imports the same file) |
 | Change wizard validation | `backend/src/modules/tournament/dto/*.dto.js` and step components |
 | Change bracket generation | `bracket.service.js` and `bracketStandard` / `bracketRoundScoring` / `bracketHybrid` |

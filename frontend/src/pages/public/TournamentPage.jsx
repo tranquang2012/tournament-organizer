@@ -283,7 +283,7 @@ const TournamentPage = () => {
           if (end) end.setHours(23, 59, 59, 999);
 
           let status = 'Upcoming';
-          if (t.tour_status === 'completed') {
+          if (t.tour_status === 'ended' || t.tour_status === 'completed') {
             status = 'Ended';
           } else if (start && start > now) {
             status = 'Upcoming';

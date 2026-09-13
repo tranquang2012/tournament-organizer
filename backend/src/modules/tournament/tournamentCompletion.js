@@ -7,18 +7,25 @@ function isMatchPlayed(match) {
   return PLAYED_STATUSES.has(match.status);
 }
 
-function nextTourStatusFromMatches(tourStatus, matches) {
+function hasHybridStageTwo(matches) {
+  return (Array.isArray(matches) ? matches : []).some((match) => match?.stage === 'stage_2');
+}
+
+function nextTourStatusFromMatches(tourStatus, matches, { format } = {}) {
   const status = tourStatus || 'draft';
   if (status === 'draft') return 'draft';
 
   const list = Array.isArray(matches) ? matches : [];
   const allPlayed = list.length > 0 && list.every(isMatchPlayed);
+  const hybridWaitingOnStageTwo = format === 'hybrid' && !hasHybridStageTwo(list);
+  const finished = allPlayed && !hybridWaitingOnStageTwo;
+  const alreadyEnded = status === 'ended' || status === 'completed';
 
-  if (allPlayed && (status === 'ongoing' || status === 'paused')) {
-    return 'completed';
+  if (finished && (status === 'ongoing' || status === 'paused' || alreadyEnded)) {
+    return 'ended';
   }
-  if (status === 'completed') {
-    return allPlayed ? 'completed' : 'ongoing';
+  if (alreadyEnded) {
+    return finished ? 'ended' : 'ongoing';
   }
   return status;
 }

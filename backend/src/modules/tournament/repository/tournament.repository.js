@@ -530,18 +530,20 @@ async getTournamentTiming(tourId, organizerId, executor = pool) {
 
   async syncCompletionFromMatches(tourId, executor = pool) {
     const { rows: tourRows } = await executor.query(
-      `SELECT tour_status FROM tournament WHERE tour_id = $1`,
+      `SELECT tour_status, tour_format FROM tournament WHERE tour_id = $1`,
       [tourId]
     );
     const tournament = tourRows[0];
     if (!tournament) return null;
 
     const { rows: matches } = await executor.query(
-      `SELECT winning_competitor_id, is_draw, status FROM matches WHERE tour_id = $1`,
+      `SELECT winning_competitor_id, is_draw, status, stage FROM matches WHERE tour_id = $1`,
       [tourId]
     );
 
-    const nextStatus = nextTourStatusFromMatches(tournament.tour_status, matches);
+    const nextStatus = nextTourStatusFromMatches(tournament.tour_status, matches, {
+      format: tournament.tour_format,
+    });
     if (nextStatus === (tournament.tour_status || 'draft')) return tournament;
 
     const { rows } = await executor.query(

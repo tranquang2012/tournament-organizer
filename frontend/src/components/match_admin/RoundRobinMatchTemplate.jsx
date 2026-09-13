@@ -176,7 +176,7 @@ const RoundRobinMatchTemplate = ({ tournament, stage }) => {
   let badgeDotColor = 'bg-emerald-500';
   const tourStatus = (tournament.tour_status || '').toLowerCase();
   
-  if (tourStatus === 'completed') {
+  if (tourStatus === 'completed' || tourStatus === 'ended') {
     statusBadge = 'Completed';
     badgeColor = 'bg-blue-100 text-blue-800';
     badgeDotColor = 'bg-blue-500';

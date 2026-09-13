@@ -16,7 +16,7 @@ export const deriveTournamentStatus = (t) => {
   const end = t.tour_enddate ? new Date(t.tour_enddate) : null;
   if (end) end.setHours(23, 59, 59, 999);
 
-  if (t.tour_status === 'completed') return 'Ended';
+  if (t.tour_status === 'ended' || t.tour_status === 'completed') return 'Ended';
   if (start && start > now) return 'Upcoming';
   if (end && end < now) return 'Ended';
   if (start && (!end || end >= now)) return 'Ongoing';

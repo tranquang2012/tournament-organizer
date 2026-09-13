@@ -7,15 +7,15 @@ class DashboardRepository {
         SELECT 
           COUNT(*) FILTER (WHERE COALESCE(tour_status, 'draft') <> 'draft') as total_tournaments,
           COUNT(*) FILTER (
-            WHERE COALESCE(tour_status, 'draft') NOT IN ('draft', 'completed')
+            WHERE COALESCE(tour_status, 'draft') NOT IN ('draft', 'completed', 'ended')
               AND (tour_startdate IS NULL OR tour_startdate::date <= CURRENT_DATE)
           ) as active_tournaments,
           COUNT(*) FILTER (
-            WHERE COALESCE(tour_status, 'draft') NOT IN ('draft', 'completed')
+            WHERE COALESCE(tour_status, 'draft') NOT IN ('draft', 'completed', 'ended')
               AND tour_startdate IS NOT NULL
               AND tour_startdate::date > CURRENT_DATE
           ) as upcoming_tournaments,
-          COUNT(*) FILTER (WHERE tour_status = 'completed') as completed_tournaments
+          COUNT(*) FILTER (WHERE tour_status IN ('completed', 'ended')) as completed_tournaments
         FROM tournament
       ),
       participant_stats AS (
