@@ -342,12 +342,21 @@ const TournamentCreatePage = () => {
         setToast({ message: 'Tournament name is required', type: 'error' });
         return false;
       }
+      const today = new Date().toISOString().slice(0, 10);
       if (!formData.startDate) {
         setToast({ message: 'Start date is required', type: 'error' });
         return false;
       }
+      if (formData.startDate < today) {
+        setToast({ message: 'Start date cannot be in the past', type: 'error' });
+        return false;
+      }
       if (!formData.endDate) {
         setToast({ message: 'End date is required', type: 'error' });
+        return false;
+      }
+      if (formData.endDate < formData.startDate) {
+        setToast({ message: 'End date cannot be before start date', type: 'error' });
         return false;
       }
     }

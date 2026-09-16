@@ -95,6 +95,7 @@ const TournamentBracket = ({
         doubleData.lower?.length || 0
     )
     const hasBracket = mode === 'double' ? doubleMatchCount > 0 : singleMatchCount > 0
+    const useSingle = mode === 'single' || !doubleData.lower?.length
 
     // SVGViewer pans and zooms via a transform on a <g>, which WebKit ignores when
     // positioning foreignObject content. Native scrolling keeps the bracket usable
@@ -138,9 +139,9 @@ const TournamentBracket = ({
                 <div className="flex justify-center py-10 text-gray-500">
                     No bracket matches generated yet.
                 </div>
-            ) : mode === 'single' ? (
+            ) : useSingle ? (
                 <SingleEliminationBracket
-                    matches={matches}
+                    matches={mode === 'double' ? (doubleData.upper || []) : matches}
                     matchComponent={CustomMatch}
                     options={bracketOptions}
                     svgWrapper={svgWrapper}

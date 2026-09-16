@@ -2,6 +2,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const matchesService = require('../src/modules/matches/service/matches.service');
 const matchesRepository = require('../src/modules/matches/repository/matches.repository');
+const { validateCreateTournamentDto } = require('../src/modules/tournament/dto/createTournament.dto');
 const pool = require('../src/shared/database/pool');
 
 test('scheduleMatch rejects dates in the past', async () => {
@@ -211,3 +212,26 @@ test('updateMatch rejects draws for non-football sports even in round robin', as
     matchesRepository.getMatchBase = origGetMatchBase;
   }
 });
+
+test('validateCreateTournamentDto rejects start_date in the past', () => {
+  const result = validateCreateTournamentDto({
+    tournament_name: 'Past Cup',
+    start_date: '2020-01-01',
+    end_date: '2020-01-05',
+  });
+  assert.ok(result.errors);
+  assert.ok(result.errors.some((e) => /past/i.test(e)));
+});
+
+test('validateCreateTournamentDto accepts today or future start_date', () => {
+  const futureStart = new Date(Date.now() + 86400000).toISOString().slice(0, 10);
+  const futureEnd = new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10);
+  const result = validateCreateTournamentDto({
+    tournament_name: 'Future Cup',
+    start_date: futureStart,
+    end_date: futureEnd,
+  });
+  assert.equal(result.errors, null);
+  assert.equal(result.data.tour_name, 'Future Cup');
+});
+

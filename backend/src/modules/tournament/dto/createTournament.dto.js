@@ -24,6 +24,8 @@ function validateCreateTournamentDto(body) {
     errors.push('start_date is required.');
   } else if (isNaN(Date.parse(start_date))) {
     errors.push('start_date must be a valid date (mm/dd/yyyy or ISO format).');
+  } else if (new Date(start_date).toISOString().slice(0, 10) < new Date().toISOString().slice(0, 10)) {
+    errors.push('start_date cannot be in the past.');
   }
 
   if (!end_date) {
