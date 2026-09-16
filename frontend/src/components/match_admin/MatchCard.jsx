@@ -7,7 +7,7 @@ import { scheduleMatch, startMatch, updateMatch } from '../../services/MatchServ
 import MatchStatModal from './MatchStatModal';
 import { faChartBar } from '@fortawesome/free-solid-svg-icons';
 
-const MatchCard = ({ match, onUpdate, variant = 'versus' }) => {
+const MatchCard = ({ match, onUpdate, variant = 'versus', allowDraw = false, tournament }) => {
   const isScoring = variant === 'scoring';
   const { status, round, team1, team2, startTime, endTime, date, autoStartAt, autoStopAt, id } = match;
 
@@ -24,6 +24,12 @@ const MatchCard = ({ match, onUpdate, variant = 'versus' }) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [modalContent, setModalContent] = useState(null); 
   const [showStatsModal, setShowStatsModal] = useState(false);
+
+  const todayStr = new Date().toLocaleDateString('en-CA');
+  const tourStartStr = tournament?.tour_startdate ? String(tournament.tour_startdate).slice(0, 10) : '';
+  const tourEndStr = tournament?.tour_enddate ? String(tournament.tour_enddate).slice(0, 10) : '';
+  const minDate = tourStartStr && tourStartStr > todayStr ? tourStartStr : todayStr;
+  const maxDate = tourEndStr || undefined;
 
   useEffect(() => {
     setScheduleDate(date || '');
@@ -95,6 +101,15 @@ const MatchCard = ({ match, onUpdate, variant = 'versus' }) => {
   };
 
   const handleEndMatchClick = () => {
+    if (!allowDraw && Number(localScore1) === Number(localScore2)) {
+      setModalContent({
+        title: 'Draw Not Allowed',
+        description: 'Scores cannot be tied. This match must determine a winner.',
+        intent: 'danger'
+      });
+      return;
+    }
+
     setModalContent({
       title: 'Confirm Match End',
       description: 'Are you sure you want to end this match? This will lock the scores and officially determine the winner.',
@@ -114,10 +129,33 @@ const MatchCard = ({ match, onUpdate, variant = 'versus' }) => {
       setIsUpdating(true);
       const [sYear, sMonth, sDay] = scheduleDate.split('-');
       const [sHour, sMin] = scheduleStart.split(':');
-      const startIso = new Date(sYear, sMonth - 1, sDay, sHour, sMin).toISOString();
+      const startDateTime = new Date(sYear, sMonth - 1, sDay, sHour, sMin);
+      const startIso = startDateTime.toISOString();
 
       const [eHour, eMin] = scheduleEnd.split(':');
-      const endIso = new Date(sYear, sMonth - 1, sDay, eHour, eMin).toISOString();
+      const endDateTime = new Date(sYear, sMonth - 1, sDay, eHour, eMin);
+      const endIso = endDateTime.toISOString();
+
+      if (endDateTime <= startDateTime) {
+        setModalContent({ title: 'Validation Error', description: 'End time must be after start time.', intent: 'danger' });
+        return;
+      }
+
+      if (startDateTime.getTime() < Date.now() - 60000) {
+        setModalContent({ title: 'Validation Error', description: 'Cannot schedule a match in the past.', intent: 'danger' });
+        return;
+      }
+
+      if (tourStartStr && scheduleDate < tourStartStr) {
+        setModalContent({ title: 'Validation Error', description: `Match cannot be scheduled before tournament start date (${tourStartStr}).`, intent: 'danger' });
+        return;
+      }
+
+      if (tourEndStr && scheduleDate > tourEndStr) {
+        setModalContent({ title: 'Validation Error', description: `Match cannot be scheduled after tournament end date (${tourEndStr}).`, intent: 'danger' });
+        return;
+      }
+
       const res = await scheduleMatch(id, startIso, endIso);
       const warning = res?.data?.conflict_warning;
       if (warning) {
@@ -264,6 +302,8 @@ const MatchCard = ({ match, onUpdate, variant = 'versus' }) => {
                 <InputField
                   type="date"
                   value={scheduleDate}
+                  min={minDate}
+                  max={maxDate}
                   onChange={(e) => setScheduleDate(e.target.value)}
                   className="w-40"
                   disabled={isCompleted || isUpdating}

@@ -85,6 +85,30 @@ class MatchesService {
         newStatus = 'running';
       }
 
+      if ((is_draw || newStatus === 'completed') && !newWinnerId) {
+        const { rows: matchInfoRows } = await client.query(
+          `SELECT m.next_winner_match_id, m.next_loser_match_id, m.stage, t.tour_format, t.sp_id
+           FROM matches m
+           JOIN tournament t ON m.tour_id = t.tour_id
+           WHERE m.match_id = $1`,
+          [matchId]
+        );
+        const matchInfo = matchInfoRows[0];
+        if (matchInfo) {
+          const isElimination =
+            ['single_elimination', 'double_elimination'].includes(matchInfo.tour_format) ||
+            matchInfo.next_winner_match_id != null ||
+            matchInfo.next_loser_match_id != null ||
+            ['knockout', 'second_stage', 'stage_2'].includes(matchInfo.stage);
+          if (isElimination) {
+            throw new AppError('Elimination matches cannot end in a draw. A winner must be determined.', 400);
+          }
+          if (Number(matchInfo.sp_id) !== 1) {
+            throw new AppError('Matches for this sport cannot end in a draw.', 400);
+          }
+        }
+      }
+
       // 3. Update current match in DB
       await matchesRepository.updateMatch(matchId, {
         score1,
@@ -140,6 +164,40 @@ class MatchesService {
   // 3. Guard: cannot schedule a completed or archived match
   if (['completed', 'archived', 'bye'].includes(current.status)) {
     throw new AppError(`Cannot schedule a match with status '${current.status}'.`, 400);
+  }
+
+  // Guard: cannot schedule match in the past
+  if (new Date(data.scheduled_start).getTime() < Date.now() - 60000) {
+    throw new AppError('Cannot schedule a match in the past.', 400);
+  }
+
+  const { rows: tourRows } = await pool.query(
+    `SELECT tour_startdate, tour_enddate FROM tournament WHERE tour_id = $1`,
+    [current.tour_id]
+  );
+  const tour = tourRows[0];
+  if (tour) {
+    const toDateStr = (d) => {
+      if (!d) return null;
+      if (d instanceof Date) {
+        const year = d.getUTCFullYear();
+        const month = String(d.getUTCMonth() + 1).padStart(2, '0');
+        const day = String(d.getUTCDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+      }
+      return String(d).slice(0, 10);
+    };
+    const tourStartStr = toDateStr(tour.tour_startdate);
+    const tourEndStr = toDateStr(tour.tour_enddate);
+    const matchStartDay = new Date(data.scheduled_start).toISOString().slice(0, 10);
+    const matchEndDay = new Date(data.scheduled_end).toISOString().slice(0, 10);
+
+    if (tourStartStr && matchStartDay < tourStartStr) {
+      throw new AppError(`Match cannot be scheduled before tournament start date (${tourStartStr}).`, 400);
+    }
+    if (tourEndStr && matchEndDay > tourEndStr) {
+      throw new AppError(`Match cannot be scheduled after tournament end date (${tourEndStr}).`, 400);
+    }
   }
 
   // 4. Check for overlapping matches in the same tournament (warn, not block)

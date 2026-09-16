@@ -16,6 +16,7 @@ import InputField from '../../common/InputField';
 import SelectField from '../../common/SelectField';
 import Button from '../../common/Button';
 import { commonSports, eSports } from '../../../constants/sports';
+import { supabase } from '../../../config/supabaseClient';
 
 /* Default team logos */
 import teamLogo1 from '../../../assets/defaultTeamLogos/logo1.jpg';
@@ -51,6 +52,7 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
   const [newTeamLogoMode, setNewTeamLogoMode] = useState('default');
   const [newTeamLogoDefault, setNewTeamLogoDefault] = useState(null);
   const [newTeamLogoFile, setNewTeamLogoFile] = useState(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [newTeamMember, setNewTeamMember] = useState({});
   const [expandedTeams, setExpandedTeams] = useState({});
   const csvInputRef = useRef(null);
@@ -109,15 +111,38 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
   };
 
   /*  Team helpers  */
-  const addTeam = () => {
-    if (!newTeamName.trim()) return;
+  const addTeam = async () => {
+    if (!newTeamName.trim() || isUploadingLogo) return;
     const id = `t-${Date.now()}`;
-    const logoSrc =
+    let logoSrc =
       newTeamLogoMode === 'default' && newTeamLogoDefault
         ? newTeamLogoDefault.src
-        : newTeamLogoFile
-          ? URL.createObjectURL(newTeamLogoFile)
-          : DEFAULT_TEAM_LOGOS[0].src;
+        : DEFAULT_TEAM_LOGOS[0].src;
+
+    if (newTeamLogoMode === 'custom' && newTeamLogoFile) {
+      try {
+        setIsUploadingLogo(true);
+        const fileExt = newTeamLogoFile.name.split('.').pop();
+        const fileName = `logos/${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('tournament-banners')
+          .upload(fileName, newTeamLogoFile, {
+            cacheControl: '3600',
+            upsert: true,
+          });
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('tournament-banners')
+          .getPublicUrl(fileName);
+
+        logoSrc = publicUrl;
+      } catch (err) {
+        console.error('Failed to upload team logo:', err);
+      } finally {
+        setIsUploadingLogo(false);
+      }
+    }
 
     const teams = [
       ...(data.teams || []),
@@ -575,10 +600,11 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
 
                     <Button
                       onClick={addTeam}
-                      disabled={!newTeamName.trim()}
+                      disabled={!newTeamName.trim() || isUploadingLogo}
+                      loading={isUploadingLogo}
                       fullWidth
                     >
-                      Add Team
+                      {isUploadingLogo ? 'Uploading...' : 'Add Team'}
                     </Button>
                   </div>
                 </div>

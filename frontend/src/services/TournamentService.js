@@ -65,6 +65,7 @@ const buildPredefinedTeamParticipants = (teams = []) =>
   teams.map((team) => ({
     comp_name: team.name,
     comp_size: Math.max(team.members?.length || 0, 1),
+    comp_logo: team.logo || null,
     members: (team.members || []).map((member) => ({
       mem_name: member.name,
       mem_expe: normalizeExperience(member.experience),

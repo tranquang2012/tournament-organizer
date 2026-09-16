@@ -66,10 +66,10 @@ class TournamentRepository {
         const compSize = participant_type === 'team' ? Number(p.comp_size) : 1;
 
         const { rows: compRows } = await client.query(
-          `INSERT INTO competitors (tour_id, comp_name, comp_size)
-           VALUES ($1,$2,$3)
+          `INSERT INTO competitors (tour_id, comp_name, comp_size, comp_logo)
+           VALUES ($1,$2,$3,$4)
            RETURNING *`,
-          [tourId, p.comp_name.trim(), compSize]
+          [tourId, p.comp_name.trim(), compSize, p.comp_logo || null]
         );
         const comp = compRows[0];
 

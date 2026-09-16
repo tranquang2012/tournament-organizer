@@ -280,7 +280,13 @@ const EliminationMatchTemplate = ({ tournament, stage }) => {
                </div>
             ) : filteredMatches.length > 0 ? (
               filteredMatches.map(match => (
-                <MatchCard key={match.id} match={match} onUpdate={handleMatchUpdate} />
+                <MatchCard
+                  key={match.id}
+                  match={match}
+                  onUpdate={handleMatchUpdate}
+                  allowDraw={false}
+                  tournament={tournament}
+                />
               ))
             ) : (
               <div className="py-12 text-center text-slate-400 font-medium bg-white rounded-xl border border-dashed border-slate-300">

@@ -421,6 +421,7 @@ const RoundScoringMatchTemplate = ({ tournament, stage = null }) => {
                       match={match}
                       variant="scoring"
                       onUpdate={handleScheduleUpdate}
+                      tournament={tournament}
                     />
                   ))}
                 </div>
