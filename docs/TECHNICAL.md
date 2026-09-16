@@ -835,12 +835,4 @@ Operational facts for the receiving team.
 | Change env ports | `env/modes/*.env` then `npm run env:local` or `env:deploy` |
 | Change production proxy/TLS | `frontend/nginx.conf`, `nginx-app.conf`, `docker-compose.yml` |
 
----
 
-## Document control
-
-| Item | Value |
-| --- | --- |
-| Requirements source | Capstone Scope and Deliverable Discussion Document (Netcompany Tournament Organizer Tool) |
-| Implementation described | Source tree as handed over |
-| Related files | [README.md](../README.md), `.env.example`, `docker-compose.yml` |
