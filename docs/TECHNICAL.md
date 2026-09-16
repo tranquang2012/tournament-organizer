@@ -767,10 +767,18 @@ PostgreSQL in the scope document **is** this database. Supabase is how it is hos
 
 | File | Change |
 | --- | --- |
-| `20260529000000_add_avatar_url_to_user_roles.sql` | `user_roles.avatar_url` |
-| `20260715000000_allow_hybrid_tour_format.sql` | `hybrid` on `tour_format` |
-| `20260728000000_add_participant_type_to_tournament.sql` | `participant_type` |
-| `20260818000000_add_tournament_favorites_and_reminders.sql` | Favorites + RLS |
+| `20260915000100_init_tournament_schema.sql` | Complete baseline schema: tables, indexes, triggers, RLS policies, and storage buckets |
+
+This migration establishes the full database structure in a single reproducible script:
+
+- **Tables:** `user_roles`, `sport`, `tournament`, `competitors`, `teammember`, `matches`, `tournament_stat_templates`, `match_stats`, `tournament_favorites`
+- **Extensions & Indexes:** Enables `pgcrypto`; adds indexes on foreign keys, statuses, start dates, and stage/round lookups
+- **Triggers & Functions:**
+  - `handle_new_auth_user()` on `auth.users` (`on_auth_user_created`): automatically provisions a `public.user_roles` record with role `'user'` on signup
+  - `guard_user_roles()` (`prevent_user_role_abuse`): prevents unauthorized role escalation and account disabling
+  - `guard_tournament_ownership()` (`prevent_tournament_ownership_forgery`): ensures tournament creator identity integrity
+- **Row Level Security (RLS):** Enabled across all tables with explicit SELECT, INSERT, UPDATE, and DELETE policies for public users, tournament owners/admins, and Super Admins
+- **Storage Buckets & Policies:** Configures `avatars` and `tournament-banners` buckets along with RLS storage policies for public read and authenticated management
 
 `supabase/config.toml` is CLI config (local API 54321, DB 54322, Studio 54323). `[db.seed]` points at `./seed.sql`, which is **not** in the repo.
 
