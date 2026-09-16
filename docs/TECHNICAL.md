@@ -1,7 +1,6 @@
 # Netcompany Tournament Organizer Tool — Technical document
 
-This is the technical handover for the **Netcompany Tournament Organizer Tool** (web). It is written for a receiving engineering team and for stakeholders who already know the capstone scope. It describes **the system as built**, and maps that back to [Netcompany_Capstone_Project_ScopeAndDelivevrable_Document.pdf](../Netcompany_Capstone_Project_ScopeAndDelivevrable_Document.pdf).
-
+This is the technical handover for the **Netcompany Tournament Organizer Tool** (web). It is written for a receiving engineering team and for stakeholders who already know the capstone scope.
 Start with the root [README](../README.md) to run the project. Use this file to understand architecture, roles, APIs, data, and operations.
 
 ---
