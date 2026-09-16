@@ -1,7 +1,7 @@
 # Netcompany Tournament Organizer Tool — Technical document
 
 This is the technical handover for the **Netcompany Tournament Organizer Tool** (web). It is written for a receiving engineering team and for stakeholders who already know the capstone scope.
-Start with the root [README](../README.md) to run the project. Use this file to understand architecture, roles, APIs, data, and operations.
+Start with the root [README](../README.md) to run the project. Use this file to understand architecture, roles, APIs, and operations. Complete schema and RLS documentation is in **[docs/DATABASE.md](DATABASE.md)**.
 
 ---
 
@@ -230,10 +230,10 @@ tournament-organizer/
 │   ├── src/modules/          user, tournament, matches, sport, admin, favorites
 │   ├── src/shared/           DB pool, auth middleware, AppError
 │   └── tests/                Node unit tests
-├── supabase/migrations/      Incremental SQL (not a full schema dump)
+├── supabase/                 Baseline SQL schema + sports catalog seed
 ├── env/modes/                local vs deploy port/URL switcher
 ├── docker-compose.yml
-├── docs/TECHNICAL.md         This file
+├── docs/                     TECHNICAL.md, DATABASE.md
 └── Netcompany_Capstone_Project_ScopeAndDelivevrable_Document.pdf
 ```
 
@@ -327,7 +327,7 @@ There is no local JWT secret verification. Each protected request calls Supabase
 
 ## 11. Domain model
 
-Full `CREATE TABLE` scripts are **not** in git (only later migrations). Confirm against the live Supabase schema. The following is inferred from repositories.
+The complete database schema is versioned in [`supabase/migrations/20260915000100_init_tournament_schema.sql`](../supabase/migrations/20260915000100_init_tournament_schema.sql) and documented in detail in [docs/DATABASE.md](DATABASE.md). The initial 12 sports are seeded via [`supabase/seed.sql`](../supabase/seed.sql) and [`supabase/migrations/20260916000200_seed_sports_catalog.sql`](../supabase/migrations/20260916000200_seed_sports_catalog.sql).
 
 ```mermaid
 erDiagram
@@ -416,7 +416,7 @@ stateDiagram-v2
 **Create wizard** (`/admin/tournaments/create`) — four steps, matching the admin-configuration deliverable:
 
 1. **General details** — `POST /api/tournaments`, optional `PATCH /:id/general-details`. Banner is a preset public URL or a `data:` image uploaded to Storage.
-2. **Sport & participants** — `PATCH /:id/sport-participants`. Replaces competitors each save. Teams may be predefined with custom/default logos (uploaded to `tournament-banners` bucket) or **randomly grouped** (`buildRandomizedTeamParticipants`) — this is the automatic team-formation requirement.
+2. **Sport & participants** — `PATCH /:id/sport-participants`. Replaces competitors each save. Participants can be entered manually or uploaded in bulk via **CSV** ([`sample_players.csv`](../sample_players.csv) or [`sample_players_16.csv`](../sample_players_16.csv)). Format: `Name,Experience` where experience is one of `Beginner`, `Intermediate`, `Advanced`, or `Expert`. Teams may be predefined with custom/default logos (uploaded to `tournament-banners` bucket) or **randomly grouped** (`buildRandomizedTeamParticipants`) — satisfying the automatic team-formation requirement.
 3. **Format** — `PATCH /:id/format-config`, validated against `sportRules.config.js`.
 4. **Review & publish** — `GET /:id/review`, then `PATCH /:id/publish` sets `tour_status` to **`ongoing`**.
 
@@ -529,6 +529,46 @@ Admin (`auth` + `requireAdminUser`; Super Admin bypasses ownership):
 | PATCH | `/:id/pause` | `{ pause_date }` |
 | PATCH | `/:id/resume` | `{ resume_date }` |
 
+#### Key API Request Payloads
+
+**`PATCH /api/tournaments/:id/sport-participants` (Team Format)**
+```json
+{
+  "sp_id": 1,
+  "participant_type": "team",
+  "participants": [
+    {
+      "id": "temp-team-1",
+      "name": "Team Tigers",
+      "logo": "https://.../storage/v1/object/public/tournament-banners/default/logo1.jpg",
+      "members": [
+        { "name": "Alice", "experience": 3 },
+        { "name": "Bob", "experience": 2 }
+      ]
+    }
+  ]
+}
+```
+
+**`POST /api/tournaments/:id/bracket/rounds/:matchId/scores` (Round Scoring)**
+```json
+{
+  "scores": [
+    { "competitor_id": "c1f7...", "score": 25.4, "rank": 1 },
+    { "competitor_id": "c2b8...", "score": 28.1, "rank": 2 }
+  ]
+}
+```
+
+**`POST /api/tournaments/:id/stat-templates`**
+```json
+{
+  "name": "Pass Accuracy",
+  "type": "PERCENTAGE"
+}
+```
+*(Types: `INTEGER`, `PERCENTAGE`, `TEXT`, `DURATION`, `BOOLEAN`)*
+
 ### Matches — `/api/matches`
 
 | Method | Path | Auth | Description |
@@ -594,6 +634,11 @@ The AI advisor widget is mounted in `AdminLayout`, so it appears on **every** `/
 `AuthProvider` listens to `supabase.auth.onAuthStateChange` and loads `/api/users/me/profile`.  
 Axios: `frontend/src/config/apiEndpoints.js` (response interceptor returns `response.data`). Sport URLs are zero-padded (`/sports/01`); convert to integers before calling the API.
 
+### 15.1 Frontend Architecture & State
+- **Auth state:** Managed via React Context (`frontend/src/context/AuthContext.jsx`), synchronizing Supabase OAuth sessions with `public.user_roles` profile data.
+- **Wizard state:** `TournamentCreatePage.jsx` orchestrates the 4-step wizard using local component state persisted step-by-step to the backend API.
+- **Quality verification:** Verified using `npm run lint` (ESLint 10) and `npm run build` (Vite 8 production bundle compile); there is no browser unit test suite.
+
 ---
 
 ## 16. Environment variables
@@ -648,7 +693,7 @@ See `.env.example`: database, Supabase, `PUBLIC_IP`, `CERTBOT_EMAIL`, SMTP, AI, 
 
 1. Use a hosted Supabase project (recommended). Local `supabase start` is optional and currently incomplete ([§21](#21-database-and-supabase), [§23](#23-known-limitations)).
 2. Enable Google and Facebook in Supabase Auth; add the redirect URLs in [§10](#10-authentication).
-3. Apply `supabase/migrations/*.sql` if those columns/tables are missing. The original schema is not in this repo.
+3. Apply `supabase/migrations/*.sql` and `supabase/seed.sql` to initialize the full baseline schema, triggers, RLS policies, storage buckets, and initial sports catalog.
 4. Create Storage buckets `tournament-banners` and `avatars` (public read is typical). Default banners live under `tournament-banners/default/`.
 5. Copy env files and run `npm run env:local`.
 
@@ -769,8 +814,9 @@ PostgreSQL in the scope document **is** this database. Supabase is how it is hos
 | File | Change |
 | --- | --- |
 | `20260915000100_init_tournament_schema.sql` | Complete baseline schema: tables, indexes, triggers, RLS policies, and storage buckets |
+| `20260916000200_seed_sports_catalog.sql` | Seeds the 12 sports catalog with names, participant types, and formats |
 
-This migration establishes the full database structure in a single reproducible script:
+The baseline migration establishes the full database structure in a single reproducible script:
 
 - **Tables:** `user_roles`, `sport`, `tournament`, `competitors`, `teammember`, `matches`, `tournament_stat_templates`, `match_stats`, `tournament_favorites`
 - **Extensions & Indexes:** Enables `pgcrypto`; adds indexes on foreign keys, statuses, start dates, and stage/round lookups
@@ -781,7 +827,7 @@ This migration establishes the full database structure in a single reproducible 
 - **Row Level Security (RLS):** Enabled across all tables with explicit SELECT, INSERT, UPDATE, and DELETE policies for public users, tournament owners/admins, and Super Admins
 - **Storage Buckets & Policies:** Configures `avatars` and `tournament-banners` buckets along with RLS storage policies for public read and authenticated management
 
-`supabase/config.toml` is CLI config (local API 54321, DB 54322, Studio 54323). `[db.seed]` points at `./seed.sql`, which is **not** in the repo.
+`supabase/config.toml` is CLI config (local API 54321, DB 54322, Studio 54323). `[db.seed]` points at `./seed.sql` which populates the initial 12 sports catalog during `supabase db reset`.
 
 ### What to transfer with the source
 
@@ -811,7 +857,7 @@ npm test
 | `email_reminder.unit.test.js` | Reminder claiming/sending |
 | `chat.service.unit.test.js` | Chat caps / vendor errors |
 | `chat.prompt.unit.test.js` | Advisor prompt |
-| `tournament_completion.unit.test.js` | All-matches-played → `completed` |
+| `tournament_completion.unit.test.js` | All-matches-played → `ended` |
 | `require_super_admin.unit.test.js` | Super Admin middleware |
 | `match_validation.unit.test.js` | Elimination draws & schedule past/bounds checks |
 
@@ -823,8 +869,8 @@ No frontend tests and no HTTP integration suite in this repository.
 
 Operational facts for the receiving team.
 
-1. **Schema not fully in git.** A blank database cannot be created from this repo alone.
-2. **`supabase/seed.sql` is missing** (referenced by `config.toml`). Do not commit OAuth secrets in that config.
+1. **Initial admin bootstrap:** A newly created database needs the first Super Admin manually promoted via SQL (`UPDATE public.user_roles SET role = 'super_admin' WHERE email = '...';`).
+2. **Seed coverage:** `supabase/seed.sql` and `20260916000200_seed_sports_catalog.sql` seed the 12 sports catalog; sample tournament and competitor data can be generated through the wizard or CSV imports ([`sample_players.csv`](../sample_players.csv)).
 3. **In-app notifications** are a placeholder (“No notification yet!”); email reminders are the notification channel.
 4. **Sport catalog is hard-coded.** A new sport needs a DB row, `sportRules.config.js`, `frontend/src/constants/sports.js`, and an icon.
 5. **Auth N+1.** Every authenticated API request calls Supabase Auth over HTTP.

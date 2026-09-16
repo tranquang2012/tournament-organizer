@@ -2,7 +2,7 @@
 
 Web platform for Netcompany to configure, schedule, manage, and monitor sports and esports tournaments. Administrators create events, generate brackets, enter scores, and track results. Guests browse public pages; signed-in users can favorite tournaments and receive email reminders.
 
-This README is the runbook. Architecture, roles, APIs, and operations: **[docs/TECHNICAL.md](docs/TECHNICAL.md)**.
+This README is the runbook. Architecture, roles, APIs, and operations: **[docs/TECHNICAL.md](docs/TECHNICAL.md)**. Database schema & policies: **[docs/DATABASE.md](docs/DATABASE.md)**.
 
 ## Who can do what
 
@@ -21,11 +21,11 @@ There is no native mobile app. The UI is a responsive browser SPA (React + Tailw
 tournament-organizer/
 ├── frontend/          React + Vite SPA (Tailwind CSS)
 ├── backend/           Express API (Node.js)
-├── supabase/          Incremental SQL migrations
+├── supabase/          Baseline schema, migrations, and seed.sql
 ├── env/modes/         Local vs Docker environment switcher
 ├── scripts/           env-mode helper + Let's Encrypt loop
 ├── docker-compose.yml API + nginx + certbot
-└── docs/              Technical handover
+└── docs/              TECHNICAL.md, DATABASE.md
 ```
 
 ## Stack
@@ -41,6 +41,33 @@ tournament-organizer/
 - A **Supabase** project
 - Docker Compose for the production-style stack
 - Optional: SMTP (email reminders), OpenAI-compatible API key for the admin advisor (`AI_BASE_URL` + `AI_API_KEY`)
+
+## Database setup (Supabase migrations)
+
+Before starting the app, apply the database schema and sports catalog to your Supabase project using either option below:
+
+### Option A: Supabase Web Dashboard (Recommended)
+
+1. Go to your project in the [Supabase Dashboard](https://supabase.com/dashboard) and open the **SQL Editor**.
+2. Open and run **[`supabase/migrations/20260915000100_init_tournament_schema.sql`](supabase/migrations/20260915000100_init_tournament_schema.sql)** (creates all tables, triggers, RLS policies, and storage buckets).
+3. Open and run **[`supabase/migrations/20260916000200_seed_sports_catalog.sql`](supabase/migrations/20260916000200_seed_sports_catalog.sql)** (seeds the 12 core sports).
+
+### Option B: Supabase CLI
+
+If you use the Supabase CLI, push migrations directly from the repository root:
+
+```bash
+# Link your remote Supabase project
+npx supabase login
+npx supabase link --project-ref <your-supabase-project-ref>
+
+# Push all migrations (creates schema and seeds sports catalog)
+npx supabase db push
+```
+
+> For local Supabase Docker development, running `npx supabase start` automatically applies all migrations and runs `supabase/seed.sql`.
+
+Details on schema design and RLS policies: **[docs/DATABASE.md](docs/DATABASE.md)**.
 
 ## Quick start (local)
 
