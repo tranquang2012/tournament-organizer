@@ -144,40 +144,7 @@ Formats: single elimination, double elimination, round robin, round scoring, hyb
 
 The scope called for a client–server system: React frontend, Express APIs, PostgreSQL, Docker. That is what was built. PostgreSQL, login, and file uploads are provided by a **hosted Supabase** project (Postgres + Auth + Storage) rather than a self-managed Postgres-only server.
 
-```mermaid
-flowchart LR
-  subgraph clients [Browser]
-    SPA[React SPA]
-  end
-
-  subgraph runtime [App runtime]
-    Nginx["nginx ports 80 and 443"]
-    Vite["Vite dev 5173"]
-    API[Express API]
-  end
-
-  subgraph supabase [Supabase PostgreSQL platform]
-    Auth[Auth Google / Facebook]
-    PG[(PostgreSQL)]
-    Storage[Storage buckets]
-  end
-
-  SMTP[SMTP email reminders]
-  AI[OpenAI Responses API]
-
-  SPA -->|OAuth session| Auth
-  SPA -->|same-origin /api| Nginx
-  SPA -->|dev proxy /api| Vite
-  Nginx --> SPA
-  Nginx -->|/api| API
-  Vite --> API
-  API -->|validate access token| Auth
-  API -->|SQL| PG
-  API -->|banners / avatars| Storage
-  SPA -->|public media URLs| Storage
-  API -.->|optional| SMTP
-  API -.->|optional| AI
-```
+![System Architecture](./images/architecture.png)
 
 **Production request path**
 
@@ -334,19 +301,7 @@ There is no local JWT secret verification. Each protected request calls Supabase
 
 The complete database schema is versioned in [`supabase/migrations/20260915000100_init_tournament_schema.sql`](../supabase/migrations/20260915000100_init_tournament_schema.sql) and documented in detail in [docs/DATABASE.md](DATABASE.md). The initial 12 sports are seeded via [`supabase/seed.sql`](../supabase/seed.sql) and [`supabase/migrations/20260916000200_seed_sports_catalog.sql`](../supabase/migrations/20260916000200_seed_sports_catalog.sql).
 
-```mermaid
-erDiagram
-  user_roles ||--o{ tournament : creates
-  user_roles ||--o{ tournament_favorites : favorites
-  sport ||--o{ tournament : has
-  tournament ||--o{ competitors : includes
-  tournament ||--o{ matches : has
-  tournament ||--o{ tournament_stat_templates : defines
-  tournament ||--o{ tournament_favorites : followed_by
-  competitors ||--o{ teammember : has
-  competitors ||--o{ matches : plays
-  matches ||--o{ match_stats : records
-```
+![Domain Model](./images/domain-model.png)
 
 ### `public.user_roles`
 
@@ -404,19 +359,7 @@ Follow list plus reminder claim/sent columns. RLS is on with **no client policie
 
 ## 12. Tournament lifecycle
 
-```mermaid
-stateDiagram-v2
-  [*] --> draft: POST create draft
-  draft --> draft: wizard patches
-  draft --> ongoing: PATCH publish
-  ongoing --> paused: PATCH pause
-  paused --> ongoing: PATCH resume
-  ongoing --> ended: all matches played
-  paused --> ended: all matches played
-  ended --> ongoing: result cleared
-  draft --> [*]: DELETE discard
-  ongoing --> [*]: DELETE cascade
-```
+![Tournament Lifecycle](./images/lifecycle.png)
 
 **Create wizard** (`/admin/tournaments/create`) — four steps, matching the admin-configuration deliverable:
 
@@ -736,18 +679,7 @@ WHERE email = 'you@example.com';
 
 Intended shape: one VM running Docker Compose, **hosted Supabase** outside the VM.
 
-```mermaid
-flowchart TB
-  Internet --> Nginx
-  subgraph compose [docker compose]
-    Nginx["frontend nginx 80 and 443"]
-    API["backend 5000 on loopback"]
-    Certbot[certbot]
-  end
-  Nginx -->|/api| API
-  Certbot -->|ACME HTTP-01| Nginx
-  API --> Supabase[Hosted Supabase PostgreSQL Auth and Storage]
-```
+![Deployment Architecture](./images/deploy.png)
 
 ```bash
 copy .env.example .env
