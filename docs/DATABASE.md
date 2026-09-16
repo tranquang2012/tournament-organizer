@@ -330,6 +330,42 @@ Follow list and email reminder tracking for signed-in users.
 
 Authentication is provided by Supabase Auth (Google and Facebook OAuth). The Node.js backend verifies bearer tokens with Supabase Auth HTTP endpoint `GET /auth/v1/user` using the anonymous key, and loads the corresponding `public.user_roles` record.
 
+### Supabase Auth URL & Redirect Configuration
+
+When users sign in via OAuth (Google or Facebook), `frontend/src/pages/auth/Login.jsx` initiates authentication with:
+```javascript
+redirectTo: `${window.location.origin}/oauth/callback`
+```
+For security, Supabase Auth strictly validates that the redirect target belongs to the authorized allow-list. If the redirect URL is missing from Supabase's configuration, OAuth callbacks will fail or be blocked.
+
+#### 1. Hosted Supabase Dashboard Configuration
+
+In your Supabase Dashboard, navigate to **Authentication** → **URL Configuration**:
+
+| Setting | Environment | Value | Description |
+| --- | --- | --- | --- |
+| **Site URL** | Local Development | `http://localhost:5173` | Default base URL for auth redirects and auth emails |
+| | Production | `https://<YOUR_EC2_PUBLIC_IP>` or `https://your-domain.com` | Production web root |
+| **Redirect URLs** | Local Development | `http://localhost:5173/oauth/callback`<br>`http://localhost:5173/**`<br>`http://127.0.0.1:5173/oauth/callback` | Required callback routes for Vite dev server |
+| | Production | `https://<YOUR_EC2_PUBLIC_IP>/oauth/callback`<br>`https://<YOUR_EC2_PUBLIC_IP>/**`<br>`https://your-domain.com/oauth/callback` | Required callback routes for EC2 / production deployment |
+
+> [!TIP]
+> Supabase supports wildcard patterns such as `http://localhost:5173/**` and `https://<YOUR_EC2_PUBLIC_IP>/**` to cover all callback and deep-linking routes.
+
+#### 2. Local Supabase CLI Configuration
+
+When running Supabase locally via the CLI (`supabase start`), URL redirects are configured in [`supabase/config.toml`](../supabase/config.toml) under the `[auth]` section:
+
+```toml
+[auth]
+enabled = true
+site_url = "http://localhost:5173"
+additional_redirect_urls = [
+  "http://localhost:5173/oauth/callback",
+  "http://127.0.0.1:5173/oauth/callback"
+]
+```
+
 ### Row Level Security (RLS)
 
 All tables have RLS enabled:
@@ -368,9 +404,10 @@ Two public buckets are configured in `storage.buckets`:
    Apply migrations sequentially using the Supabase CLI or SQL Editor:
    - Run `supabase/migrations/20260915000100_init_tournament_schema.sql` (schema, triggers, RLS, storage).
    - Run `supabase/migrations/20260916000200_seed_sports_catalog.sql` (sports 1–12).
+   - Configure **Site URL** and **Redirect URLs** in **Authentication** → **URL Configuration** (see [Supabase Auth URL & Redirect Configuration](#supabase-auth-url--redirect-configuration)).
 2. **With Local Supabase CLI:**
    ```bash
    supabase start
    supabase db reset
    ```
-   `supabase/config.toml` will automatically run all migrations in `supabase/migrations/` and apply `supabase/seed.sql`.
+   `supabase/config.toml` will automatically run all migrations in `supabase/migrations/`, apply `supabase/seed.sql`, and configure redirect URLs.

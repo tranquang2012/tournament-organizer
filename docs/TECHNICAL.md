@@ -301,10 +301,15 @@ Users cannot disable or demote themselves. Only a Super Admin can disable or ena
 
 If `user_roles.is_disable` is true, the API returns **403**; the client signs out locally and returns to login with an error query string.
 
-Redirect URLs that must be allow-listed in Supabase Auth:
+Supabase Auth URL Configuration (**Authentication** → **URL Configuration** in the Supabase Dashboard):
 
-- `http://localhost:5173/oauth/callback`
-- Production origin `/oauth/callback`
+- **Site URL**:
+  - Development: `http://localhost:5173`
+  - Production: `https://<YOUR_EC2_PUBLIC_IP>` or `https://your-domain.com`
+- **Redirect URLs (Allow-list)**:
+  - Local development: `http://localhost:5173/oauth/callback`, `http://localhost:5173/**`, `http://127.0.0.1:5173/oauth/callback`
+  - Production origin: `https://<YOUR_EC2_PUBLIC_IP>/oauth/callback`, `https://<YOUR_EC2_PUBLIC_IP>/**`
+- For local Supabase CLI (`supabase start`), configure `site_url` and `additional_redirect_urls` in `supabase/config.toml`. See [docs/DATABASE.md](DATABASE.md#supabase-auth-url--redirect-configuration) for full details.
 
 ### API token check
 

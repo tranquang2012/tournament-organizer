@@ -51,6 +51,9 @@ Before starting the app, apply the database schema and sports catalog to your Su
 1. Go to your project in the [Supabase Dashboard](https://supabase.com/dashboard) and open the **SQL Editor**.
 2. Open and run **[`supabase/migrations/20260915000100_init_tournament_schema.sql`](supabase/migrations/20260915000100_init_tournament_schema.sql)** (creates all tables, triggers, RLS policies, and storage buckets).
 3. Open and run **[`supabase/migrations/20260916000200_seed_sports_catalog.sql`](supabase/migrations/20260916000200_seed_sports_catalog.sql)** (seeds the 12 core sports).
+4. Go to **Authentication** → **URL Configuration**:
+   - Set **Site URL** to `http://localhost:5173` (or your production origin).
+   - In **Redirect URLs**, add `http://localhost:5173/oauth/callback` and `http://localhost:5173/**` (plus your production URLs if applicable).
 
 ### Option B: Supabase CLI
 
@@ -99,7 +102,7 @@ Details on schema design and RLS policies: **[docs/DATABASE.md](docs/DATABASE.md
 
 4. Open **http://localhost:5173**. Leave `VITE_API_BASE_URL` unset so Vite can proxy `/api`.
 
-Allow-list `/oauth/callback` in Supabase Auth. Create the first Super Admin by setting `role` on `public.user_roles` (see the technical document).
+Allow-list `http://localhost:5173/oauth/callback` in Supabase Auth (**Authentication** → **URL Configuration**). Create the first Super Admin by setting `role` on `public.user_roles` (see [docs/TECHNICAL.md](docs/TECHNICAL.md)).
 
 ## Production-style run (Docker)
 
