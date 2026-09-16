@@ -1,20 +1,13 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTableCells, faSitemap, faFilter, faTrophy, faCalendarDays, faBolt, faClock, faCheck } from '@fortawesome/free-solid-svg-icons';
+import { faFilter, faTrophy, faCalendarDays, faBolt, faClock, faCheck } from '@fortawesome/free-solid-svg-icons';
 import MatchCard from './MatchCard';
-import BracketViewPlaceholder from './BracketViewPlaceholder';
 import { getTournamentMatches } from '../../services/TournamentService';
 
 // Mock images if tournament data is incomplete
 import imgFootball from '../../assets/sportImages/football.jpg';
 
-const TABS = [
-  { id: 'dashboard', label: 'Match Dashboard', icon: faTableCells },
-  { id: 'bracket', label: 'Bracket View', icon: faSitemap },
-];
-
 const EliminationMatchTemplate = ({ tournament, stage }) => {
-  const [activeTab, setActiveTab] = useState('dashboard');
   const [statusFilter, setStatusFilter] = useState('All Status');
   const [groupFilter, setGroupFilter] = useState('All Groups');
   const [roundFilter, setRoundFilter] = useState('All Rounds');
@@ -228,31 +221,8 @@ const EliminationMatchTemplate = ({ tournament, stage }) => {
         </div>
       </div>
 
-      {/* 2. Tab Bar */}
-      <div className="flex items-center gap-1 mb-6 bg-white rounded-xl border border-slate-200 p-1 self-start w-fit max-w-full overflow-x-auto shadow-sm">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            onClick={() => setActiveTab(tab.id)}
-            className={`
-              flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-semibold
-              border-none cursor-pointer transition-all duration-200 whitespace-nowrap
-              ${activeTab === tab.id
-                ? 'bg-[#123836] text-white shadow-sm'
-                : 'bg-transparent text-slate-500 hover:text-slate-700 hover:bg-slate-50'
-              }
-            `}
-          >
-            <FontAwesomeIcon icon={tab.icon} className="text-xs" />
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Tab Content */}
-      {activeTab === 'dashboard' && (
-        <div className="animate-[fadeIn_0.2s_ease-out]">
+      {/* 2. Match Dashboard */}
+      <div className="animate-[fadeIn_0.2s_ease-out]">
           
           {/* 3. Filter Bar */}
           <div className="flex items-center justify-between bg-white rounded-xl border border-slate-200 p-3 mb-4 shadow-sm gap-3 flex-wrap">
@@ -319,13 +289,6 @@ const EliminationMatchTemplate = ({ tournament, stage }) => {
             )}
           </div>
         </div>
-      )}
-
-      {activeTab === 'bracket' && (
-        <div className="animate-[fadeIn_0.2s_ease-out]">
-          <BracketViewPlaceholder />
-        </div>
-      )}
 
     </div>
   );
