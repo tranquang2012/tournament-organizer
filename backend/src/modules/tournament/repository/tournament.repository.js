@@ -191,7 +191,10 @@ class TournamentRepository {
     const { rows } = await pool.query(
       `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner, s.sport_format,
               (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
-              (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
+              (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size,
+              (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id) as total_matches,
+              (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id AND m.status IN ('completed', 'resolved', 'bye')) as completed_matches,
+              (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id AND m.status = 'running') as live_matches
        FROM tournament t
        LEFT JOIN sport s ON t.sp_id = s.sport_id
        WHERE t.created_by=$1 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $1 AND role IN ('superadmin', 'super_admin'))
@@ -205,7 +208,10 @@ class TournamentRepository {
     let query = `
       SELECT t.*, s.sport_name, s.sport_type, s.sport_banner, s.sport_format,
              (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
-             (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
+             (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size,
+             (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id) as total_matches,
+             (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id AND m.status IN ('completed', 'resolved', 'bye')) as completed_matches,
+             (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id AND m.status = 'running') as live_matches
       FROM tournament t
       LEFT JOIN sport s ON t.sp_id = s.sport_id
       WHERE COALESCE(t.tour_status, 'draft') <> 'draft'
@@ -225,7 +231,10 @@ class TournamentRepository {
     const query = `
       SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
              (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
-             (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
+             (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size,
+             (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id) as total_matches,
+             (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id AND m.status IN ('completed', 'resolved', 'bye')) as completed_matches,
+             (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id AND m.status = 'running') as live_matches
       FROM tournament t
       LEFT JOIN sport s ON t.sp_id = s.sport_id
       WHERE t.tour_id = $1 AND COALESCE(t.tour_status, 'draft') <> 'draft'

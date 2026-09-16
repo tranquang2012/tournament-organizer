@@ -95,12 +95,12 @@ const TournamentManagePage = () => {
             format: formatName,
             startDate: formatDate(t.tour_startdate),
             endDate: formatDate(t.tour_enddate),
-            completedMatches: 0,
-            totalMatches: 0,
+            completedMatches: t.completed_matches || 0,
+            totalMatches: t.total_matches || 0,
             matchesLabel: 'matches',
             teamsCount: t.competitor_count || 0,
             participantsLabel: (Number(t.team_size) === 1 || Number(t.tour_team_size) === 1) ? 'participants' : 'teams',
-            liveCount: tourStatus === 'ongoing' ? 1 : 0,
+            liveCount: t.live_matches || 0,
             status
           };
         });
