@@ -736,7 +736,7 @@ Both `AI_BASE_URL` and `AI_API_KEY` must be set. Otherwise the handler returns *
 | Setup | `AI_BASE_URL` | `AI_API_KEY` | `AI_MODEL` |
 | --- | --- | --- | --- |
 | Current (OpenAI-compatible gateway) | `https://modelapi.vn/v1` (as in `.env.example`; Docker Compose uses the same default if the var is omitted) | Gateway key | Default `gpt-5.6-sol` |
-| Official OpenAI | `https://api.openai.com/v1` | OpenAI secret key | A model available on your OpenAI account that supports Responses. Do **not** keep `gpt-5.6-sol` unless OpenAI actually serves that name |
+| Official OpenAI | `https://api.openai.com/v1` | OpenAI secret key | A model available on your OpenAI account that supports Responses. |
 
 Change env and restart the backend (rebuild the backend container in Docker). No frontend rebuild is required; the browser only calls `/api/admin/chat`.
 
