@@ -28,7 +28,7 @@ const getCurrentUserProfile = async (req, res, next) => {
 
 const getAllUserProfiles = async (req, res, next) => {
   try {
-    const userProfiles = await userService.getAllUserProfiles();
+    const userProfiles = await userService.getAllUserProfiles(req.auth.profile);
 
     res.json({
       data: userProfiles,

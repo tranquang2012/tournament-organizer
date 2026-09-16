@@ -1,18 +1,21 @@
-import { useState, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChevronLeft,
   faSliders,
   faUsers,
+  faPause,
 } from '@fortawesome/free-solid-svg-icons';
 import { getTournamentById, getParticipants } from '../../services/TournamentService';
 import EditDetailsTab from '../../components/tournament_admin/edit/EditDetailsTab';
 import EditParticipantsTab from '../../components/tournament_admin/edit/EditParticipantsTab';
+import EditActionsTab from '../../components/tournament_admin/edit/EditActionsTab';
 
 const TABS = [
   { key: 'details',      label: 'Tournament Details', icon: faSliders },
   { key: 'participants', label: 'Participants',        icon: faUsers   },
+  { key: 'actions',      label: 'Tournament Actions',  icon: faPause   },
 ];
 
 const mapParticipantsToCompetitors = (participants, teamSize, existingCompetitors = []) => {
@@ -25,6 +28,7 @@ const mapParticipantsToCompetitors = (participants, teamSize, existingCompetitor
         comp_id: p.id,
         comp_name: p.name,
         comp_size: 1,
+        comp_logo: p.logo || existingComp?.comp_logo,
         members: [
           {
             mem_id: existingMem?.mem_id || p.id,
@@ -38,6 +42,7 @@ const mapParticipantsToCompetitors = (participants, teamSize, existingCompetitor
         comp_id: p.id,
         comp_name: p.name,
         comp_size: teamSize,
+        comp_logo: p.logo || existingComp?.comp_logo,
         members: (p.members || []).map(m => {
           const existingTeamMem = existingComp?.members?.find(em => em.mem_id === m.id);
           return {
@@ -60,18 +65,26 @@ const TournamentEditPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const loadTournament = useCallback(async () => {
+    const [tourData, participantData] = await Promise.all([
+      getTournamentById(id),
+      getParticipants(id),
+    ]);
+    if (!tourData) throw new Error('Tournament not found');
+    tourData.competitors = mapParticipantsToCompetitors(
+      participantData,
+      tourData.team_size,
+      tourData.competitors,
+    );
+    setTournament(tourData);
+    return tourData;
+  }, [id]);
+
   useEffect(() => {
     const fetch = async () => {
       try {
         setLoading(true);
-        const [tourData, participantData] = await Promise.all([
-          getTournamentById(id),
-          getParticipants(id)
-        ]);
-        if (!tourData) throw new Error('Tournament not found');
-        
-        tourData.competitors = mapParticipantsToCompetitors(participantData, tourData.team_size, tourData.competitors);
-        setTournament(tourData);
+        await loadTournament();
       } catch (err) {
         console.error(err);
         setError(err.message || 'Failed to load tournament');
@@ -80,7 +93,7 @@ const TournamentEditPage = () => {
       }
     };
     fetch();
-  }, [id]);
+  }, [loadTournament]);
 
   /*  Loading state  */
   if (loading) {
@@ -139,7 +152,7 @@ const TournamentEditPage = () => {
         </div>
 
         {/* Tab bar */}
-        <div className="flex items-center gap-1 mb-8 bg-white rounded-xl border border-slate-200 p-1 self-start w-fit shadow-sm">
+        <div className="flex items-center gap-1 mb-8 bg-white rounded-xl border border-slate-200 p-1 self-start w-full max-w-full overflow-x-auto shadow-sm">
           {TABS.map((tab) => (
             <button
               key={tab.key}
@@ -171,6 +184,20 @@ const TournamentEditPage = () => {
           {activeTab === 'participants' && (
             <EditParticipantsTab
               tournamentData={tournament}
+            />
+          )}
+          {activeTab === 'actions' && (
+            <EditActionsTab
+              key={[
+                id,
+                tournament?.tour_status,
+                tournament?.tour_pausedate,
+                tournament?.tour_startdate,
+                tournament?.tour_enddate,
+              ].join('-')}
+              tournamentId={id}
+              tournament={tournament}
+              onTournamentRefresh={loadTournament}
             />
           )}
         </div>

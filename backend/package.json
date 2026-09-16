@@ -4,23 +4,25 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node --test tests/*.unit.test.js",
     "dev": "nodemon index.js",
-    "start": "node index.js"
+    "start": "node index.js",
+    "reminders:run": "node scripts/process-email-reminders.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@prisma/client": "^7.8.0",
+    "brackets-manager": "^1.11.0",
+    "brackets-memory-db": "^1.0.6",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1",
+    "nodemailer": "^9.0.5",
     "pg": "^8.20.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14",
-    "prisma": "^7.8.0"
+    "nodemon": "^3.1.14"
   }
 }

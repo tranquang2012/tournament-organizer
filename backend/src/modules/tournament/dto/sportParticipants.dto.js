@@ -71,6 +71,16 @@ function validateSportParticipantsDto(body) {
           }
         }
       });
+
+      if (rules.lobby_size) {
+        const count = participants.length;
+        const allowedCounts = [8, 16, 32, 64];
+        if (!allowedCounts.includes(count)) {
+          errors.push(
+            `${rules.sport_name} requires 8, 16, 32, or 64 players (lobbies of ${rules.lobby_size}). You currently have ${count}.`
+          );
+        }
+      }
     }
   }
 

@@ -11,8 +11,30 @@ services:
       DB_SSL_REJECT_UNAUTHORIZED: ${DB_SSL_REJECT_UNAUTHORIZED:-false}
       SUPABASE_URL: ${SUPABASE_URL:?Set SUPABASE_URL to your Supabase project URL}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY:?Set SUPABASE_ANON_KEY to your Supabase anon or publishable key}
+      EMAIL_REMINDERS_ENABLED: ${EMAIL_REMINDERS_ENABLED:-false}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_SECURE: ${SMTP_SECURE:-false}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASS: ${SMTP_PASS:-}
+      SMTP_FROM: ${SMTP_FROM:-}
+      SMTP_SERVICE: ${SMTP_SERVICE:-}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost}
+      REMINDER_DAYS_BEFORE: ${REMINDER_DAYS_BEFORE:-1}
+      REMINDER_TIME_ZONE: ${REMINDER_TIME_ZONE:-Asia/Ho_Chi_Minh}
+      EMAIL_REMINDER_INTERVAL_MS: ${EMAIL_REMINDER_INTERVAL_MS:-900000}
+      EMAIL_REMINDER_BATCH_SIZE: ${EMAIL_REMINDER_BATCH_SIZE:-100}
+      REMINDER_CLAIM_STALE_MINUTES: ${REMINDER_CLAIM_STALE_MINUTES:-30}
+      AI_BASE_URL: ${AI_BASE_URL:-https://modelapi.vn/v1}
+      AI_API_KEY: ${AI_API_KEY:-}
+      AI_MODEL: ${AI_MODEL:-gpt-5.6-sol}
+      AI_REASONING_EFFORT: ${AI_REASONING_EFFORT:-none}
+      AI_MAX_OUTPUT_TOKENS: ${AI_MAX_OUTPUT_TOKENS:-800}
+      AI_MAX_INPUT_CHARS: ${AI_MAX_INPUT_CHARS:-12000}
+      AI_TIMEOUT_MS: ${AI_TIMEOUT_MS:-90000}
     ports:
-      - "5000:5000"
+      # API is reached via nginx /api — do not expose 5000 publicly in production unless needed for debugging
+      - "127.0.0.1:5000:5000"
 
   frontend:
     build:
@@ -20,10 +42,38 @@ services:
       args:
         VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:?Set VITE_SUPABASE_URL to your Supabase project URL}
         VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:?Set VITE_SUPABASE_ANON_KEY to your Supabase publishable or anon key}
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:5000}
+        # Leave unset in production — nginx proxies /api to the backend container.
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
     container_name: tournament-frontend
     restart: unless-stopped
+    environment:
+      PUBLIC_IP: ${PUBLIC_IP:-}
     ports:
-      - "3000:80"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - nginx-certs:/etc/nginx/certs
+      - acme-webroot:/var/www/acme
     depends_on:
       - backend
+
+  certbot:
+    image: certbot/certbot:latest
+    container_name: tournament-certbot
+    restart: unless-stopped
+    volumes:
+      - nginx-certs:/etc/nginx/certs
+      - acme-webroot:/var/www/acme
+      - letsencrypt:/etc/letsencrypt
+      - ./scripts/certbot-loop.sh:/certbot-loop.sh:ro
+    environment:
+      PUBLIC_IP: ${PUBLIC_IP:-}
+      CERTBOT_EMAIL: ${CERTBOT_EMAIL:-}
+    entrypoint: ["/bin/sh", "/certbot-loop.sh"]
+    depends_on:
+      - frontend
+
+volumes:
+  nginx-certs:
+  acme-webroot:
+  letsencrypt:

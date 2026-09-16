@@ -1,4 +1,5 @@
 const pool = require('../../../shared/database/pool');
+const { nextTourStatusFromMatches } = require('../tournamentCompletion');
 
 class TournamentRepository {
   //Step 1
@@ -40,10 +41,10 @@ class TournamentRepository {
 
       const { rows: tourRows } = await client.query(
         `UPDATE tournament
-         SET sp_id=$1
-         WHERE tour_id=$2 AND (created_by=$3 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $3 AND role IN ('superadmin', 'super_admin')))
+         SET sp_id=$1, participant_type=$2
+         WHERE tour_id=$3 AND (created_by=$4 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $4 AND role IN ('superadmin', 'super_admin')))
          RETURNING *`,
-        [sp_id, tourId, organizerId]
+        [sp_id, participant_type, tourId, organizerId]
       );
       if (!tourRows[0]) throw new Error('Tournament not found or access denied.');
 
@@ -65,10 +66,10 @@ class TournamentRepository {
         const compSize = participant_type === 'team' ? Number(p.comp_size) : 1;
 
         const { rows: compRows } = await client.query(
-          `INSERT INTO competitors (tour_id, comp_name, comp_size)
-           VALUES ($1,$2,$3)
+          `INSERT INTO competitors (tour_id, comp_name, comp_size, comp_logo)
+           VALUES ($1,$2,$3,$4)
            RETURNING *`,
-          [tourId, p.comp_name.trim(), compSize]
+          [tourId, p.comp_name.trim(), compSize, p.comp_logo || null]
         );
         const comp = compRows[0];
 
@@ -111,13 +112,15 @@ class TournamentRepository {
 
   //Step 3
 
-  async updateFormat(tourId, tour_format, organizerId) {
+  async updateFormat(tourId, data, organizerId) {
+    const { tour_format, group_count, advance_per_group, first_stage_format, second_stage_format, sets_per_match } = data;
     const { rows } = await pool.query(
       `UPDATE tournament
-       SET tour_format=$1
-       WHERE tour_id=$2 AND (created_by=$3 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $3 AND role IN ('superadmin', 'super_admin')))
+       SET tour_format=$1, group_count=$2, advance_per_group=$3, first_stage_format=$6, second_stage_format=$7,
+           sets_per_match=$8
+       WHERE tour_id=$4 AND (created_by=$5 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $5 AND role IN ('superadmin', 'super_admin')))
        RETURNING *`,
-      [tour_format, tourId, organizerId]
+      [tour_format, group_count, advance_per_group, tourId, organizerId, first_stage_format, second_stage_format, sets_per_match || 1]
     );
     return rows[0] || null;
   }
@@ -127,7 +130,7 @@ class TournamentRepository {
   async getFullTournament(tourId, organizerId) {
     //Tournament + sport info
     const { rows: tourRows } = await pool.query(
-      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner, s.sport_format,
               (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
        FROM tournament t
        LEFT JOIN sport s ON t.sp_id = s.sport_id
@@ -175,7 +178,10 @@ class TournamentRepository {
 
   async findById(tourId, organizerId) {
     const { rows } = await pool.query(
-      `SELECT * FROM tournament WHERE tour_id=$1 AND (created_by=$2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')))`,
+      `SELECT t.*, s.sport_format
+       FROM tournament t
+       LEFT JOIN sport s ON t.sp_id = s.sport_id
+       WHERE t.tour_id=$1 AND (t.created_by=$2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')))`,
       [tourId, organizerId]
     );
     return rows[0] || null;
@@ -183,9 +189,12 @@ class TournamentRepository {
 
   async listAll(organizerId) {
     const { rows } = await pool.query(
-      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+      `SELECT t.*, s.sport_name, s.sport_type, s.sport_banner, s.sport_format,
               (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
-              (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
+              (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size,
+              (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id) as total_matches,
+              (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id AND m.status IN ('completed', 'resolved', 'bye')) as completed_matches,
+              (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id AND m.status = 'running') as live_matches
        FROM tournament t
        LEFT JOIN sport s ON t.sp_id = s.sport_id
        WHERE t.created_by=$1 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $1 AND role IN ('superadmin', 'super_admin'))
@@ -197,9 +206,12 @@ class TournamentRepository {
 
   async listPublic({ sportId } = {}) {
     let query = `
-      SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+      SELECT t.*, s.sport_name, s.sport_type, s.sport_banner, s.sport_format,
              (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
-             (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size
+             (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size,
+             (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id) as total_matches,
+             (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id AND m.status IN ('completed', 'resolved', 'bye')) as completed_matches,
+             (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id AND m.status = 'running') as live_matches
       FROM tournament t
       LEFT JOIN sport s ON t.sp_id = s.sport_id
       WHERE COALESCE(t.tour_status, 'draft') <> 'draft'
@@ -214,6 +226,23 @@ class TournamentRepository {
     const { rows } = await pool.query(query, params);
     return rows;
   }
+
+  async getPublic(tourId) {
+    const query = `
+      SELECT t.*, s.sport_name, s.sport_type, s.sport_banner,
+             (SELECT COUNT(*)::int FROM competitors c WHERE c.tour_id = t.tour_id) as competitor_count,
+             (SELECT comp_size FROM competitors c WHERE c.tour_id = t.tour_id LIMIT 1) as team_size,
+             (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id) as total_matches,
+             (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id AND m.status IN ('completed', 'resolved', 'bye')) as completed_matches,
+             (SELECT COUNT(*)::int FROM matches m WHERE m.tour_id = t.tour_id AND m.status = 'running') as live_matches
+      FROM tournament t
+      LEFT JOIN sport s ON t.sp_id = s.sport_id
+      WHERE t.tour_id = $1 AND COALESCE(t.tour_status, 'draft') <> 'draft'
+    `;
+    const { rows } = await pool.query(query, [tourId]);
+    return rows[0] || null;
+  }
+
 
   async deleteDraft(tourId, organizerId) {
   const client = await pool.connect();
@@ -232,7 +261,7 @@ class TournamentRepository {
       return { deleted: false, reason: 'not_found' };
     }
 
-    if (tourRows[0].tour_status === 'published') {
+    if ((tourRows[0].tour_status || 'draft') !== 'draft') {
       await client.query('ROLLBACK');
       return { deleted: false, reason: 'already_published' };
     }
@@ -275,7 +304,7 @@ class TournamentRepository {
 
   async getParticipants(tourId) {
     const { rows: competitors } = await pool.query(
-      `SELECT comp_id, comp_name, comp_size FROM competitors WHERE tour_id = $1`,
+      `SELECT comp_id, comp_name, comp_size, comp_logo FROM competitors WHERE tour_id = $1`,
       [tourId]
     );
 
@@ -298,13 +327,15 @@ class TournamentRepository {
           type: "individual",
           id: comp.comp_id,
           name: primaryMember.mem_name || comp.comp_name || "Unknown",
-          experience: primaryMember.mem_expe || "Beginner"
+          experience: primaryMember.mem_expe || "Beginner",
+          logo: comp.comp_logo
         };
       } else {
         return {
           type: "team",
           id: comp.comp_id,
           name: comp.comp_name || "Unnamed Team",
+          logo: comp.comp_logo,
           members: members.map(m => ({
             id: m.mem_id,
             name: m.mem_name,
@@ -427,7 +458,7 @@ class TournamentRepository {
   //verify the tournament belongs to this organizer
     const { rows: tourRows } = await pool.query(
       `SELECT tour_id FROM tournament
-       WHERE tour_id = $1 AND created_by = $2`,
+       WHERE tour_id = $1 AND (created_by = $2 OR EXISTS (SELECT 1 FROM public.user_roles WHERE id = $2 AND role IN ('superadmin', 'super_admin')))`,
       [tourId, organizerId]
     );
 
@@ -466,6 +497,69 @@ class TournamentRepository {
    );
 
    return { updated: true, competitor: rows[0] };
+  }
+  async pauseTournament(tourId, pauseDate, organizerId, executor = pool) {
+  const { rows } = await executor.query(
+    `UPDATE tournament
+     SET tour_status     = 'paused',
+         tour_pausedate  = $1
+     WHERE tour_id = $2
+       AND created_by = $3
+       AND tour_status = 'ongoing'
+     RETURNING *`,
+    [pauseDate, tourId, organizerId]
+  );
+  return rows[0] || null;
+}
+
+async resumeTournament(tourId, newEndDate, organizerId, executor = pool) {
+  const { rows } = await executor.query(
+    `UPDATE tournament
+     SET tour_status    = 'ongoing',
+         tour_enddate   = $1,
+         tour_pausedate = NULL
+     WHERE tour_id = $2
+       AND created_by = $3
+       AND tour_status = 'paused'
+     RETURNING *`,
+    [newEndDate, tourId, organizerId]
+  );
+  return rows[0] || null;
+}
+
+async getTournamentTiming(tourId, organizerId, executor = pool) {
+  const { rows } = await executor.query(
+    `SELECT tour_id, tour_status, tour_startdate, tour_enddate, tour_pausedate, created_by
+     FROM tournament
+     WHERE tour_id = $1 AND created_by = $2`,
+    [tourId, organizerId]
+  );
+  return rows[0] || null;
+}
+
+  async syncCompletionFromMatches(tourId, executor = pool) {
+    const { rows: tourRows } = await executor.query(
+      `SELECT tour_status, tour_format FROM tournament WHERE tour_id = $1`,
+      [tourId]
+    );
+    const tournament = tourRows[0];
+    if (!tournament) return null;
+
+    const { rows: matches } = await executor.query(
+      `SELECT winning_competitor_id, is_draw, status, stage FROM matches WHERE tour_id = $1`,
+      [tourId]
+    );
+
+    const nextStatus = nextTourStatusFromMatches(tournament.tour_status, matches, {
+      format: tournament.tour_format,
+    });
+    if (nextStatus === (tournament.tour_status || 'draft')) return tournament;
+
+    const { rows } = await executor.query(
+      `UPDATE tournament SET tour_status = $2 WHERE tour_id = $1 RETURNING tour_id, tour_status`,
+      [tourId, nextStatus]
+    );
+    return rows[0] || null;
   }
 }
 

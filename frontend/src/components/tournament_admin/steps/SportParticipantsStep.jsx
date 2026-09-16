@@ -1,7 +1,6 @@
 import { useState, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faPlus,
   faTrash,
   faUsers,
   faUser,
@@ -9,7 +8,6 @@ import {
   faListOl,
   faChevronDown,
   faChevronUp,
-  faCloudArrowUp,
   faXmark,
   faImage,
   faFileArrowUp,
@@ -18,6 +16,7 @@ import InputField from '../../common/InputField';
 import SelectField from '../../common/SelectField';
 import Button from '../../common/Button';
 import { commonSports, eSports } from '../../../constants/sports';
+import { supabase } from '../../../config/supabaseClient';
 
 /* Default team logos */
 import teamLogo1 from '../../../assets/defaultTeamLogos/logo1.jpg';
@@ -53,6 +52,7 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
   const [newTeamLogoMode, setNewTeamLogoMode] = useState('default');
   const [newTeamLogoDefault, setNewTeamLogoDefault] = useState(null);
   const [newTeamLogoFile, setNewTeamLogoFile] = useState(null);
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
   const [newTeamMember, setNewTeamMember] = useState({});
   const [expandedTeams, setExpandedTeams] = useState({});
   const csvInputRef = useRef(null);
@@ -111,15 +111,38 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
   };
 
   /*  Team helpers  */
-  const addTeam = () => {
-    if (!newTeamName.trim()) return;
+  const addTeam = async () => {
+    if (!newTeamName.trim() || isUploadingLogo) return;
     const id = `t-${Date.now()}`;
-    const logoSrc =
+    let logoSrc =
       newTeamLogoMode === 'default' && newTeamLogoDefault
         ? newTeamLogoDefault.src
-        : newTeamLogoFile
-          ? URL.createObjectURL(newTeamLogoFile)
-          : DEFAULT_TEAM_LOGOS[0].src;
+        : DEFAULT_TEAM_LOGOS[0].src;
+
+    if (newTeamLogoMode === 'custom' && newTeamLogoFile) {
+      try {
+        setIsUploadingLogo(true);
+        const fileExt = newTeamLogoFile.name.split('.').pop();
+        const fileName = `logos/${Date.now()}_${Math.random().toString(36).substring(2, 15)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('tournament-banners')
+          .upload(fileName, newTeamLogoFile, {
+            cacheControl: '3600',
+            upsert: true,
+          });
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('tournament-banners')
+          .getPublicUrl(fileName);
+
+        logoSrc = publicUrl;
+      } catch (err) {
+        console.error('Failed to upload team logo:', err);
+      } finally {
+        setIsUploadingLogo(false);
+      }
+    }
 
     const teams = [
       ...(data.teams || []),
@@ -288,11 +311,23 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
             )
           })}
           </div>
-          <p className="text-xs text-slate-400 italic m-0">
-            {currentSportConfig && currentSportConfig.types 
-              ? `* ${currentSportConfig.name} supports ${(Array.isArray(currentSportConfig.types) ? currentSportConfig.types : [currentSportConfig.types]).map(t => t.toLowerCase()).join(' and ')} play.`
-              : '* Options are restricted based on your chosen sport.'}
-          </p>
+          <div className="flex flex-col gap-1">
+            <p className="text-xs text-slate-400 italic m-0">
+              {currentSportConfig && currentSportConfig.types 
+                ? `* ${currentSportConfig.name} supports ${(Array.isArray(currentSportConfig.types) ? currentSportConfig.types : [currentSportConfig.types]).map(t => t.toLowerCase()).join(' and ')} play.`
+                : '* Options are restricted based on your chosen sport.'}
+            </p>
+            {currentSportConfig?.lobby_size ? (
+              <p className={`text-xs m-0 ${
+                [8, 16, 32, 64].includes((data.participants || []).length)
+                  ? 'text-emerald-600'
+                  : 'text-amber-600'
+              }`}>
+                {currentSportConfig.name} uses lobbies of {currentSportConfig.lobby_size} players.
+                {' '}Allowed totals: 8, 16, 32, or 64. You currently have {(data.participants || []).length}.
+              </p>
+            ) : null}
+          </div>
         </div>
 
         {/*  INDIVIDUAL MODE  */}
@@ -326,13 +361,6 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
                 >
                   Browse File
                 </Button>
-                <input
-                  ref={csvInputRef}
-                  type="file"
-                  accept=".csv"
-                  onChange={handleCSVUpload}
-                  className="hidden"
-                />
               </div>
 
               {/* Manual Entry */}
@@ -363,8 +391,8 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
             </div>
 
             {/* RIGHT  */}
-            <div className="bg-slate-50/50 rounded-xl border border-slate-100 overflow-hidden">
-              <table className="w-full border-collapse text-left">
+            <div className="bg-slate-50/50 rounded-xl border border-slate-100 overflow-hidden overflow-x-auto">
+              <table className="w-full border-collapse text-left min-w-[400px]">
                 <thead>
                   <tr className="border-b border-slate-200/60">
                     <th className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-5 py-3 w-10">
@@ -450,17 +478,19 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
               </div>
             </div>
 
-            <div className="mb-6">
-              <InputField
-                label="Number of members in a team"
-                type="number"
-                placeholder="e.g. 5"
-                value={data.membersPerTeam || ''}
-                onChange={(e) => update('membersPerTeam', e.target.value)}
-                required
-                className="max-w-[250px]"
-              />
-            </div>
+            {data.teamMode === 'randomize' && (
+              <div className="mb-6">
+                <InputField
+                  label="Number of members in a team"
+                  type="number"
+                  placeholder="e.g. 5"
+                  value={data.membersPerTeam || ''}
+                  onChange={(e) => update('membersPerTeam', e.target.value)}
+                  required
+                  className="max-w-[250px]"
+                />
+              </div>
+            )}
 
             {/*  Pre-define Teams  */}
             {data.teamMode === 'predefine' && (
@@ -570,10 +600,11 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
 
                     <Button
                       onClick={addTeam}
-                      disabled={!newTeamName.trim()}
+                      disabled={!newTeamName.trim() || isUploadingLogo}
+                      loading={isUploadingLogo}
                       fullWidth
                     >
-                      Add Team
+                      {isUploadingLogo ? 'Uploading...' : 'Add Team'}
                     </Button>
                   </div>
                 </div>
@@ -774,8 +805,8 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
                   </div>
 
                   {/* RIGHT — Player Table */}
-                  <div className="bg-slate-50/50 rounded-xl border border-slate-100 overflow-hidden">
-                    <table className="w-full border-collapse text-left">
+                  <div className="bg-slate-50/50 rounded-xl border border-slate-100 overflow-hidden overflow-x-auto">
+                    <table className="w-full border-collapse text-left min-w-[400px]">
                       <thead>
                         <tr className="border-b border-slate-200/60">
                           <th className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-5 py-3 w-10">#</th>
@@ -835,6 +866,13 @@ const SportParticipantsStep = ({ data, onChange, currentSportConfig }) => {
           </div>
         )}
       </div>
+      <input
+        ref={csvInputRef}
+        type="file"
+        accept=".csv"
+        onChange={handleCSVUpload}
+        className="hidden"
+      />
     </div>
   );
 };

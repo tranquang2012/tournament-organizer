@@ -68,7 +68,7 @@ export function ConfirmationModal({
       <div className="fixed inset-0 z-[201] flex items-center justify-center p-4 pointer-events-none">
         <div
           className={
-            "bg-white rounded-2xl shadow-2xl w-full max-w-[420px] " +
+            "bg-white rounded-2xl shadow-2xl w-full max-w-[calc(100vw-2rem)] sm:max-w-[420px] mx-4 " +
             "pointer-events-auto animate-[modalIn_0.2s_ease-out]"
           }
           onClick={(e) => e.stopPropagation()}
@@ -107,7 +107,7 @@ export function ConfirmationModal({
           </div>
 
           {/* actions */}
-          <div className="flex items-center justify-end gap-3 p-6">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 p-6">
             <Button
               variant="secondary"
               onClick={onClose}

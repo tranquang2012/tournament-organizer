@@ -1,10 +1,6 @@
 import axios from "../config/apiEndpoints";
 import { supabase } from "../config/supabaseClient";
 
-const getUser = (inputId) => {
-    return axios.get(`/api/users/${inputId}/profile`)
-}
-
 const getAccessToken = async (accessToken) => {
     if (accessToken) {
         return accessToken;
@@ -90,13 +86,11 @@ const uploadCurrentUserAvatar = async (file, accessToken) => {
 }
 
 export {
-    getUser,
     getCurrentUserProfile,
     updateCurrentUserProfile,
     uploadCurrentUserAvatar,
     normalizeRole,
     getAccessToken,
     withAuthHeader,
-    getAuthErrorMessage,
     isDisabledAccountError
 };

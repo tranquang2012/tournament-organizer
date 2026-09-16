@@ -3,15 +3,17 @@ const FORMATS = {
   DOUBLE_ELIM:  'double_elimination',
   ROUND_ROBIN:  'round_robin',
   ROUND_SCORING: 'round_scoring',
+  HYBRID:        'hybrid',
 };
 
 const ALL_EXCEPT_ROUND_SCORING = [
   FORMATS.SINGLE_ELIM,
   FORMATS.DOUBLE_ELIM,
   FORMATS.ROUND_ROBIN,
+  FORMATS.HYBRID,
 ];
 
-const ROUND_SCORING_ONLY = [FORMATS.ROUND_SCORING];
+const ROUND_SCORING_ONLY = [FORMATS.ROUND_SCORING, FORMATS.HYBRID];
 
 
 const SPORT_RULES = {
@@ -20,6 +22,8 @@ const SPORT_RULES = {
     sport_name:        'Football',
     participant_types: ['team'],
     formats:           ALL_EXCEPT_ROUND_SCORING,
+    standings_mode:    'league_table',
+    ranking_points:    { win: 3, draw: 1, loss: 0 },
   },
   2: {
     sport_name:        'Basketball',
@@ -40,11 +44,13 @@ const SPORT_RULES = {
     sport_name:        'Running',
     participant_types: ['individual'],
     formats:           ROUND_SCORING_ONLY,
+    score_mode:        'time',
   },
   6: {
     sport_name:        'Bowling',
     participant_types: ['individual'],
     formats:           ROUND_SCORING_ONLY,
+    score_mode:        'points',
   },
 
   //E-Sports
@@ -72,11 +78,13 @@ const SPORT_RULES = {
     sport_name:        'Teamfight Tactics',
     participant_types: ['individual'],
     formats:           ROUND_SCORING_ONLY,
+    lobby_size:        8,
   },
   12: {
     sport_name:        'Programming',
     participant_types: ['individual'],
     formats:           ROUND_SCORING_ONLY,
+    score_mode:        'points',
   },
 };
 
@@ -86,4 +94,4 @@ function getSportRules(sp_id) {
   return rules;
 }
 
-module.exports = { SPORT_RULES, FORMATS, getSportRules };
+module.exports = { SPORT_RULES, getSportRules };

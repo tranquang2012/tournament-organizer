@@ -88,6 +88,7 @@ const GeneralDetailsStep = ({ data, onChange }) => {
           label="Start Date"
           type="date"
           value={data.startDate}
+          min={new Date().toISOString().slice(0, 10)}
           onChange={update('startDate')}
           required
         />
@@ -97,6 +98,7 @@ const GeneralDetailsStep = ({ data, onChange }) => {
           label="End Date"
           type="date"
           value={data.endDate}
+          min={data.startDate || new Date().toISOString().slice(0, 10)}
           onChange={update('endDate')}
           required
         />

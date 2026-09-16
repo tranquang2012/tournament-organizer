@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import AdminTournamentSection from '../../components/tournament_admin/AdminTournamentSection';
 import TournamentActionModal from '../../components/tournament_admin/TournamentActionModal';
 import { getTournaments } from '../../services/TournamentService';
@@ -54,12 +54,14 @@ const TournamentManagePage = () => {
             return `${day}/${month}/${year}`;
           };
 
-          // Classify status: Active, Upcoming, Completed
+          // Classify status: Active, Paused, Upcoming, Completed
           let status = 'Upcoming';
           const tourStatus = (t.tour_status || '').toLowerCase();
-          if (tourStatus === 'ongoing' || tourStatus === 'active') {
+          if (tourStatus === 'paused') {
+            status = 'Paused';
+          } else if (tourStatus === 'ongoing' || tourStatus === 'active') {
             status = 'Active';
-          } else if (tourStatus === 'completed') {
+          } else if (tourStatus === 'completed' || tourStatus === 'ended') {
             status = 'Completed';
           } else if (tourStatus === 'draft' || tourStatus === 'ready') {
             status = 'Upcoming';
@@ -79,8 +81,8 @@ const TournamentManagePage = () => {
 
           // Format name label
           const formatMapping = {
-            'single_elim': 'Single Elimination',
-            'double_elim': 'Double Elimination',
+            'single_elimination': 'Single Elimination',
+            'double_elimination': 'Double Elimination',
             'round_robin': 'Round Robin',
             'hybrid': 'Hybrid',
           };
@@ -93,12 +95,12 @@ const TournamentManagePage = () => {
             format: formatName,
             startDate: formatDate(t.tour_startdate),
             endDate: formatDate(t.tour_enddate),
-            completedMatches: 0,
-            totalMatches: 0,
+            completedMatches: t.completed_matches || 0,
+            totalMatches: t.total_matches || 0,
             matchesLabel: 'matches',
             teamsCount: t.competitor_count || 0,
             participantsLabel: (Number(t.team_size) === 1 || Number(t.tour_team_size) === 1) ? 'participants' : 'teams',
-            liveCount: tourStatus === 'ongoing' ? 1 : 0,
+            liveCount: t.live_matches || 0,
             status
           };
         });
@@ -116,6 +118,7 @@ const TournamentManagePage = () => {
   }, []);
 
   const activeTournaments = tournaments.filter(t => t.status === 'Active');
+  const pausedTournaments = tournaments.filter(t => t.status === 'Paused');
   const upcomingTournaments = tournaments.filter(t => t.status === 'Upcoming');
   const completedTournaments = tournaments.filter(t => t.status === 'Completed');
 
@@ -153,6 +156,15 @@ const TournamentManagePage = () => {
                 />
               )}
 
+              {pausedTournaments.length > 0 && (
+                <AdminTournamentSection
+                  title="Paused Tournaments"
+                  pillColorClass="bg-[#f59e0b]"
+                  tournaments={pausedTournaments}
+                  onCardClick={setSelectedTournament}
+                />
+              )}
+
               {upcomingTournaments.length > 0 && (
                 <AdminTournamentSection
                   title="Upcoming Tournaments"
@@ -171,9 +183,9 @@ const TournamentManagePage = () => {
                 />
               )}
 
-              {activeTournaments.length === 0 && upcomingTournaments.length === 0 && completedTournaments.length === 0 && (
+              {activeTournaments.length === 0 && pausedTournaments.length === 0 && upcomingTournaments.length === 0 && completedTournaments.length === 0 && (
                 <div className="text-center py-10 text-slate-400">
-                  No active, upcoming, or completed tournaments found.
+                  No active, paused, upcoming, or completed tournaments found.
                 </div>
               )}
             </div>

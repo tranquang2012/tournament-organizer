@@ -1,4 +1,6 @@
 const service = require('../service/tournament.service');
+const bracketService = require('../service/bracket.service');
+const rankingService = require('../service/ranking.service');
 
 class TournamentController {
   //Step 1
@@ -32,7 +34,6 @@ class TournamentController {
     } catch (err) { next(err); }
   }
 
-  //Step 4
   async getReview(req, res, next) {
     try {
       const data = await service.getReviewData(req.params.id, req.auth.userId);
@@ -62,6 +63,14 @@ class TournamentController {
     } catch (err) { next(err); }
   }
 
+  async getPublicTournament(req, res, next) {
+    try {
+      const data = await service.getPublicTournament(req.params.id);
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
+
+
   async discardDraft(req, res, next) {
     try {
       const result = await service.discardDraft(req.params.id, req.auth.userId);
@@ -87,6 +96,20 @@ class TournamentController {
     }
   }
 
+  async pauseTournament(req, res, next) {
+  try {
+    const data = await service.pauseTournament(req.params.id, req.body, req.auth.userId);
+    res.status(200).json({ success: true, data });
+  } catch (err) { next(err); }
+}
+
+async resumeTournament(req, res, next) {
+  try {
+    const data = await service.resumeTournament(req.params.id, req.body, req.auth.userId);
+    res.status(200).json({ success: true, data });
+  } catch (err) { next(err); }
+}
+
   async updateMember(req, res, next) {
     try {
       const data = await service.updateMember(req.params.memId, req.body, req.auth.userId);
@@ -101,13 +124,70 @@ class TournamentController {
        tourId,
        compId,
        req.body,
-       req.user.id
+       req.auth.userId
       );
       res.status(200).json({ success: true, data: competitor });
     } catch (err) {
-     next(err);
-   }
+      next(err);
+    }
   }
+
+  async generateBracket(req, res, next) {
+    try {
+      const result = await bracketService.generateBracket(req.params.id);
+      res.status(200).json({ success: true, status: 'READY', totalMatches: result.totalMatches });
+    } catch (err) { next(err); }
+  }
+
+  async getMatches(req, res, next) {
+    try {
+      const data = await bracketService.getMatches(req.params.id);
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
+
+  async getStages(req, res, next) {
+    try {
+      const data = await bracketService.getStages(req.params.id, { stage: req.query.stage || null });
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
+
+  async getRankings(req, res, next) {
+    try {
+      const data = await rankingService.getTournamentRankings(req.params.id, {
+        stage: req.query.stage,
+        group: req.query.group,
+      });
+      res.status(200).json({ success: true, data });
+    } catch (err) { next(err); }
+  }
+
+  async submitRoundScores(req, res, next) {
+  try {
+    const { id: tourId, matchId } = req.params;
+    const { scores, finalize } = req.body;
+
+    if (!Array.isArray(scores) || scores.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: 'scores must be a non-empty array of { comp_id, score } or { comp_id, sets }.',
+      });
+    }
+
+    const data = await bracketService.submitRoundScores(
+      tourId,
+      matchId,
+      scores,
+      req.auth.userId,
+      { finalize: finalize !== false }
+    );
+
+    res.status(200).json({ success: true, data });
+  } catch (err) {
+    next(err);
+  }
+}
 }
 
 module.exports = new TournamentController();

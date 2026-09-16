@@ -1,5 +1,3 @@
-import React from 'react';
-
 const AdminTournamentCard = ({ tournament, onClick }) => {
   const {
     image,
@@ -35,6 +33,9 @@ const AdminTournamentCard = ({ tournament, onClick }) => {
   if (status === 'Upcoming') {
     badgeColor = 'bg-[#f1f5f9] text-[#475569]';
     badgeDotColor = 'bg-[#94a3b8]';
+  } else if (status === 'Paused') {
+    badgeColor = 'bg-[#fef3c7] text-[#92400e]';
+    badgeDotColor = 'bg-[#f59e0b]';
   } else if (status === 'Completed') {
     badgeColor = 'bg-[#dbeafe] text-[#1e3a8a]'; 
     badgeDotColor = 'bg-[#3b82f6]';

@@ -24,8 +24,8 @@ const DEFAULT_BANNERS = [
 ];
 
 const FORMAT_LABELS = {
-  single_elim: 'Single Elimination',
-  double_elim: 'Double Elimination',
+  single_elimination: 'Single Elimination',
+  double_elimination: 'Double Elimination',
   round_robin: 'Round Robin',
   hybrid: 'Hybrid',
 };
@@ -36,9 +36,15 @@ const FORMAT_LABELS = {
 const EditDetailsTab = ({ tournamentId, initialData }) => {
   const toDateInput = (dateStr) => {
     if (!dateStr) return '';
+    if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      return dateStr;
+    }
     const d = new Date(dateStr);
     if (isNaN(d.getTime())) return '';
-    return d.toISOString().split('T')[0];
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   };
 
   const [form, setForm] = useState({
@@ -246,6 +252,7 @@ const EditDetailsTab = ({ tournamentId, initialData }) => {
             />
           )}
         </div>
+
       </div>
 
       {/* Save bar */}

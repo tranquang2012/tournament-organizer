@@ -11,11 +11,11 @@ const EXPERIENCE_MAP = {
 
 let cachedSportRules = null;
 
-const getSportRules = async () => {
+export const getSportRules = async () => {
   if (cachedSportRules) return cachedSportRules;
 
   const response = await axios.get('/api/tournaments/sport-rules');
-  cachedSportRules = response.data || {};
+  cachedSportRules = response?.data || response || {};
   return cachedSportRules;
 };
 
@@ -65,13 +65,22 @@ const buildPredefinedTeamParticipants = (teams = []) =>
   teams.map((team) => ({
     comp_name: team.name,
     comp_size: Math.max(team.members?.length || 0, 1),
+    comp_logo: team.logo || null,
     members: (team.members || []).map((member) => ({
       mem_name: member.name,
       mem_expe: normalizeExperience(member.experience),
     })),
   }));
 
-const buildRandomizedTeamParticipants = (players = [], numberOfTeams) => {
+const EXP_VALUES = {
+  Beginner: 1,
+  Intermediate: 2,
+  Advanced: 3,
+  Professional: 4,
+  Pro: 4,
+};
+
+export const buildRandomizedTeamParticipants = (players = [], numberOfTeams) => {
   const teamCount = Number(numberOfTeams) || 0;
   if (teamCount < 1) return [];
 
@@ -80,19 +89,104 @@ const buildRandomizedTeamParticipants = (players = [], numberOfTeams) => {
     members: [],
   }));
 
-  [...players]
-    .sort(() => Math.random() - 0.5)
-    .forEach((player, index) => {
-      teams[index % teamCount].members.push({
-        mem_name: player.name,
-        mem_expe: normalizeExperience(player.experience),
-      });
-    });
+  const getPlayerExpValue = (player) => {
+    const exp = normalizeExperience(player.experience);
+    return EXP_VALUES[exp] || 1;
+  };
 
-  return teams.map((team) => ({
+  const sortedPlayers = [...players].sort((a, b) => getPlayerExpValue(b) - getPlayerExpValue(a));
+  const teamSizeLimit = Math.ceil(players.length / teamCount);
+
+  // Balanced draft distribution
+  for (const player of sortedPlayers) {
+    const candidates = teams.filter((t) => t.members.length < teamSizeLimit);
+    if (candidates.length === 0) break;
+
+    let bestTeam = candidates[0];
+    let minSum = Infinity;
+
+    for (const team of candidates) {
+      const sum = team.members.reduce((acc, m) => acc + (EXP_VALUES[m.mem_expe] || 1), 0);
+      if (sum < minSum) {
+        minSum = sum;
+        bestTeam = team;
+      } else if (sum === minSum) {
+        if (team.members.length < bestTeam.members.length) {
+          bestTeam = team;
+        }
+      }
+    }
+
+    bestTeam.members.push({
+      mem_name: player.name,
+      mem_expe: normalizeExperience(player.experience),
+    });
+  }
+
+  // Local optimization (iterative swapping) to minimize gap between average experience
+  const calculateTeamAvg = (team) => {
+    if (team.members.length === 0) return 0;
+    const total = team.members.reduce((sum, m) => sum + (EXP_VALUES[m.mem_expe] || 1), 0);
+    return total / team.members.length;
+  };
+
+  const getGap = (currentTeams) => {
+    let minAvg = Infinity;
+    let maxAvg = -Infinity;
+    for (const t of currentTeams) {
+      const avg = calculateTeamAvg(t);
+      if (avg < minAvg) minAvg = avg;
+      if (avg > maxAvg) maxAvg = avg;
+    }
+    return maxAvg - minAvg;
+  };
+
+  let bestGap = getGap(teams);
+  let improved = true;
+  let iterations = 0;
+  const maxIterations = 100;
+
+  while (improved && iterations < maxIterations) {
+    improved = false;
+    iterations++;
+
+    for (let i = 0; i < teams.length; i++) {
+      for (let j = i + 1; j < teams.length; j++) {
+        const teamA = teams[i];
+        const teamB = teams[j];
+
+        for (let idxA = 0; idxA < teamA.members.length; idxA++) {
+          for (let idxB = 0; idxB < teamB.members.length; idxB++) {
+            const memA = teamA.members[idxA];
+            const memB = teamB.members[idxB];
+
+            if (memA.mem_expe === memB.mem_expe) continue;
+
+            teamA.members[idxA] = memB;
+            teamB.members[idxB] = memA;
+
+            const newGap = getGap(teams);
+            if (newGap < bestGap) {
+              bestGap = newGap;
+              improved = true;
+            } else {
+              teamA.members[idxA] = memA;
+              teamB.members[idxB] = memB;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  const finalGap = getGap(teams);
+
+  const result = teams.map((team) => ({
     ...team,
     comp_size: Math.max(team.members.length, 1),
   }));
+  result.finalGap = finalGap;
+  return result;
 };
 
 const buildIndividualParticipants = (participants = []) =>
@@ -122,6 +216,10 @@ const buildSportParticipantsPayload = async (data) => {
 
 const buildFormatConfigPayload = (data) => ({
   tour_format: data.format,
+  group_count: data.format === 'hybrid' ? Number(data.hybridGroups) : undefined,
+  advance_per_group: data.format === 'hybrid' ? Number(data.hybridAdvancing) : undefined,
+  second_stage_format: data.format === 'hybrid' ? data.hybridSecondRound : undefined,
+  sets_per_match: Number(data.setsPerMatch) || 1,
 });
 
 const withTournamentAuth = async () => {
@@ -161,14 +259,29 @@ export const saveFormatConfig = async (tournamentId, data) => {
   );
 };
 
-export const getReview = async (tournamentId) => {
-  const authConfig = await withTournamentAuth();
-  return axios.get(`/api/tournaments/${tournamentId}/review`, authConfig);
-};
-
 export const publishTournament = async (tournamentId) => {
   const authConfig = await withTournamentAuth();
   return axios.patch(`/api/tournaments/${tournamentId}/publish`, {}, authConfig);
+};
+
+export const pauseTournament = async (tournamentId, pauseDate) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.patch(
+    `/api/tournaments/${tournamentId}/pause`,
+    { pause_date: pauseDate },
+    authConfig,
+  );
+  return response?.data?.data ?? response?.data;
+};
+
+export const resumeTournament = async (tournamentId, resumeDate) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.patch(
+    `/api/tournaments/${tournamentId}/resume`,
+    { resume_date: resumeDate },
+    authConfig,
+  );
+  return response?.data?.data ?? response?.data;
 };
 
 export const getTournaments = async () => {
@@ -204,6 +317,11 @@ export const updateMember = async (memberId, data) => {
   return axios.patch(`/api/tournaments/participants/members/${memberId}`, data, authConfig);
 };
 
+export const updateCompetitor = async (tournamentId, competitorId, data) => {
+  const authConfig = await withTournamentAuth();
+  return axios.patch(`/api/tournaments/${tournamentId}/competitors/${competitorId}`, data, authConfig);
+};
+
 export const deleteTournament = async (tournamentId) => {
   const authConfig = await withTournamentAuth();
   return axios.delete(`/api/tournaments/${tournamentId}`, authConfig);
@@ -212,4 +330,62 @@ export const deleteTournament = async (tournamentId) => {
 export const discardTournamentDraft = async (tournamentId) => {
   const authConfig = await withTournamentAuth();
   return axios.delete(`/api/tournaments/${tournamentId}/discard`, authConfig);
+};
+
+export const getPublicTournamentById = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/public`);
+  return response?.data || null;
+};
+
+export const getTournamentMatches = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/matches`);
+  return response?.data || [];
+};
+
+export const getTournamentStages = async (tournamentId, stage = null) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/stages`, {
+    params: stage ? { stage } : undefined,
+  });
+  return response?.data || [];
+};
+
+export const getTournamentRankings = async (tournamentId) => {
+  const response = await axios.get(`/api/tournaments/${tournamentId}/rankings`);
+  return response?.data || null;
+};
+
+export const generateBracket = async (tournamentId) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.post(`/api/tournaments/${tournamentId}/generate-bracket`, {}, authConfig);
+  return response?.data || null;
+};
+
+export const submitRoundScores = async (tournamentId, matchId, scores, { finalize = true } = {}) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.post(
+    `/api/tournaments/${tournamentId}/bracket/rounds/${matchId}/scores`,
+    { scores, finalize },
+    authConfig,
+  );
+  return response?.data || null;
+};
+
+// --- STAT TEMPLATES ---
+
+export const getStatTemplates = async (tournamentId) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.get(`/api/tournaments/${tournamentId}/stat-templates`, authConfig);
+  return response?.data || [];
+};
+
+export const createStatTemplate = async (tournamentId, payload) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.post(`/api/tournaments/${tournamentId}/stat-templates`, payload, authConfig);
+  return response?.data;
+};
+
+export const deleteStatTemplate = async (tournamentId, templateId) => {
+  const authConfig = await withTournamentAuth();
+  const response = await axios.delete(`/api/tournaments/${tournamentId}/stat-templates/${templateId}`, authConfig);
+  return response?.data;
 };

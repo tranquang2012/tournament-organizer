@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import {
@@ -10,6 +10,7 @@ import {
   faChevronRight,
   faEye,
   faArrowRightFromBracket,
+  faXmark,
 } from '@fortawesome/free-solid-svg-icons'
 import { useAuth } from '../../hooks/useAuth'
 import { supabase } from '../../config/supabaseClient'
@@ -35,7 +36,7 @@ const navItems = [
   },
 ]
 
-const AdminSidebar = ({ collapsed, setCollapsed }) => {
+const AdminSidebar = ({ collapsed, setCollapsed, mobileOpen = false, onMobileClose }) => {
   const [openMenus, setOpenMenus] = useState({ Tournaments: true })
   const location = useLocation()
   const navigate = useNavigate()
@@ -55,6 +56,17 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
     SUPER_ADMIN: 'Super Admin',
   }[role] || role
 
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
+    }
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [mobileOpen])
+
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut()
@@ -72,34 +84,47 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
   const isChildActive = (children) =>
     children?.some((child) => location.pathname.startsWith(child.path))
 
-  return (
-    <aside
-      className={`fixed top-0 left-0 bottom-0 z-50 flex flex-col bg-[#123836] border-r border-white/6 font-['Inter',_'Segoe_UI',_system-ui,_sans-serif] transition-all duration-300 ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden ${
-        collapsed ? 'w-[72px]' : 'w-[260px]'
-      }`}
-    >
+  const handleNavClick = () => {
+    onMobileClose?.()
+  }
+
+  const isMobileExpanded = mobileOpen
+  const isDesktopCollapsed = collapsed && !mobileOpen
+
+  const sidebarContent = (
+  <>
       {/* Brand*/}
-      <div className="px-5 pt-7 pb-5 flex items-center justify-center border-b border-white/6 min-h-[77px]">
+      <div className="px-5 pt-7 pb-5 flex items-center justify-between border-b border-white/6 min-h-[77px]">
         <span
           className={`font-bold text-white uppercase whitespace-nowrap transition-all duration-300 ${
-            collapsed ? 'text-xl tracking-[1px]' : 'text-xl tracking-[3px]'
+            isDesktopCollapsed ? 'text-xl tracking-[1px]' : 'text-xl tracking-[3px]'
           }`}
         >
-          {collapsed ? 'NC' : 'NETCOMPANY'}
+          {isDesktopCollapsed ? 'NC' : 'NETCOMPANY'}
         </span>
+        {mobileOpen && (
+          <button
+            type="button"
+            onClick={onMobileClose}
+            aria-label="Close navigation menu"
+            className="md:hidden flex items-center justify-center w-8 h-8 rounded-lg bg-white/10 border-none cursor-pointer text-white"
+          >
+            <FontAwesomeIcon icon={faXmark} />
+          </button>
+        )}
       </div>
 
       {/* ADMIN CONTROL label */}
       <div
         className={`pt-5 pb-2 text-[11px] font-semibold tracking-[1.5px] text-[#94b8b8] uppercase whitespace-nowrap min-h-[35px] flex items-center ${
-          collapsed ? 'justify-center px-0' : 'px-6'
+          isDesktopCollapsed ? 'justify-center px-0' : 'px-6'
         }`}
       >
-        {collapsed ? <span>•••</span> : <span>ADMIN CONTROL</span>}
+        {isDesktopCollapsed ? <span>•••</span> : <span>ADMIN CONTROL</span>}
       </div>
 
       {/* Navigation */}
-      <nav className={`flex flex-col gap-0.5 ${collapsed ? 'px-2' : 'px-3'}`}>
+      <nav className={`flex flex-col gap-0.5 overflow-y-auto ${isDesktopCollapsed ? 'px-2' : 'px-3'}`}>
         {visibleNavItems.map((item) => {
           const hasChildren = !!item.children
 
@@ -108,10 +133,11 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
               <NavLink
                 key={item.label}
                 to={item.path}
-                title={collapsed ? item.label : undefined}
+                title={isDesktopCollapsed ? item.label : undefined}
+                onClick={handleNavClick}
                 className={({ isActive }) =>
                   `flex items-center rounded-[10px] text-sm font-medium cursor-pointer transition-all duration-300 no-underline whitespace-nowrap ${
-                    collapsed ? 'justify-center p-3 gap-0' : 'gap-3.5 px-3.5 py-3'
+                    isDesktopCollapsed ? 'justify-center p-3 gap-0' : 'gap-3.5 px-3.5 py-3'
                   } ${
                     isActive
                       ? 'bg-[rgba(45,212,168,0.14)] text-[#2dd4a8]'
@@ -120,7 +146,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
                 }
               >
                 <FontAwesomeIcon icon={item.icon} className="w-[18px] h-[18px] shrink-0 text-base text-center" />
-                {!collapsed && <span className="flex-1 overflow-hidden text-ellipsis">{item.label}</span>}
+                {!isDesktopCollapsed && <span className="flex-1 overflow-hidden text-ellipsis">{item.label}</span>}
               </NavLink>
             )
           }
@@ -133,9 +159,9 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
             <div key={item.label}>
               <button
                 onClick={() => toggleMenu(item.label)}
-                title={collapsed ? item.label : undefined}
+                title={isDesktopCollapsed ? item.label : undefined}
                 className={`flex items-center w-full rounded-[10px] text-sm font-medium cursor-pointer transition-all duration-300 border-none bg-transparent text-left whitespace-nowrap ${
-                  collapsed ? 'justify-center p-3 gap-0' : 'gap-3.5 px-3.5 py-3'
+                  isDesktopCollapsed ? 'justify-center p-3 gap-0' : 'gap-3.5 px-3.5 py-3'
                 } ${
                   childActive
                     ? 'bg-[rgba(45,212,168,0.14)] text-[#2dd4a8]'
@@ -143,7 +169,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
                 }`}
               >
                 <FontAwesomeIcon icon={item.icon} className="w-[18px] h-[18px] shrink-0 text-base text-center" />
-                {!collapsed && (
+                {!isDesktopCollapsed && (
                   <>
                     <span className="flex-1 overflow-hidden text-ellipsis">{item.label}</span>
                     <FontAwesomeIcon
@@ -156,12 +182,13 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
                 )}
               </button>
 
-              {!collapsed && isOpen && (
+              {!isDesktopCollapsed && isOpen && (
                 <div className="pl-[22px] ml-6 border-l-[1.5px] border-white/6 flex flex-col animate-[slideDown_0.2s_ease-out]">
                   {item.children.map((child) => (
                     <NavLink
                       key={child.label}
                       to={child.path}
+                      onClick={handleNavClick}
                       className={({ isActive }) =>
                         `block px-3.5 py-2.5 rounded-lg text-[13px] no-underline transition-all duration-300 whitespace-nowrap ${
                           isActive
@@ -184,47 +211,48 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
       <div className="flex-1" />
 
       {/* Go to User View */}
-      <div className={`flex flex-col gap-0.5 mb-1 ${collapsed ? 'px-2' : 'px-3'}`}>
+      <div className={`flex flex-col gap-0.5 mb-1 ${isDesktopCollapsed ? 'px-2' : 'px-3'}`}>
         <NavLink
           to="/"
-          title={collapsed ? 'Go to User View' : undefined}
+          title={isDesktopCollapsed ? 'Go to User View' : undefined}
+          onClick={handleNavClick}
           className={() =>
             `flex items-center rounded-[10px] text-sm font-medium cursor-pointer transition-all duration-300 no-underline whitespace-nowrap ${
-              collapsed ? 'justify-center p-3 gap-0' : 'gap-3.5 px-3.5 py-3'
+              isDesktopCollapsed ? 'justify-center p-3 gap-0' : 'gap-3.5 px-3.5 py-3'
             } text-[#fbbf24] hover:bg-[rgba(251,191,36,0.1)] hover:text-[#fcd34d]`
           }
         >
           <FontAwesomeIcon icon={faEye} className="w-[18px] h-[18px] shrink-0 text-base text-center" />
-          {!collapsed && <span className="flex-1 overflow-hidden text-ellipsis">Go to User View</span>}
+          {!isDesktopCollapsed && <span className="flex-1 overflow-hidden text-ellipsis">Go to User View</span>}
         </NavLink>
       </div>
 
-      {/* Collapse toggle */}
-      <div className={`flex flex-col gap-0.5 mb-2 ${collapsed ? 'px-2' : 'px-3'}`}>
+      {/* Collapse toggle — desktop only */}
+      <div className={`hidden md:flex flex-col gap-0.5 mb-2 ${isDesktopCollapsed ? 'px-2' : 'px-3'}`}>
         <button
           onClick={() => setCollapsed((c) => !c)}
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
           className={`flex items-center w-full rounded-[10px] text-sm font-medium cursor-pointer transition-all duration-300 border-none bg-transparent text-left whitespace-nowrap ${
-            collapsed ? 'justify-center p-3 gap-0' : 'gap-3.5 px-3.5 py-3'
+            isDesktopCollapsed ? 'justify-center p-3 gap-0' : 'gap-3.5 px-3.5 py-3'
           } text-[#e0f0f0] hover:bg-[rgba(45,212,168,0.08)] hover:text-white`}
         >
           <FontAwesomeIcon 
             icon={collapsed ? faChevronRight : faChevronLeft} 
             className="w-[18px] h-[18px] shrink-0 text-base text-center"
           />
-          {!collapsed && <span className="flex-1 overflow-hidden text-ellipsis">Collapse</span>}
+          {!isDesktopCollapsed && <span className="flex-1 overflow-hidden text-ellipsis">Collapse</span>}
         </button>
       </div>
 
       {/* Admin profile */}
       <div
         className={`flex items-center gap-3 border-t border-white/6 whitespace-nowrap mb-2 ${
-          collapsed ? 'justify-center flex-col px-2 py-4 mx-1 gap-4' : 'px-[18px] py-4 mx-3'
+          isDesktopCollapsed ? 'justify-center flex-col px-2 py-4 mx-1 gap-4' : 'px-[18px] py-4 mx-3'
         }`}
       >
         <div
           className="flex items-center gap-3 cursor-pointer overflow-hidden group"
-          onClick={() => navigate('/account-management')}
+          onClick={() => { navigate('/account-management'); handleNavClick() }}
           title="Manage Account"
         >
           {userData?.avatarUrl ? (
@@ -242,7 +270,7 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
                 .slice(0, 2)}
             </div>
           )}
-          {!collapsed && (
+          {!isDesktopCollapsed && (
             <div className="flex flex-col overflow-hidden">
               <span className="text-[13px] font-semibold text-[#e0f0f0] overflow-hidden text-ellipsis group-hover:text-[#2dd4a8] transition-colors">
                 {userData?.fullName || 'Admin'}
@@ -251,11 +279,11 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
             </div>
           )}
         </div>
-        {(!collapsed) ? (
+        {!isDesktopCollapsed ? (
           <button
             onClick={handleLogout}
             title="Sign Out"
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-[#94b8b8] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-all duration-300 ml-auto shrink-0 cursor-pointer"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-[#94b8b8] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-all duration-300 ml-auto shrink-0 cursor-pointer border-none bg-transparent"
           >
             <FontAwesomeIcon icon={faArrowRightFromBracket} className="text-[15px]" />
           </button>
@@ -263,13 +291,39 @@ const AdminSidebar = ({ collapsed, setCollapsed }) => {
           <button
             onClick={handleLogout}
             title="Sign Out"
-            className="flex items-center justify-center w-8 h-8 rounded-lg text-[#94b8b8] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-all duration-300 shrink-0 cursor-pointer"
+            className="flex items-center justify-center w-8 h-8 rounded-lg text-[#94b8b8] hover:text-[#ef4444] hover:bg-[rgba(239,68,68,0.1)] transition-all duration-300 shrink-0 cursor-pointer border-none bg-transparent"
           >
             <FontAwesomeIcon icon={faArrowRightFromBracket} className="text-[15px]" />
           </button>
         )}
       </div>
-    </aside>
+  </>
+  )
+
+  return (
+    <>
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="md:hidden fixed inset-0 bg-black/40 z-40"
+          onClick={onMobileClose}
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        className={`
+          fixed top-0 left-0 bottom-0 z-50 flex flex-col bg-[#123836] border-r border-white/6
+          font-['Inter',_'Segoe_UI',_system-ui,_sans-serif] transition-all duration-300
+          ease-[cubic-bezier(0.4,0,0.2,1)] overflow-hidden
+          ${isDesktopCollapsed ? 'md:w-[72px]' : 'md:w-[260px]'}
+          ${isMobileExpanded ? 'translate-x-0 w-[min(80vw,280px)]' : '-translate-x-full w-[min(80vw,280px)]'}
+          md:translate-x-0
+        `}
+      >
+        {sidebarContent}
+      </aside>
+    </>
   )
 }
 

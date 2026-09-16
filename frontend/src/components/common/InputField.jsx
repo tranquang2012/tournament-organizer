@@ -24,16 +24,29 @@ export function InputField({
           {required && <span className="text-red-500 ml-0.5">*</span>}
         </label>
       )}
-      <input
+        <input
         id={fieldId}
         type={type}
         placeholder={placeholder}
         value={value}
         onChange={onChange}
         disabled={disabled}
+        onClick={(e) => {
+          if (type === 'date' || type === 'time' || type === 'datetime-local') {
+            try {
+              e.target.showPicker();
+            } catch (err) {
+              // ignore if not supported
+            }
+          }
+          if (props.onClick) props.onClick(e);
+        }}
         className={`
           w-full px-4 py-2.5 rounded-xl border text-sm text-slate-700 outline-none
           transition-all duration-200 placeholder:text-slate-400
+          ${
+            type === 'date' || type === 'time' ? 'cursor-pointer' : ''
+          }
           ${error
             ? 'border-red-400 focus:border-red-500 focus:ring-2 focus:ring-red-100'
             : 'border-slate-200 focus:border-[#123836] focus:ring-2 focus:ring-[rgba(18,56,54,0.12)]'

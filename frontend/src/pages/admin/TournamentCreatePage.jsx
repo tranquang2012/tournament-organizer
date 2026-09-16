@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useBlocker } from 'react-router-dom';
+import { useBlocker, useNavigate } from 'react-router-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowLeft, faArrowRight } from '@fortawesome/free-solid-svg-icons';
 import ConfirmationModal from '../../components/common/ConfirmationModal';
@@ -16,6 +16,8 @@ import {
   saveFormatConfig,
   publishTournament,
   discardTournamentDraft,
+  buildRandomizedTeamParticipants,
+  getSportRules,
 } from '../../services/TournamentService';
 import { getAccessToken } from '../../services/AuthService';
 import { getAllSports } from '../../services/SportService';
@@ -49,10 +51,24 @@ const INITIAL_DATA = {
   format: '',
   numberOfMatches: '',
   matchesPerDay: '',
-  hybridEliminationType: 'single_elimination',
-  hybridStages: 2,
-  hybridMatchesPerStage: 1,
+  hybridGroups: '',
+  hybridAdvancing: '',
+  hybridSecondRound: '',
+  setsPerMatch: '1',
 };
+
+const LOBBY_TOURNAMENT_SIZES = [8, 16, 32, 64];
+
+const getLobbyPreset = (playerCount, lobbySize = 8) => {
+  if (!LOBBY_TOURNAMENT_SIZES.includes(playerCount)) return null;
+  const groupCount = playerCount / lobbySize;
+  const advancePerGroup = lobbySize / groupCount;
+  return { groupCount, advancePerGroup };
+};
+
+const isValidLobbyCount = (count, lobbySize) => (
+  lobbySize ? LOBBY_TOURNAMENT_SIZES.includes(count) : true
+);
 
 const getErrorMessage = (error) => (
   error?.response?.data?.error?.message || error?.message || 'Something went wrong'
@@ -68,10 +84,26 @@ const TournamentCreatePage = () => {
   const [isDirty, setIsDirty] = useState(false);
   const [discarding, setDiscarding] = useState(false);
   const [sportsConfig, setSportsConfig] = useState([]);
+  const [sportRules, setSportRules] = useState({});
+  const [showBalanceWarning, setShowBalanceWarning] = useState(false);
 
   const currentSportConfig = sportsConfig.find(
     (s) => s.name.toLowerCase() === formData.sport?.toLowerCase()
   );
+  const currentSportRules = Object.values(sportRules).find(
+    (rule) => rule.sport_name?.toLowerCase() === formData.sport?.toLowerCase()
+  );
+  const lobbySize = currentSportRules?.lobby_size || null;
+  const scoreMode = currentSportRules?.score_mode || 'points';
+  const isScoringSport = currentSportConfig
+    && String(currentSportConfig.format || '').toLowerCase().includes('scoring')
+    && !String(currentSportConfig.format || '').toLowerCase().includes('versus');
+  const enrichedSportConfig = currentSportConfig
+    ? { ...currentSportConfig, lobby_size: lobbySize, score_mode: scoreMode }
+    : currentSportConfig;
+  const participantCount = formData.participantType === 'team'
+    ? (formData.teamMode === 'predefine' ? (formData.teams || []).length : (formData.participants || []).length)
+    : (formData.participants || []).length;
 
   const blocker = useBlocker(
     ({ currentLocation, nextLocation }) =>
@@ -94,6 +126,7 @@ const TournamentCreatePage = () => {
   };
 
   const tokenRef = useRef(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const updateToken = async () => {
@@ -108,8 +141,9 @@ const TournamentCreatePage = () => {
 
     const fetchSports = async () => {
       try {
-        const res = await getAllSports();
+        const [res, rules] = await Promise.all([getAllSports(), getSportRules()]);
         setSportsConfig(res.data || res || []);
+        setSportRules(rules || {});
       } catch (err) {
         console.error('Failed to fetch sports config:', err);
       }
@@ -127,7 +161,7 @@ const TournamentCreatePage = () => {
 
     const handleUnload = () => {
       if (isDirty && tournamentId && tokenRef.current) {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5001';
+        const baseUrl = import.meta.env.VITE_API_BASE_URL || '';
         const url = `${baseUrl}/api/tournaments/${tournamentId}/discard`;
         fetch(url, {
           method: 'DELETE',
@@ -163,12 +197,25 @@ const TournamentCreatePage = () => {
       };
 
       const checkSupportedFormat = (supportedList, val) => {
+        if (val === 'hybrid') {
+          const supportsCategory = (category) => {
+            if (!supportedList) return true;
+            if (Array.isArray(supportedList)) {
+              return supportedList.some((s) => s.toLowerCase() === category.toLowerCase());
+            }
+            if (typeof supportedList === 'string') {
+              return supportedList.toLowerCase().includes(category.toLowerCase());
+            }
+            return true;
+          };
+          return supportsCategory('versus') || supportsCategory('scoring');
+        }
+
         const FORMAT_CATEGORIES = {
           'single_elimination': 'versus',
           'double_elimination': 'versus',
           'round_robin': 'versus',
           'round_scoring': 'scoring',
-          'hybrid': 'versus',
         };
         const category = FORMAT_CATEGORIES[val];
         if (!supportedList || !category) return true;
@@ -193,6 +240,50 @@ const TournamentCreatePage = () => {
     }
   }, [formData.sport, currentSportConfig, formData.participantType, formData.format]);
 
+  useEffect(() => {
+    if (scoreMode === 'time' && String(formData.setsPerMatch) !== '1') {
+      setFormData((prev) => ({ ...prev, setsPerMatch: '1' }));
+    }
+  }, [formData.sport, scoreMode, formData.setsPerMatch]);
+
+  useEffect(() => {
+    if (!lobbySize || !isValidLobbyCount(participantCount, lobbySize)) return;
+
+    const preset = getLobbyPreset(participantCount, lobbySize);
+    if (!preset) return;
+
+    setFormData((prev) => {
+      const next = { ...prev };
+      let changed = false;
+
+      if (participantCount === lobbySize && prev.format !== 'round_scoring') {
+        next.format = 'round_scoring';
+        changed = true;
+      } else if (participantCount > lobbySize) {
+        if (prev.format !== 'hybrid') {
+          next.format = 'hybrid';
+          changed = true;
+        }
+        const groups = String(preset.groupCount);
+        const advancing = String(preset.advancePerGroup);
+        if (prev.hybridGroups !== groups) {
+          next.hybridGroups = groups;
+          changed = true;
+        }
+        if (prev.hybridAdvancing !== advancing) {
+          next.hybridAdvancing = advancing;
+          changed = true;
+        }
+        if (prev.hybridSecondRound !== 'round_scoring') {
+          next.hybridSecondRound = 'round_scoring';
+          changed = true;
+        }
+      }
+
+      return changed ? next : prev;
+    });
+  }, [lobbySize, participantCount]);
+
   /* Validation */
   const isStepCompleted = (idx) => {
     if (idx === 0) {
@@ -200,22 +291,24 @@ const TournamentCreatePage = () => {
     }
     if (idx === 1) {
       if (!formData.sport) return false;
+      if (lobbySize && !isValidLobbyCount(participantCount, lobbySize)) return false;
       if (formData.participantType === 'individual') {
         return formData.participants?.length > 0;
       }
       if (formData.participantType === 'team') {
-        if (!formData.membersPerTeam || formData.membersPerTeam <= 0) return false;
-        if (formData.teamMode === 'predefine') {
-          return formData.teams?.length > 0;
-        } else {
+        if (formData.teamMode === 'randomize') {
+          if (!formData.membersPerTeam || formData.membersPerTeam <= 0) return false;
           return formData.participants?.length > 0;
+        } else {
+          return formData.teams?.length > 0;
         }
       }
       return false;
     }
     if (idx === 2) {
       if (formData.format === 'hybrid') {
-        return !!formData.format && formData.hybridStages > 0 && formData.hybridMatchesPerStage > 0;
+        const hybridSecondRound = formData.hybridSecondRound || (isScoringSport ? 'round_scoring' : '');
+        return !!hybridSecondRound && !!formData.hybridGroups && !!formData.hybridAdvancing;
       }
       return !!formData.format;
     }
@@ -249,12 +342,21 @@ const TournamentCreatePage = () => {
         setToast({ message: 'Tournament name is required', type: 'error' });
         return false;
       }
+      const today = new Date().toISOString().slice(0, 10);
       if (!formData.startDate) {
         setToast({ message: 'Start date is required', type: 'error' });
         return false;
       }
+      if (formData.startDate < today) {
+        setToast({ message: 'Start date cannot be in the past', type: 'error' });
+        return false;
+      }
       if (!formData.endDate) {
         setToast({ message: 'End date is required', type: 'error' });
+        return false;
+      }
+      if (formData.endDate < formData.startDate) {
+        setToast({ message: 'End date cannot be before start date', type: 'error' });
         return false;
       }
     }
@@ -283,22 +385,70 @@ const TournamentCreatePage = () => {
       }
 
       if (formData.participantType === 'team' && formData.teamMode === 'randomize') {
-        const teamCount = Number(formData.numberOfTeams) || 0;
-        if (teamCount < 1) {
-          setToast({ message: 'Number of teams is required', type: 'error' });
+        const playerPoolCount = formData.participants?.length || 0;
+        const membersPerTeam = Number(formData.membersPerTeam) || 0;
+
+        if (membersPerTeam <= 0) {
+          setToast({ message: 'Number of members in a team must be greater than 0', type: 'error' });
           return false;
         }
 
-        if (formData.participants.length < teamCount) {
-          setToast({ message: 'Player count must be at least the number of teams', type: 'error' });
+        if (playerPoolCount === 0) {
+          setToast({ message: 'Player pool cannot be empty', type: 'error' });
+          return false;
+        }
+
+        if (playerPoolCount % membersPerTeam !== 0) {
+          setToast({
+            message: `Player pool (${playerPoolCount} players) cannot be divided equally into teams of ${membersPerTeam}.`,
+            type: 'error',
+          });
+          return false;
+        }
+
+        // Set calculated numberOfTeams on the form data
+        formData.numberOfTeams = playerPoolCount / membersPerTeam;
+      }
+
+      if (lobbySize) {
+        if (!isValidLobbyCount(participantCount, lobbySize)) {
+          setToast({
+            message: `${formData.sport} requires 8, 16, 32, or 64 players (lobbies of ${lobbySize}). You currently have ${participantCount}.`,
+            type: 'error',
+          });
           return false;
         }
       }
     }
 
-    if (currentStep === 2 && !formData.format) {
-      setToast({ message: 'Tournament format is required', type: 'error' });
-      return false;
+    if (currentStep === 2) {
+      if (!formData.format) {
+        setToast({ message: 'Tournament format is required', type: 'error' });
+        return false;
+      }
+      if (formData.format === 'hybrid') {
+        if (!formData.hybridGroups || !formData.hybridAdvancing) {
+          setToast({ message: 'Please configure the first round groups', type: 'error' });
+          return false;
+        }
+        const hybridSecondRound = formData.hybridSecondRound || (isScoringSport ? 'round_scoring' : '');
+        if (!hybridSecondRound) {
+          setToast({ message: 'Please select a format for the second round', type: 'error' });
+          return false;
+        }
+      }
+
+      const usesGamesPerMatch =
+        formData.format === 'round_scoring' ||
+        formData.hybridSecondRound === 'round_scoring' ||
+        (formData.format === 'hybrid' && isScoringSport);
+      if (usesGamesPerMatch) {
+        const setsPerMatch = Number(formData.setsPerMatch || 1);
+        if (!Number.isInteger(setsPerMatch) || setsPerMatch < 1 || setsPerMatch > 20) {
+          setToast({ message: 'Games per match must be a whole number between 1 and 20', type: 'error' });
+          return false;
+        }
+      }
     }
 
     return true;
@@ -320,13 +470,31 @@ const TournamentCreatePage = () => {
     }
 
     if (currentStep === 2) {
-      await saveFormatConfig(tournamentId, formData);
+      const formatData = { ...formData };
+      if (formData.format === 'hybrid' && isScoringSport && !formData.hybridSecondRound) {
+        formatData.hybridSecondRound = 'round_scoring';
+      }
+      if (scoreMode === 'time') {
+        formatData.setsPerMatch = '1';
+      }
+      await saveFormatConfig(tournamentId, formatData);
     }
   };
 
-  const handleNext = async () => {
+  const handleNext = async (bypassWarning = false) => {
     if (!validateCurrentStep()) return;
 
+    const shouldBypass = bypassWarning === true;
+
+    if (currentStep === 1 && formData.participantType === 'team' && formData.teamMode === 'randomize' && !shouldBypass) {
+      const teams = buildRandomizedTeamParticipants(formData.participants, formData.numberOfTeams);
+      if (teams.finalGap > 1.0) {
+        setShowBalanceWarning(true);
+        return;
+      }
+    }
+
+    setShowBalanceWarning(false);
     setSavingStep(true);
     try {
       await persistCurrentStep();
@@ -364,6 +532,7 @@ const TournamentCreatePage = () => {
       await publishTournament(tournamentId);
       setIsDirty(false);
       setToast({ message: 'Tournament published successfully!', type: 'success' });
+      setTimeout(() => navigate('/admin/tournaments/list'), 1500);
     } catch (error) {
       setToast({ message: getErrorMessage(error), type: 'error' });
     } finally {
@@ -377,9 +546,16 @@ const TournamentCreatePage = () => {
       case 0:
         return <GeneralDetailsStep data={formData} onChange={updateStep1} />;
       case 1:
-        return <SportParticipantsStep data={formData} onChange={updateStep2} currentSportConfig={currentSportConfig} />;
+        return <SportParticipantsStep data={formData} onChange={updateStep2} currentSportConfig={enrichedSportConfig} />;
       case 2:
-        return <FormatConfigStep data={formData} onChange={updateStep3} currentSportConfig={currentSportConfig} />;
+        return (
+          <FormatConfigStep
+            data={formData}
+            onChange={updateStep3}
+            currentSportConfig={enrichedSportConfig}
+            participantCount={participantCount}
+          />
+        );
       case 3:
         return (
           <ReviewPublishStep
@@ -412,6 +588,17 @@ const TournamentCreatePage = () => {
         loading={discarding}
       />
 
+      {/* Balance warning modal */}
+      <ConfirmationModal
+        open={showBalanceWarning}
+        onClose={() => setShowBalanceWarning(false)}
+        onConfirm={() => handleNext(true)}
+        title="Unbalanced Teams Warning"
+        description="The experience distribution of the player pool makes it difficult to balance the teams perfectly. Do you want to proceed anyway?"
+        intent="warning"
+        confirmLabel="Proceed Anyway"
+        cancelLabel="Adjust Players"
+      />
       {/* Page header */}
       <div className="mb-8">
         <h1 className="text-2xl font-bold text-slate-800 m-0 leading-tight">
@@ -437,7 +624,7 @@ const TournamentCreatePage = () => {
 
       {/* Navigation buttons */}
       {currentStep < STEPS.length - 1 && (
-        <div className="flex items-center justify-between mt-10 pt-6 border-t border-slate-100">
+        <div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-3 mt-10 pt-6 border-t border-slate-100">
           <button
             type="button"
             onClick={handleBack}

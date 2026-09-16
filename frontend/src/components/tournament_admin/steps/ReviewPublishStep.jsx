@@ -14,6 +14,7 @@ const FORMAT_LABELS = {
   double_elimination: 'Double Elimination',
   round_robin: 'Round Robin',
   round_scoring: 'Round Scoring',
+  hybrid: 'Multi Round (Hybrid)',
 };
 const ReviewPublishStep = ({ data, onGoToStep, onPublish, publishing }) => {
   const participantCount =
@@ -46,8 +47,8 @@ const ReviewPublishStep = ({ data, onGoToStep, onPublish, publishing }) => {
           <Row label="Start Date" value={data.startDate || '—'} />
           <Row label="End Date" value={data.endDate || '—'} />
           {(data.banner || data.defaultBannerSrc) && (
-            <div className="flex items-center gap-2 py-2">
-              <span className="text-sm text-slate-400 w-[140px] shrink-0">Banner</span>
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2 py-2">
+              <span className="text-sm text-slate-400 sm:w-[140px] shrink-0">Banner</span>
               <div className="flex items-center gap-3">
                 <div className="w-20 h-12 rounded-lg overflow-hidden border border-slate-200">
                   <img
@@ -108,6 +109,16 @@ const ReviewPublishStep = ({ data, onGoToStep, onPublish, publishing }) => {
         {/*  Format Configuration */}
         <Section icon={faGear} title="Format Configuration" onEdit={() => onGoToStep(2)}>
           <Row label="Format" value={FORMAT_LABELS[data.format] || '—'} />
+          {data.format === 'hybrid' && (
+            <>
+              <Row label="Round 1 Groups" value={data.hybridGroups || '—'} />
+              <Row label="Advance per Group" value={data.hybridAdvancing || '—'} />
+              <Row label="Round 2 Format" value={FORMAT_LABELS[data.hybridSecondRound] || '—'} />
+            </>
+          )}
+          {(data.format === 'round_scoring' || data.hybridSecondRound === 'round_scoring' || Number(data.setsPerMatch) > 1) && (
+            <Row label="Games per match" value={data.setsPerMatch || 1} />
+          )}
         </Section>
       </div>
 
@@ -163,8 +174,8 @@ function Section({ icon, title, onEdit, children }) {
 
 function Row({ label, value }) {
   return (
-    <div className="flex items-start gap-2 py-2">
-      <span className="text-sm text-slate-400 w-[140px] shrink-0">{label}</span>
+    <div className="flex flex-col sm:flex-row sm:items-start gap-1 sm:gap-2 py-2">
+      <span className="text-sm text-slate-400 sm:w-[140px] shrink-0">{label}</span>
       <span className="text-sm text-slate-700 break-words">{String(value)}</span>
     </div>
   );

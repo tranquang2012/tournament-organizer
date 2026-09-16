@@ -13,22 +13,23 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import Button from '../../common/Button';
 import EditMemberInlineModal from './EditMemberInlineModal';
-import { updateMember, saveSportAndParticipants } from '../../../services/TournamentService';
+import EditTeamInlineModal from './EditTeamInlineModal';
+import { updateMember, updateCompetitor, saveSportAndParticipants } from '../../../services/TournamentService';
 
 const EXP_COLORS = {
-  Beginner:     { text: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
+  Beginner: { text: '#22c55e', bg: 'rgba(34,197,94,0.12)' },
   Intermediate: { text: '#3b82f6', bg: 'rgba(59,130,246,0.12)' },
-  Advanced:     { text: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
+  Advanced: { text: '#8b5cf6', bg: 'rgba(139,92,246,0.12)' },
   Professional: { text: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
-  Pro:          { text: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
+  Pro: { text: '#ef4444', bg: 'rgba(239,68,68,0.12)' },
 };
 
 const expStyle = (exp) => EXP_COLORS[exp] || EXP_COLORS.Beginner;
 
 /* Individual participants list */
 const IndividualList = ({ participants, onEdit }) => (
-  <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden">
-    <table className="w-full border-collapse text-left">
+  <div className="bg-white rounded-2xl border border-slate-200/80 overflow-hidden overflow-x-auto">
+    <table className="w-full border-collapse text-left min-w-[400px]">
       <thead>
         <tr className="border-b border-slate-100">
           <th className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-5 py-3 w-10">#</th>
@@ -80,37 +81,84 @@ const IndividualList = ({ participants, onEdit }) => (
   </div>
 );
 
+const EXP_VALUES = {
+  Beginner: 1,
+  Intermediate: 2,
+  Advanced: 3,
+  Professional: 4,
+  Pro: 4,
+};
+
+const getAverageExperience = (members = []) => {
+  if (members.length === 0) return null;
+  const sum = members.reduce((acc, m) => acc + (EXP_VALUES[m.mem_expe || m.experience] || 1), 0);
+  return (sum / members.length).toFixed(1);
+};
+
 /*  Team card  */
-const TeamCard = ({ team, expanded, onToggle, onEdit, swapMode, dragHandlers, draggingMemberId }) => {
+const TeamCard = ({ team, expanded, onToggle, onEdit, onEditTeam, swapMode, dragHandlers, draggingMemberId }) => {
   const memberCount = team.members?.length ?? 0;
+  const avgExp = getAverageExperience(team.members);
 
   return (
     <div
-      className={`bg-white rounded-2xl border overflow-hidden transition-all duration-200 ${
-        swapMode ? 'border-[#123836]/30 shadow-sm' : 'border-slate-200/80'
-      }`}
+      className={`bg-white rounded-2xl border overflow-hidden transition-all duration-200 ${swapMode ? 'border-[#123836]/30 shadow-sm' : 'border-slate-200/80'
+        }`}
+      onDragOver={swapMode ? (e) => dragHandlers.onTeamDragOver(e, team.comp_id) : undefined}
+      onDragLeave={swapMode ? dragHandlers.onTeamDragLeave : undefined}
+      onDrop={swapMode ? (e) => dragHandlers.onTeamDrop(e, team.comp_id) : undefined}
     >
       {/* Card header */}
-      <button
-        type="button"
-        onClick={onToggle}
-        className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50/50 transition-colors cursor-pointer bg-transparent border-none text-left"
-      >
-        {/* Team icon */}
-        <div className="w-8 h-8 rounded-lg bg-[#f0fdf4] flex items-center justify-center shrink-0">
-          <FontAwesomeIcon icon={faUsers} className="text-[#123836] text-xs" />
-        </div>
+      <div className="w-full flex items-center gap-3 px-4 py-3.5 hover:bg-slate-50/50 transition-colors bg-transparent border-none text-left">
+        <button
+          type="button"
+          onClick={onToggle}
+          className="flex-1 flex items-center gap-3 cursor-pointer bg-transparent border-none text-left p-0 min-w-0"
+        >
+          {/* Team icon or logo */}
+          {team.comp_logo ? (
+            <img
+              src={team.comp_logo}
+              alt={team.comp_name}
+              className="w-8 h-8 rounded-lg object-cover shrink-0"
+            />
+          ) : (
+            <div className="w-8 h-8 rounded-lg bg-[#f0fdf4] flex items-center justify-center shrink-0">
+              <FontAwesomeIcon icon={faUsers} className="text-[#123836] text-xs" />
+            </div>
+          )}
 
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-slate-800 leading-tight truncate">{team.comp_name}</p>
-          <p className="text-xs text-slate-400 mt-0.5">{memberCount} member{memberCount !== 1 ? 's' : ''}</p>
-        </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-bold text-slate-800 leading-tight truncate">{team.comp_name}</p>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {memberCount} member{memberCount !== 1 ? 's' : ''}
+              {avgExp !== null && ` · Avg Exp: ${avgExp}`}
+            </p>
+          </div>
+        </button>
 
-        <FontAwesomeIcon
-          icon={expanded ? faChevronUp : faChevronDown}
-          className="text-slate-400 text-xs shrink-0"
-        />
-      </button>
+        {!swapMode && (
+          <button
+            type="button"
+            onClick={() => onEditTeam(team)}
+            className="inline-flex items-center justify-center w-7 h-7 rounded-lg border border-slate-200 bg-white text-slate-500 hover:border-[#123836] hover:text-[#123836] hover:bg-[rgba(18,56,54,0.04)] transition-all duration-200 cursor-pointer shrink-0"
+            title="Edit Team"
+          >
+            <FontAwesomeIcon icon={faPenToSquare} className="text-xs" />
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={onToggle}
+          className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-600 bg-transparent border-none cursor-pointer shrink-0"
+        >
+          <FontAwesomeIcon
+            icon={expanded ? faChevronUp : faChevronDown}
+            className="text-xs"
+          />
+        </button>
+      </div>
 
       {/* Expanded member list */}
       {expanded && (
@@ -123,20 +171,18 @@ const TeamCard = ({ team, expanded, onToggle, onEdit, swapMode, dragHandlers, dr
               return (
                 <div
                   key={m.mem_id || m.id}
-                  className={`flex items-center gap-3 px-4 py-2.5 border-b border-slate-50 last:border-b-0 transition-all duration-200 ${
-                    swapMode
+                  className={`flex items-center gap-3 px-4 py-2.5 border-b border-slate-50 last:border-b-0 transition-all duration-200 ${swapMode
                       ? 'cursor-grab active:cursor-grabbing hover:bg-[rgba(18,56,54,0.04)]'
                       : 'hover:bg-slate-50/40'
-                  } ${
-                    (m.mem_id || m.id) === draggingMemberId
+                    } ${(m.mem_id || m.id) === draggingMemberId
                       ? 'opacity-40 scale-95 bg-slate-100 rounded-lg shadow-inner ring-1 ring-slate-200'
                       : ''
-                  }`}
+                    }`}
                   draggable={swapMode}
                   onDragStart={swapMode ? (e) => dragHandlers.onDragStart(e, m, team.comp_id) : undefined}
-                  onDragOver={swapMode ? (e) => dragHandlers.onDragOver(e, team.comp_id) : undefined}
-                  onDragLeave={swapMode ? dragHandlers.onDragLeave : undefined}
-                  onDrop={swapMode ? (e) => dragHandlers.onDrop(e, m, team.comp_id) : undefined}
+                  onDragOver={swapMode ? (e) => dragHandlers.onMemberDragOver(e, team.comp_id) : undefined}
+                  onDragLeave={swapMode ? dragHandlers.onMemberDragLeave : undefined}
+                  onDrop={swapMode ? (e) => dragHandlers.onMemberDrop(e, m, team.comp_id) : undefined}
                   onDragEnd={swapMode ? dragHandlers.onDragEnd : undefined}
                 >
                   {swapMode && (
@@ -202,6 +248,7 @@ const EditParticipantsTab = ({ tournamentData }) => {
 
   /* Edit modal */
   const [editingMember, setEditingMember] = useState(null);
+  const [editingTeam, setEditingTeam] = useState(null);
 
   /* Swap mode */
   const [swapMode, setSwapMode] = useState(false);
@@ -226,7 +273,7 @@ const EditParticipantsTab = ({ tournamentData }) => {
       const updatedList = indivList.map((m) =>
         (m.mem_id || m.id) === memberId ? { ...m, mem_name: newName, mem_expe: experience } : m
       );
-      
+
       await saveSportAndParticipants(tournamentData.tour_id, {
         sport: tournamentData.sport_name,
         participantType: 'individual',
@@ -235,7 +282,7 @@ const EditParticipantsTab = ({ tournamentData }) => {
           experience: m.mem_expe || m.experience || 'Beginner'
         }))
       });
-      
+
       setIndivList(updatedList);
     } else {
       await updateMember(memberId, { mem_name: newName, mem_expe: experience });
@@ -250,32 +297,47 @@ const EditParticipantsTab = ({ tournamentData }) => {
     }
   };
 
-  /* Swap mode drag handlers */
+  /* Save team details (rename and logo URL) */
+  const handleSaveTeamDetails = async (competitorId, newName, newLogo) => {
+    await updateCompetitor(tournamentData.tour_id, competitorId, {
+      comp_name: newName,
+      comp_logo: newLogo,
+    });
+    setTeams((prev) =>
+      prev.map((t) =>
+        t.comp_id === competitorId ? { ...t, comp_name: newName, comp_logo: newLogo } : t
+      )
+    );
+  };
+
+  /* Swap/Move mode drag handlers */
   const dragHandlers = {
     onDragStart: (e, member, fromTeamId) => {
       dragRef.current = { member, fromTeam: fromTeamId };
       setDraggingMemberId(member.mem_id || member.id);
       e.dataTransfer.effectAllowed = 'move';
     },
-    onDragOver: (e, toTeamId) => {
+    onMemberDragOver: (e, toTeamId) => {
       if (dragRef.current.fromTeam && dragRef.current.fromTeam !== toTeamId) {
         e.preventDefault();
+        e.stopPropagation();
         e.currentTarget.classList.add('bg-[#dcfce7]', 'ring-2', 'ring-[#22c55e]', 'ring-inset', 'scale-[1.02]', 'shadow-md', 'z-10', 'rounded-xl');
       }
     },
-    onDragLeave: (e) => {
+    onMemberDragLeave: (e) => {
       e.currentTarget.classList.remove('bg-[#dcfce7]', 'ring-2', 'ring-[#22c55e]', 'ring-inset', 'scale-[1.02]', 'shadow-md', 'z-10', 'rounded-xl');
     },
-    onDrop: (e, swapTarget, toTeamId) => {
+    onMemberDrop: (e, swapTarget, toTeamId) => {
       e.preventDefault();
+      e.stopPropagation();
       e.currentTarget.classList.remove('bg-[#dcfce7]', 'ring-2', 'ring-[#22c55e]', 'ring-inset', 'scale-[1.02]', 'shadow-md', 'z-10', 'rounded-xl');
       setDraggingMemberId(null);
-      
+
       const { member, fromTeam } = dragRef.current;
       if (!member || fromTeam === toTeamId || !swapTarget) return;
 
       setTeams((prev) => {
-        const next = prev.map((t) => {
+        return prev.map((t) => {
           if (t.comp_id === fromTeam) {
             const newMembers = t.members.filter(
               (m) => (m.mem_id || m.id) !== (member.mem_id || member.id)
@@ -292,15 +354,62 @@ const EditParticipantsTab = ({ tournamentData }) => {
           }
           return t;
         });
-        return next;
       });
 
-      // Track pending swap for confirmation
-      setSwapPending((prev) => [
-        ...prev,
-        { memberId: member.mem_id || member.id, data: { comp_id: toTeamId } },
-        { memberId: swapTarget.mem_id || swapTarget.id, data: { comp_id: fromTeam } }
-      ]);
+      setSwapPending((prev) => {
+        const filtered = prev.filter(
+          (p) => p.memberId !== (member.mem_id || member.id) && p.memberId !== (swapTarget.mem_id || swapTarget.id)
+        );
+        return [
+          ...filtered,
+          { memberId: member.mem_id || member.id, data: { comp_id: toTeamId } },
+          { memberId: swapTarget.mem_id || swapTarget.id, data: { comp_id: fromTeam } }
+        ];
+      });
+      dragRef.current = { member: null, fromTeam: null };
+    },
+    onTeamDragOver: (e, toTeamId) => {
+      if (dragRef.current.fromTeam && dragRef.current.fromTeam !== toTeamId) {
+        e.preventDefault();
+        e.currentTarget.classList.add('ring-2', 'ring-[#22c55e]', 'bg-[#f0fdf4]/50');
+      }
+    },
+    onTeamDragLeave: (e) => {
+      e.currentTarget.classList.remove('ring-2', 'ring-[#22c55e]', 'bg-[#f0fdf4]/50');
+    },
+    onTeamDrop: (e, toTeamId) => {
+      e.preventDefault();
+      e.currentTarget.classList.remove('ring-2', 'ring-[#22c55e]', 'bg-[#f0fdf4]/50');
+      setDraggingMemberId(null);
+
+      const { member, fromTeam } = dragRef.current;
+      if (!member || fromTeam === toTeamId) return;
+
+      setTeams((prev) => {
+        return prev.map((t) => {
+          if (t.comp_id === fromTeam) {
+            return {
+              ...t,
+              members: t.members.filter((m) => (m.mem_id || m.id) !== (member.mem_id || member.id))
+            };
+          }
+          if (t.comp_id === toTeamId) {
+            return {
+              ...t,
+              members: [...t.members, { ...member, comp_id: toTeamId }]
+            };
+          }
+          return t;
+        });
+      });
+
+      setSwapPending((prev) => {
+        const filtered = prev.filter((p) => p.memberId !== (member.mem_id || member.id));
+        return [
+          ...filtered,
+          { memberId: member.mem_id || member.id, data: { comp_id: toTeamId } }
+        ];
+      });
       dragRef.current = { member: null, fromTeam: null };
     },
     onDragEnd: () => {
@@ -380,7 +489,7 @@ const EditParticipantsTab = ({ tournamentData }) => {
               }
             }}
           >
-            {swapMode ? 'Exit Swap Mode' : 'Swap Members'}
+            {swapMode ? 'Exit Reassign Mode' : 'Reassign Members'}
           </Button>
         )}
       </div>
@@ -390,7 +499,7 @@ const EditParticipantsTab = ({ tournamentData }) => {
         <div className="mb-5 px-4 py-3 rounded-xl bg-[rgba(18,56,54,0.06)] border border-[#123836]/20 flex items-center gap-3 animate-[fadeIn_0.2s_ease-out]">
           <FontAwesomeIcon icon={faArrowRightArrowLeft} className="text-[#123836] shrink-0" />
           <p className="text-sm font-semibold text-[#123836] flex-1">
-            Swap mode active — drag a member and drop them into another team
+            Reassign mode active: drag a member over another to swap, or drop onto a team to move
           </p>
           {swapPending.length > 0 && (
             <span className="text-xs font-bold text-[#123836] bg-[#123836]/10 px-2 py-1 rounded-full">
@@ -424,6 +533,7 @@ const EditParticipantsTab = ({ tournamentData }) => {
                 expanded={!!expandedTeams[team.comp_id]}
                 onToggle={() => toggleTeam(team.comp_id)}
                 onEdit={(m) => setEditingMember({ id: m.mem_id || m.id, name: m.mem_name || m.name, experience: m.mem_expe })}
+                onEditTeam={(t) => setEditingTeam({ id: t.comp_id, name: t.comp_name, logo: t.comp_logo })}
                 swapMode={swapMode}
                 dragHandlers={dragHandlers}
                 draggingMemberId={draggingMemberId}
@@ -435,10 +545,10 @@ const EditParticipantsTab = ({ tournamentData }) => {
 
       {/* Confirm swap bar*/}
       {swapMode && (
-        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3.5 bg-[#123836] rounded-2xl shadow-2xl animate-[fadeIn_0.25s_ease-out]">
+        <div className="fixed bottom-4 left-4 right-4 sm:left-1/2 sm:right-auto sm:-translate-x-1/2 sm:bottom-6 z-50 flex flex-wrap items-center justify-center gap-2 sm:gap-3 px-4 sm:px-5 py-3 sm:py-3.5 bg-[#123836] rounded-2xl shadow-2xl animate-[fadeIn_0.25s_ease-out] max-w-[calc(100vw-2rem)] sm:max-w-none">
           <p className="text-white text-sm font-semibold">
             {swapPending.length > 0
-              ? `${swapPending.length} member${swapPending.length > 1 ? 's' : ''} to swap`
+              ? `${swapPending.length} pending change${swapPending.length > 1 ? 's' : ''}`
               : 'Drag members between teams'}
           </p>
           <div className="flex items-center gap-2 ml-2">
@@ -471,6 +581,14 @@ const EditParticipantsTab = ({ tournamentData }) => {
         member={editingMember}
         onClose={() => setEditingMember(null)}
         onSave={handleSaveMemberName}
+      />
+
+      {/* Edit team modal */}
+      <EditTeamInlineModal
+        open={!!editingTeam}
+        team={editingTeam}
+        onClose={() => setEditingTeam(null)}
+        onSave={handleSaveTeamDetails}
       />
     </div>
   );

@@ -19,7 +19,8 @@ const UserMasterTable = ({ users, loading, actionLoading, onAction }) => {
           <span className="text-sm">No users match your filters</span>
         </div>
       ) : (
-        <table className="w-full border-collapse text-left">
+        <div className="overflow-x-auto">
+        <table className="w-full border-collapse text-left min-w-[640px]">
           <thead>
             <tr className="border-b border-slate-100">
               <th className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-6 py-4">
@@ -50,6 +51,7 @@ const UserMasterTable = ({ users, loading, actionLoading, onAction }) => {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </div>
   )
