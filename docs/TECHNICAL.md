@@ -379,7 +379,7 @@ Catalog `sport_id` 1–12: `sport_name`, `sport_type[]`, `sport_banner`, `sport_
 
 ### `public.competitors` / `public.teammember`
 
-A **competitor** is the competitive unit (team or single player). `comp_size` is 1 for individuals. Members live in `teammember` (`mem_name`, `mem_expe`). Individuals also get a teammember row with the same display name.
+A **competitor** is the competitive unit (team or single player). `comp_size` is 1 for individuals. `comp_logo` stores the public logo URL (preset or uploaded to `tournament-banners`). Members live in `teammember` (`mem_name`, `mem_expe`). Individuals also get a teammember row with the same display name.
 
 ### `public.matches`
 
@@ -416,7 +416,7 @@ stateDiagram-v2
 **Create wizard** (`/admin/tournaments/create`) — four steps, matching the admin-configuration deliverable:
 
 1. **General details** — `POST /api/tournaments`, optional `PATCH /:id/general-details`. Banner is a preset public URL or a `data:` image uploaded to Storage.
-2. **Sport & participants** — `PATCH /:id/sport-participants`. Replaces competitors each save. Teams may be predefined or **randomly grouped** (`buildRandomizedTeamParticipants`) — this is the automatic team-formation requirement.
+2. **Sport & participants** — `PATCH /:id/sport-participants`. Replaces competitors each save. Teams may be predefined with custom/default logos (uploaded to `tournament-banners` bucket) or **randomly grouped** (`buildRandomizedTeamParticipants`) — this is the automatic team-formation requirement.
 3. **Format** — `PATCH /:id/format-config`, validated against `sportRules.config.js`.
 4. **Review & publish** — `GET /:id/review`, then `PATCH /:id/publish` sets `tour_status` to **`ongoing`**.
 
@@ -425,7 +425,8 @@ Leaving the wizard may `DELETE /:id/discard`. Discard deletes **drafts only**. L
 **After publish**
 
 - `/admin/tournaments/:id/matches` → `POST /:id/generate-bracket` (deletes existing matches, then inserts a new set — automatic pairing). The API does not itself require `ongoing` status.
-- Scoring `PATCH /api/matches/:matchId` (and round-scoring / hybrid submit) updates the match and **propagates** winners/losers along `next_*_match_id`. Hybrid generates stage 2 when stage 1 is complete.
+- Scoring `PATCH /api/matches/:matchId` (and round-scoring / hybrid submit) updates the match and **propagates** winners/losers along `next_*_match_id`. Elimination bracket matches (and non-football sports) strictly forbid draws; a winner must be determined. Hybrid generates stage 2 when stage 1 is complete.
+- Scheduling `PATCH /api/matches/:matchId/schedule` validates that match start is not in the past (`< now`), start date is not before `tour_startdate`, and end date does not exceed `tour_enddate`.
 - After a score save, `tournamentCompletion.js` sets `tour_status = 'ended'` when **every** match is played (winner, draw, or status `completed` / `resolved` / `archived` / `bye`). Hybrid also requires at least one **stage 2** match, so finishing stage 1 does not end the event. Zero matches does not end it. Clearing a result can revert `ended` to `ongoing`. End date alone does **not** write `ended`; public cards may still show “Ended” from `tour_enddate`. Older rows with `completed` are treated the same as `ended` when reading.
 - Pause stores `pause_date` and sets `paused`. Resume requires `resume_date` and shifts start/end dates by the pause length.
 
@@ -535,8 +536,8 @@ Admin (`auth` + `requireAdminUser`; Super Admin bypasses ownership):
 | GET | `/calendar` | public | Scheduled matches |
 | GET | `/public` | public | Recent matches by sport |
 | GET | `/:matchId` | public | Match detail |
-| PATCH | `/:matchId` | admin | Scores / winner / draw |
-| PATCH | `/:matchId/schedule` | admin | Schedule |
+| PATCH | `/:matchId` | admin | Scores / winner / draw (elimination & non-football reject draws) |
+| PATCH | `/:matchId/schedule` | admin | Schedule (validated against past time & tournament bounds) |
 | GET | `/:id/stats` | public | Match stats |
 | POST/PATCH/DELETE | `/:id/stats`… | admin | Mutate stats |
 | PATCH | `/:matchId/start` | admin | Start |
@@ -812,6 +813,7 @@ npm test
 | `chat.prompt.unit.test.js` | Advisor prompt |
 | `tournament_completion.unit.test.js` | All-matches-played → `completed` |
 | `require_super_admin.unit.test.js` | Super Admin middleware |
+| `match_validation.unit.test.js` | Elimination draws & schedule past/bounds checks |
 
 No frontend tests and no HTTP integration suite in this repository.
 
