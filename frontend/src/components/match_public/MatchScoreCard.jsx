@@ -8,8 +8,10 @@ import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
 import trophy from '../../assets/trophy.png'
 
 const MatchScoreCard = ({ match }) => {
-    const isCompleted = match.status === 'completed';
+    const isCompleted = match.status === 'completed' || match.status === 'resolved' || match.status === 'bye';
     const isPaused = match.status === 'paused';
+    const isRunning = match.status === 'running' || match.status === 'ongoing';
+    const isTBD = match.team1 === 'TBD' || match.team2 === 'TBD';
     const navigate = useNavigate();
     const playClock = useMatchPlayClock({
         status: match.status,
@@ -36,7 +38,9 @@ const MatchScoreCard = ({ match }) => {
                     <span className='text-[10px] md:text-[15px] h-[10%] pl-1'>Date: {match.date}</span>
                     <span className='text-[10px] md:text-[15px] h-[10%] pl-1'>Time: {match.time}</span>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team1Losing ? 'opacity-40' : ''}`}>
-                        <img src={match.team1Logo || logo1} alt={match.team1} className='w-10 h-10 md:h-15 md:w-15 object-contain' />
+                        {match.team1 !== 'TBD' && (
+                            <img src={match.team1Logo || logo1} alt={match.team1} className='w-10 h-10 md:h-15 md:w-15 object-contain' />
+                        )}
                         <span className='text-[10px] md:text-[15px] font-black uppercase truncate max-w-[80px] md:max-w-none text-center'>{match.team1}</span>
                     </div>
                 </div>
@@ -46,15 +50,19 @@ const MatchScoreCard = ({ match }) => {
                             <FontAwesomeIcon icon={faCircle} className='text-[15px] text-green-400 mr-1' />
                         ) : isPaused ? (
                             <FontAwesomeIcon icon={faCircle} className='text-[15px] text-yellow-500 mr-1 animate-pulse' />
-                        ) : (
+                        ) : isRunning ? (
                             <FontAwesomeIcon icon={faCircle} className='text-[15px] text-red-500 mr-1 animate-pulse' />
+                        ) : (
+                            <FontAwesomeIcon icon={faCircle} className='text-[15px] text-gray-400 mr-1' />
                         )}
                         <span className='mr-2 text-[10px] md:text-[13px] md:text-[16px]'>
-                            {isCompleted ? 'Finished' : playClock}
+                            {isCompleted ? 'Finished' : isPaused ? 'Paused' : isRunning ? playClock : isTBD ? 'TBD' : 'Upcoming'}
                         </span>
                     </div>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team2Losing ? 'opacity-40' : ''}`}>
-                        <img src={match.team2Logo || logo2} alt={match.team2} className='w-10 h-10 md:h-15 md:w-15 object-contain' />
+                        {match.team2 !== 'TBD' && (
+                            <img src={match.team2Logo || logo2} alt={match.team2} className='w-10 h-10 md:h-15 md:w-15 object-contain' />
+                        )}
                         <span className='text-[10px] md:text-[15px] font-black uppercase truncate max-w-[80px] md:max-w-none text-center'>{match.team2}</span>
                     </div>
                 </div>

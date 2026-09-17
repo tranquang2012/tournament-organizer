@@ -30,7 +30,7 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
                     onMouseLeave={onMouseLeave}
                 >
                     <div className='flex px-2 py-1.5 items-center gap-2'>
-                        {topParty?.name !== 'BYE' && (
+                        {topParty?.name !== 'BYE' && topParty?.name !== 'TBD' && (
                             <img src={topParty?.logo || logo1} className='h-7 w-7 flex-shrink-0 object-contain' />
                         )}
                         <span className={`text-[16px] ${topWon ? 'font-semibold text-gray-800' : topLost ? 'font-normal text-gray-400' : 'font-normal text-gray-700'}`}>
@@ -54,7 +54,7 @@ const CustomMatch = ({ match, topParty, bottomParty, topWon, bottomWon, onPartyC
                     onMouseLeave={onMouseLeave}
                 >
                     <div className='flex px-2 py-1.5 items-center gap-2'>
-                        {bottomParty?.name !== 'BYE' && (
+                        {bottomParty?.name !== 'BYE' && bottomParty?.name !== 'TBD' && (
                             <img src={bottomParty?.logo || logo2} className='h-7 w-7 flex-shrink-0 object-contain' />
                         )}
                         <span className={`text-[16px] ${bottomWon ? 'font-semibold text-gray-800' : bottomLost ? 'font-normal text-gray-400' : 'font-normal text-gray-700'}`}>

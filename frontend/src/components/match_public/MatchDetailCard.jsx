@@ -7,8 +7,10 @@ import logo2 from '../../assets/defaultTeamLogos/logo2.jpg'
 import trophy from '../../assets/trophy.png'
 
 const MatchDetailCard = ({ match }) => {
-    const isCompleted = match.status === 'completed';
+    const isCompleted = match.status === 'completed' || match.status === 'resolved' || match.status === 'bye';
     const isPaused = match.status === 'paused';
+    const isRunning = match.status === 'running' || match.status === 'ongoing';
+    const isTBD = match.team1 === 'TBD' || match.team2 === 'TBD' || match.status === 'locked' || match.status === 'waiting';
     const playClock = useMatchPlayClock({
         status: match.status,
         elapsedMs: match.elapsedMs,
@@ -17,6 +19,9 @@ const MatchDetailCard = ({ match }) => {
 
     const team1Losing = match.score1 < match.score2;
     const team2Losing = match.score2 < match.score1;
+
+    const team1Logo = match.home?.logo || match.team1Logo || logo1;
+    const team2Logo = match.away?.logo || match.team2Logo || logo2;
 
     return (
         <div className='w-full flex flex-col gap-3'>
@@ -28,15 +33,19 @@ const MatchDetailCard = ({ match }) => {
                             <FontAwesomeIcon icon={faCircle} className='text-[15px] text-green-400 mr-1' />
                         ) : isPaused ? (
                             <FontAwesomeIcon icon={faCircle} className='text-[15px] text-yellow-500 mr-1 animate-pulse' />
-                        ) : (
+                        ) : isRunning ? (
                             <FontAwesomeIcon icon={faCircle} className='text-[15px] text-red-500 mr-1 animate-pulse' />
+                        ) : (
+                            <FontAwesomeIcon icon={faCircle} className='text-[15px] text-gray-400 mr-1' />
                         )}
                         <span className='mr-2 text-[10px] md:text-[13px] md:text-[16px]'>
-                            {isCompleted ? 'Finished' : playClock}
+                            {isCompleted ? 'Finished' : isPaused ? 'Paused' : isRunning ? playClock : isTBD ? 'TBD' : 'Upcoming'}
                         </span>
                     </div>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team1Losing ? 'opacity-40' : ''}`}>
-                        <img src={logo1} alt='logoteam1' className='w-10 h-10 md:h-15 md:w-15 object-contain' />
+                        {match.team1 !== 'TBD' && (
+                            <img src={team1Logo} alt={match.team1} className='w-10 h-10 md:h-15 md:w-15 object-contain' />
+                        )}
                         <span className='text-[10px] md:text-[15px] font-black uppercase mt-2 truncate max-w-[100px] md:max-w-none text-center'>{match.team1}</span>
                         <div className='flex flex-col items-center mt-2 gap-0.5'>
                             {match.home?.scorers?.map((s, i) => (
@@ -48,7 +57,9 @@ const MatchDetailCard = ({ match }) => {
                 <div className='flex flex-col w-[50%] bg-[#123836] rounded-tr-lg rounded-br-lg text-white'>
                     <div className='h-[30px] text-[#123836]'>Hide</div>
                     <div className={`flex flex-col mt-[5%] items-center transition-all duration-300 ${isCompleted && team2Losing ? 'opacity-40' : ''}`}>
-                        <img src={logo2} alt='logoteam2' className='w-10 h-10 md:h-15 md:w-15 object-contain' />
+                        {match.team2 !== 'TBD' && (
+                            <img src={team2Logo} alt={match.team2} className='w-10 h-10 md:h-15 md:w-15 object-contain' />
+                        )}
                         <span className='text-[10px] md:text-[15px] font-black uppercase mt-2 truncate max-w-[100px] md:max-w-none text-center'>{match.team2}</span>
                         <div className='flex flex-col items-center mt-2 gap-0.5'>
                             {match.away?.scorers?.map((s, i) => (

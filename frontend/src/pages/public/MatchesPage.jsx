@@ -24,10 +24,18 @@ const formatScheduledTime = (isoStr) => {
 };
 
 const buildTeamMatchData = (match, stats, participants) => {
-  const c1 = match.competitors?.[0];
-  const c2 = match.competitors?.[1];
-  const r1 = match.results?.[0];
-  const r2 = match.results?.[1];
+  const c1 = match.competitor1_id
+    ? match.competitors?.find(c => c.comp_id === match.competitor1_id)
+    : match.competitors?.[0];
+  const c2 = match.competitor2_id
+    ? match.competitors?.find(c => c.comp_id === match.competitor2_id)
+    : (c1 ? match.competitors?.find(c => c.comp_id !== c1.comp_id) : match.competitors?.[1]);
+  const r1 = match.competitor1_id
+    ? match.results?.find(r => r.comp_id === match.competitor1_id)
+    : match.results?.[0];
+  const r2 = match.competitor2_id
+    ? match.results?.find(r => r.comp_id === match.competitor2_id)
+    : (r1 ? match.results?.find(r => r.comp_id !== r1.comp_id) : match.results?.[1]);
 
   // Build participant lists per team from tournament participants
   // getParticipants returns { id, name, members: [{ name }] } (not comp_id/mem_name)
@@ -292,11 +300,15 @@ const MatchesPage = () => {
                 {matchData.date && <><FontAwesomeIcon icon={faCalendarDays} /> {matchData.date} </>}
                 {matchData.time && <><FontAwesomeIcon icon={faClock} /> {matchData.time}</>}
               </span>
-              {matchData.status === 'ongoing' || matchData.status === 'running' || matchData.status === 'paused' ? (
+              {matchData.status === 'ongoing' || matchData.status === 'running' ? (
                 <button className='font-semibold text-red-500 border border-gray-300 rounded-[10px] p-1 shadow-sm cursor-pointer w-fit
                 transition-transform duration-300 ease-in-out hover:scale-105 hover:border-gray-500'>Live now!</button>
-              ) : (
+              ) : matchData.status === 'paused' ? (
+                <button className='font-semibold text-yellow-600 border border-yellow-300 rounded-[10px] p-1 shadow-sm w-fit'>Paused</button>
+              ) : matchData.status === 'completed' || matchData.status === 'resolved' || matchData.status === 'bye' ? (
                 <button className='font-semibold text-white rounded-[10px] bg-[#123836] p-1 shadow-sm w-fit'>Match End</button>
+              ) : (
+                <button className='font-semibold text-[#123836] border border-[#123836] rounded-[10px] p-1 shadow-sm w-fit'>{matchData.team1 === 'TBD' || matchData.team2 === 'TBD' ? 'TBD' : 'Upcoming'}</button>
               )}
             </div>
             <span className='hidden md:block ml-auto text-[#123836] font-semibold text-[50px] shrink-0'>{matchData.tournamentName}</span>

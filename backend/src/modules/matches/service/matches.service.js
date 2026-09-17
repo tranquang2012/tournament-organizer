@@ -653,6 +653,8 @@ async resumeMatch(matchId, body) {
       round: m.round,
       group_name: m.group_name,
       status: m.status,
+      competitor1_id: m.competitor1_id || null,
+      competitor2_id: m.competitor2_id || null,
       competitors,
       scheduled_start: m.scheduled_start,
       scheduled_end: m.scheduled_end,

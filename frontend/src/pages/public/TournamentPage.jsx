@@ -113,7 +113,7 @@ const transformBackendMatchesToBracket = (backendMatches, format, isIndividual) 
       participants.push({
         id: `tbd-${m.match_id}-${idx}`,
         name: m.status === 'bye' ? 'BYE' : 'TBD',
-        logo: m.status === 'bye' ? null : (isIndividual ? PLAYER_DEFAULT_LOGO : (idx === 0 ? logo1 : logo2)),
+        logo: null,
         isWinner: false,
         resultText: '0',
         status: undefined
@@ -446,12 +446,12 @@ const TournamentPage = () => {
           status,
           team1: {
             name: comp1?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'),
-            logo: comp1?.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo1),
+            logo: comp1?.comp_logo || (comp1 ? (isIndividual ? PLAYER_DEFAULT_LOGO : logo1) : null),
             score: result1 ? result1.score : 0
           },
           team2: {
             name: comp2?.comp_name || (m.status === 'bye' ? 'BYE' : 'TBD'),
-            logo: comp2?.comp_logo || (isIndividual ? PLAYER_DEFAULT_LOGO : logo2),
+            logo: comp2?.comp_logo || (comp2 ? (isIndividual ? PLAYER_DEFAULT_LOGO : logo2) : null),
             score: result2 ? result2.score : 0
           }
         };
